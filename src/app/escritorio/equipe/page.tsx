@@ -40,7 +40,7 @@ export default async function PaginaDaEquipe() {
       {ativos.length === 0 ? (
         <p className="vazio">Nenhum integrante ativo ainda.</p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="lista-empilhada">
           {ativos.map((membro) => (
             <div key={membro.profileId} className="cartao-de-lista">
               <span className="avatar" aria-hidden>
@@ -69,7 +69,7 @@ export default async function PaginaDaEquipe() {
       {pendentes.length > 0 && (
         <>
           <h2 className="secao">Convites pendentes</h2>
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="lista-empilhada">
             {pendentes.map((membro) => (
               <div key={membro.profileId} className="cartao-de-lista">
                 <span className="avatar" aria-hidden>

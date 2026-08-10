@@ -839,3 +839,18 @@ body:has(.tela-de-entrada) footer.rodape {
   border-color: var(--danger);
   background: transparent;
 }
+
+/* A lista empilhada de cartões. minmax(0, 1fr) pelo mesmo motivo da
+   grade-dupla: o trilho implícito tem piso de min-content, e uma linha
+   longa sem quebra (a prévia da triagem numa conversa) empurrava UM cartão
+   além da régua, mais largo que os irmãos. As duas peças importam: o
+   trilho capado E o min-width: 0 nos itens. */
+.lista-empilhada {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.lista-empilhada > * {
+  min-width: 0;
+}

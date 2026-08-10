@@ -34,7 +34,7 @@ export default async function PaginaDeCasosDoEscritorio() {
           Quando um cliente aceitar um caso do escritório, ele aparece aqui.
         </p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="lista-empilhada">
           {casos.map((caso) => (
             <Link
               key={caso.id}

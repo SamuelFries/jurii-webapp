@@ -37,7 +37,7 @@ export default async function PaginaDeCasosDoAdvogado() {
           Nenhum caso ativo. Abra a conversa com o cliente para propor um.
         </p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="lista-empilhada">
           {casos.map((caso) => (
             <Link
               key={caso.id}

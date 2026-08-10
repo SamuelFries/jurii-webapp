@@ -18,7 +18,7 @@ export function ListaDeConversas({
   const agora = new Date();
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className="lista-empilhada">
       {conversas.map((conversa) => (
         <Link
           key={conversa.id}

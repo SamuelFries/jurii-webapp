@@ -46,6 +46,15 @@ const fixture = `<!doctype html>
         <span class="conteudo"><span class="titulo">Patrícia Helena Nunes</span>
         <p class="linha-2">Direito Cível</p></span></div>
     </div>
+    <h2 class="secao">Conversas</h2>
+    <div class="lista-empilhada" id="conversas">
+      <div class="cartao-de-lista"><span class="avatar">PF</span>
+        <span class="conteudo"><span class="titulo">Pedro Fernando Fries</span>
+        <p class="linha-2">Solicitação de aceite do caso: Caso o zé</p></span></div>
+      <div class="cartao-de-lista" id="cartao-longo"><span class="avatar">F</span>
+        <span class="conteudo"><span class="titulo">Fábio Costa</span>
+        <p class="linha-2" id="triagem">Triagem da assistente Jurii Resumo do caso: Cliente relata: "oi baterm". Categoria provável: Não identificada. Triagem manual recomendada. Urgência: Baixa: Relato ainda sem detalhes suficientes para classificar</p></span></div>
+    </div>
     <h2 class="secao">Escritórios recomendados</h2>
     <div class="grade-dupla" id="escritorios">
       <div class="cartao-de-lista"><span class="avatar">SA</span>
@@ -67,6 +76,35 @@ for (const largura of [1280, 1728, 2402]) {
     viewport: { width: largura, height: 1000 },
   });
   await pagina.setContent(fixture);
+
+  const medidasDaLista = await pagina.evaluate(() => {
+    const lista = document.getElementById("conversas").getBoundingClientRect();
+    const cartaoLongo = document
+      .getElementById("cartao-longo")
+      .getBoundingClientRect();
+    const cartaoCurto = document
+      .querySelector("#conversas .cartao-de-lista")
+      .getBoundingClientRect();
+    const triagem = document.getElementById("triagem");
+    return {
+      cartaoLongo: cartaoLongo.width,
+      cartaoCurto: cartaoCurto.width,
+      lista: lista.width,
+      triagemTruncada: triagem.scrollWidth > triagem.clientWidth,
+    };
+  });
+
+  if (Math.abs(medidasDaLista.cartaoLongo - medidasDaLista.cartaoCurto) > 1) {
+    falhas.push(
+      `@${largura}: o cartão com triagem longa (${medidasDaLista.cartaoLongo.toFixed(0)}) ficou mais largo que o irmão (${medidasDaLista.cartaoCurto.toFixed(0)})`,
+    );
+  }
+  if (medidasDaLista.cartaoLongo > medidasDaLista.lista + 1) {
+    falhas.push(`@${largura}: cartão estourando a lista empilhada`);
+  }
+  if (!medidasDaLista.triagemTruncada) {
+    falhas.push(`@${largura}: a prévia da triagem não truncou em reticências`);
+  }
 
   const medidas = await pagina.evaluate(() => {
     const advogados = document.getElementById("advogados").getBoundingClientRect();
