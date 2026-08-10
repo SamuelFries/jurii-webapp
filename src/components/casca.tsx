@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { FluxosDoUsuario } from "@/lib/fluxos";
 import { sair } from "@/app/entrar/acoes";
+import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 export type FluxoAtivo = "cliente" | "advogado" | "escritorio";
 
@@ -35,7 +36,7 @@ const abasPorFluxo: Record<FluxoAtivo, Aba[]> = {
  * main.dart): só aparece fluxo que a pessoa TEM, porque opção que aparece e
  * não funciona é pior que opção ausente.
  */
-export function Casca({
+export async function Casca({
   fluxo,
   fluxos,
   caminhoAtivo,
@@ -46,6 +47,28 @@ export function Casca({
   caminhoAtivo: string;
   children: React.ReactNode;
 }) {
+  // O contador do sino, do ESCOPO do fluxo ativo (o mesmo recorte do app:
+  // cada fluxo tem o seu sino). Contagem por cabeçalho, sem trazer linhas.
+  const escopoDoSino =
+    fluxo === "cliente" ? "client" : fluxo === "advogado" ? "lawyer" : "firm";
+  const rotaDoSino =
+    fluxo === "cliente"
+      ? "/notificacoes"
+      : fluxo === "advogado"
+        ? "/advogado/notificacoes"
+        : "/escritorio/notificacoes";
+  const supabase = await clienteDoServidor();
+  let contagem = supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("scope", escopoDoSino)
+    .filter("read_at", "is", null);
+  if (fluxo === "escritorio" && fluxos.escritorio !== null) {
+    contagem = contagem.eq("law_firm_id", fluxos.escritorio.id);
+  }
+  const { count } = await contagem;
+  const naoLidas = count ?? 0;
+
   // Profissional primeiro: o webapp existe para o dia de trabalho de
   // advogados e escritórios; o fluxo do cliente fica por último.
   const trocas: { rotulo: string; href: string; fluxo: FluxoAtivo }[] = [];
@@ -70,6 +93,20 @@ export function Casca({
               jurii<span className="ouro">.</span>
             </Link>
             <div className="acoes-do-topo">
+              <Link
+                href={rotaDoSino}
+                className="sino"
+                aria-label={
+                  naoLidas > 0
+                    ? `Notificações, ${naoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                Notificações
+                {naoLidas > 0 && (
+                  <span className="pilula-nao-lidas">{naoLidas}</span>
+                )}
+              </Link>
               {trocas.length > 1 && (
                 <nav className="troca-de-fluxo" aria-label="Trocar de área">
                   {trocas.map((troca) => (

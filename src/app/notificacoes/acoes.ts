@@ -1,0 +1,66 @@
+"use server";
+
+import { redirect } from "next/navigation";
+
+import { clienteDoServidor } from "@/lib/supabase/servidor";
+
+/**
+ * As mutações de notificação, iguais às do app: marcar uma, marcar todas do
+ * escopo, apagar. A RLS garante que só o destinatário alcança as linhas.
+ */
+
+function caminhoSeguro(bruto: FormDataEntryValue | null, padrao: string): string {
+  const caminho = String(bruto ?? padrao);
+  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : padrao;
+}
+
+/** Abrir é ler: marca e segue para o destino (conversa ou caso). */
+export async function abrirNotificacao(dados: FormData): Promise<void> {
+  const destino = caminhoSeguro(dados.get("destino"), "/notificacoes");
+  const supabase = await clienteDoServidor();
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", String(dados.get("id") ?? ""))
+    .filter("read_at", "is", null);
+  redirect(destino);
+}
+
+export async function marcarComoLida(dados: FormData): Promise<void> {
+  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const supabase = await clienteDoServidor();
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", String(dados.get("id") ?? ""))
+    .filter("read_at", "is", null);
+  redirect(voltar);
+}
+
+export async function marcarTodasComoLidas(dados: FormData): Promise<void> {
+  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const escopo = String(dados.get("escopo") ?? "client");
+  const lawFirmId = dados.get("escritorio");
+
+  const supabase = await clienteDoServidor();
+  let consulta = supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("scope", escopo)
+    .filter("read_at", "is", null);
+  if (escopo === "firm" && lawFirmId != null) {
+    consulta = consulta.eq("law_firm_id", String(lawFirmId));
+  }
+  await consulta;
+  redirect(voltar);
+}
+
+export async function apagarNotificacao(dados: FormData): Promise<void> {
+  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const supabase = await clienteDoServidor();
+  await supabase
+    .from("notifications")
+    .delete()
+    .eq("id", String(dados.get("id") ?? ""));
+  redirect(voltar);
+}
