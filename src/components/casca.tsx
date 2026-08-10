@@ -16,6 +16,7 @@ const abasPorFluxo: Record<FluxoAtivo, Aba[]> = {
     { rotulo: "Início", href: "/inicio" },
     { rotulo: "Conversas", href: "/conversas" },
     { rotulo: "Meus casos", href: "/casos" },
+    { rotulo: "Favoritos", href: "/favoritos" },
   ],
   advogado: [
     { rotulo: "Mensagens", href: "/advogado" },
