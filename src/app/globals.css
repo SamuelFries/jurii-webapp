@@ -813,3 +813,29 @@ body:has(.tela-de-entrada) footer.rodape {
   color: var(--text);
   border-color: var(--gold-soft);
 }
+
+.forma-do-coracao {
+  flex: 0 0 auto !important;
+}
+
+.coracao {
+  width: 44px;
+  margin: 18px 0 0;
+  padding: 10px 0;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+.coracao:hover {
+  background: var(--surface-2);
+  color: var(--danger);
+}
+
+.coracao.ativo {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
