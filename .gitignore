@@ -1,0 +1,17 @@
+# Dependências e build
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Segredos: NUNCA comitar. A publishable key do Supabase é pública por
+# desenho (vai no binário do app), mas a service_role NUNCA sai das
+# variáveis de ambiente da Vercel. Ver README.
+.env
+.env.local
+.env*.local
+
+# Sistema
+.DS_Store
+.vercel
