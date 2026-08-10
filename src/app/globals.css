@@ -382,14 +382,23 @@ button.discreto:hover {
 
 .grade-dupla {
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr), e não 1fr: `1fr` tem piso de min-content, então uma
+     linha longa em nowrap (o endereço do escritório) EMPURRAVA o trilho
+     além do contêiner e a grade dos escritórios desalinhava da dos
+     advogados. Com o piso zerado, o trilho respeita a régua e a linha
+     trunca em reticências. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
 @media (min-width: 720px) {
   .grade-dupla {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.grade-dupla > * {
+  min-width: 0;
 }
 
 .cartao-de-lista {
