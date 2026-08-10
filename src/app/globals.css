@@ -794,3 +794,22 @@ body:has(.tela-de-entrada) footer.rodape {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.sino {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sino:hover {
+  color: var(--text);
+  border-color: var(--gold-soft);
+}
