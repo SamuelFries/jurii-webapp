@@ -41,7 +41,7 @@ export default async function PaginaDeCasosDoCliente({
       {listaDeSolicitacoes.length > 0 && (
         <>
           <h2 className="secao">Solicitações pendentes</h2>
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="lista-empilhada">
             {listaDeSolicitacoes.map((solicitacao) => (
               <div key={solicitacao.id} className="cartao">
                 <div className="linha-topo">
@@ -81,7 +81,7 @@ export default async function PaginaDeCasosDoCliente({
           aparece aqui.
         </p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="lista-empilhada">
           {listaDeCasos.map((caso) => (
             <Link
               key={caso.id}

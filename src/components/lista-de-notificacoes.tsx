@@ -71,7 +71,7 @@ export async function ListaDeNotificacoes({
       {notificacoes.length === 0 ? (
         <p className="vazio">Nenhuma notificação por aqui ainda.</p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="lista-empilhada">
           {notificacoes.map((notificacao) => {
             const destino = destinoDaNotificacao(notificacao, fluxo);
             return (

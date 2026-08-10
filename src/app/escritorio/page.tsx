@@ -83,7 +83,7 @@ export default async function PaginaDoEscritorio() {
       {(semResponsavel > 0 || aguardando > 0) && (
         <>
           <h2 className="secao">Precisa de atenção</h2>
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="lista-empilhada">
             {semResponsavel > 0 && (
               <Link href="/escritorio/casos" className="cartao-de-lista">
                 <span className="conteudo">
