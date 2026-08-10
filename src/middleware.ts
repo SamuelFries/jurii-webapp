@@ -63,5 +63,10 @@ export async function middleware(requisicao: NextRequest) {
 
 export const config = {
   // Tudo, menos estáticos e o webhook (chamada de máquina, sem cookie).
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/webhooks).*)"],
+  // O `.*\\..*` deixa passar qualquer arquivo com extensão (as imagens da
+  // marca em /marca, o icon.svg): sem isso o portão redirecionava o PNG do
+  // lockup para /entrar e a tela de login abria sem o próprio logo.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\..*).*)",
+  ],
 };

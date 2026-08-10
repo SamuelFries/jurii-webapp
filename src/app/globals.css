@@ -535,3 +535,73 @@ h2.secao {
   font-weight: 800;
   margin-right: 4px;
 }
+
+/* ---- Tela de entrada ---- */
+
+/* A entrada é a única tela sem casca: o rodapé global sumiria atrás do
+   azul de tela cheia, então sai de cena aqui. */
+body:has(.tela-de-entrada) footer.rodape {
+  display: none;
+}
+
+.tela-de-entrada {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  /* O azul do Jurii, em profundidade: navy sobre navy-2, como o cartão de
+     destaque do app. */
+  background:
+    radial-gradient(1100px 600px at 80% -10%, #16305c 0%, transparent 60%),
+    radial-gradient(900px 700px at -10% 110%, #0d2249 0%, transparent 55%),
+    linear-gradient(165deg, var(--navy) 0%, var(--navy-2) 55%, var(--navy) 100%);
+  overflow: hidden;
+}
+
+.fundo-da-entrada {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cartao-de-entrada {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid rgba(223, 229, 241, 0.6);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(4, 12, 28, 0.45);
+  padding: 34px 30px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cartao-de-entrada form {
+  width: 100%;
+}
+
+.lockup-da-entrada {
+  height: 132px;
+  width: 132px;
+}
+
+.subtitulo-da-entrada {
+  text-align: center;
+  font-size: 14px;
+  margin: 10px 0 4px;
+}
+
+.so-para-leitores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
