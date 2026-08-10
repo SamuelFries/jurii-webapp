@@ -1,0 +1,32 @@
+import { papeisDaLinha, type PapelNoEscritorio } from "../fluxos";
+
+/** A equipe do escritório, espelho de _fetchTeamMembers do app: linhas de
+ * law_firm_members (status != disabled) com o join de profiles. */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Linha = Record<string, any>;
+
+export interface MembroDaEquipe {
+  profileId: string;
+  nome: string;
+  iniciais: string;
+  avatarUrl: string | null;
+  papeis: PapelNoEscritorio[];
+  ativo: boolean;
+  convitePendente: boolean;
+}
+
+export function membroDaLinha(row: Linha): MembroDaEquipe {
+  const perfil = (row.profiles ?? null) as Linha | null;
+  const status = String(row.status ?? "active");
+  return {
+    profileId: String(row.profile_id ?? ""),
+    nome: String(perfil?.full_name ?? "Integrante"),
+    iniciais: String(perfil?.initials ?? "?"),
+    avatarUrl:
+      perfil?.avatar_url == null ? null : String(perfil.avatar_url),
+    papeis: papeisDaLinha(row.roles, row.member_role ?? row.role),
+    ativo: status === "active",
+    convitePendente: status === "invited" || status === "pending",
+  };
+}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-/** A raiz não tem conteúdo próprio: o middleware decide entre /entrar e
- * /assinatura pela sessão, então basta apontar para a área logada. */
+/** A raiz não tem conteúdo próprio: o middleware manda quem não tem sessão
+ * para /entrar; quem tem cai na home do fluxo do cliente. */
 export default function PaginaRaiz() {
-  redirect("/assinatura");
+  redirect("/inicio");
 }

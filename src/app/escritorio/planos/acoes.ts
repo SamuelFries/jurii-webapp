@@ -23,9 +23,9 @@ export async function escolherPlano(dados: FormData): Promise<void> {
 
   if (error) {
     redirect(
-      `/planos?erro=${encodeURIComponent(traduzErroDeEscolhaDePlano(error.message))}`,
+      `/escritorio/planos?erro=${encodeURIComponent(traduzErroDeEscolhaDePlano(error.message))}`,
     );
   }
 
-  redirect("/assinatura");
+  redirect("/escritorio/assinatura");
 }

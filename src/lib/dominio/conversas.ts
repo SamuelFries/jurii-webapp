@@ -1,0 +1,87 @@
+/**
+ * Conversas e mensagens, espelho do MessagingRepository do app.
+ *
+ * As linhas vêm de fetch_conversations_for_current_user, cujo RETURNS TABLE
+ * é (id, type, title, initials, avatar_url, specialty, last_message,
+ * last_message_at, law_firm_id, client_id, lawyer_id, unread_count). O
+ * título já vem trocado pelo servidor conforme o escopo: no fluxo do
+ * cliente é o escritório; nos outros, o cliente ou o colega.
+ */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Linha = Record<string, any>;
+
+export type EscopoDeConversa = "client" | "lawyer" | "firmClient" | "firmTeam";
+
+export interface Conversa {
+  id: string;
+  titulo: string;
+  iniciais: string;
+  avatarUrl: string | null;
+  especialidade: string;
+  ultimaMensagem: string;
+  ultimaMensagemEm: Date | null;
+  naoLidas: number;
+}
+
+export interface Mensagem {
+  id: string;
+  corpo: string;
+  minha: boolean;
+  criadaEm: Date;
+  apagadaParaTodos: boolean;
+}
+
+export function conversaDaLinha(row: Linha): Conversa {
+  return {
+    id: String(row.id),
+    titulo: String(row.title ?? ""),
+    iniciais: String(row.initials ?? "?"),
+    avatarUrl: row.avatar_url == null ? null : String(row.avatar_url),
+    especialidade: String(row.specialty ?? ""),
+    ultimaMensagem: String(row.last_message ?? ""),
+    ultimaMensagemEm: row.last_message_at
+      ? new Date(String(row.last_message_at))
+      : null,
+    naoLidas: Number(row.unread_count ?? 0),
+  };
+}
+
+export function mensagemDaLinha(row: Linha, meuId: string): Mensagem {
+  return {
+    id: String(row.id),
+    corpo: String(row.body ?? ""),
+    minha: String(row.sender_id) === meuId,
+    criadaEm: new Date(String(row.created_at)),
+    apagadaParaTodos: row.deleted_for_all_at != null,
+  };
+}
+
+/** "Hoje às 14:32", "Ontem às 09:10" ou "07/08 às 18:45". São Paulo é
+ * UTC-3 estável (o Brasil aboliu o horário de verão em 2019). */
+export function rotuloDeHorario(data: Date, agora: Date): string {
+  const fusoMs = 3 * 3_600_000;
+  const local = new Date(data.getTime() - fusoMs);
+  const agoraLocal = new Date(agora.getTime() - fusoMs);
+
+  const hora = `${String(local.getUTCHours()).padStart(2, "0")}:${String(
+    local.getUTCMinutes(),
+  ).padStart(2, "0")}`;
+
+  const mesmoDia =
+    local.getUTCFullYear() === agoraLocal.getUTCFullYear() &&
+    local.getUTCMonth() === agoraLocal.getUTCMonth() &&
+    local.getUTCDate() === agoraLocal.getUTCDate();
+  if (mesmoDia) return `Hoje às ${hora}`;
+
+  const ontem = new Date(agoraLocal.getTime() - 86_400_000);
+  const foiOntem =
+    local.getUTCFullYear() === ontem.getUTCFullYear() &&
+    local.getUTCMonth() === ontem.getUTCMonth() &&
+    local.getUTCDate() === ontem.getUTCDate();
+  if (foiOntem) return `Ontem às ${hora}`;
+
+  const dia = String(local.getUTCDate()).padStart(2, "0");
+  const mes = String(local.getUTCMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes} às ${hora}`;
+}

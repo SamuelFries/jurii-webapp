@@ -42,7 +42,9 @@ export async function middleware(requisicao: NextRequest) {
   } = await supabase.auth.getUser();
 
   const rota = requisicao.nextUrl.pathname;
-  const precisaDeLogin = rota.startsWith("/assinatura") || rota.startsWith("/planos");
+  // Tudo é logado, menos a porta de entrada (o webhook nem passa por aqui:
+  // está fora do matcher, porque chamada de máquina não tem cookie).
+  const precisaDeLogin = !rota.startsWith("/entrar");
 
   if (precisaDeLogin && !user) {
     const destino = requisicao.nextUrl.clone();

@@ -1,39 +1,60 @@
 # jurii-webapp
 
-A área do escritório fora do aplicativo: gestão da assinatura e, quando o
-provedor for escolhido, o pagamento. O pagamento vive AQUI e não no app por
-decisão, não por acaso: compra dentro do app entrega 30% para a Apple.
+O Jurii na web: os três fluxos do aplicativo (cliente, advogado, escritório)
+falando com o MESMO banco pelas MESMAS RPCs e RLS, mais o lugar onde o
+pagamento vai viver. O pagamento fica AQUI e não no app por decisão, não por
+acaso: compra dentro do app entrega 30% para a Apple.
 
 Convive com dois vizinhos e não os substitui:
 
-- **jurii** (Flutter): o produto. A paywall, a escolha de plano e toda a
-  operação continuam lá; este webapp fala com o MESMO banco pelas MESMAS
-  RPCs (`choose_law_firm_plan`) e RLS.
+- **jurii** (Flutter): o produto completo. Verificações, convites, edição de
+  perfil, triagem por IA e notificações continuam lá.
 - **jurii-site**: marketing e páginas legais, estático puro.
 
-## O que existe hoje
+## Os fluxos
 
-- `/entrar`: login com a conta do aplicativo (Supabase Auth, sessão em
-  cookies).
-- `/assinatura`: o estado da assinatura de quem entrou, com os mesmos
-  rótulos do app.
-- `/planos`: os planos do banco, chave Mensal/Anual com desconto calculado
-  dos preços (nunca escrito à mão), troca de plano pela RPC.
-- `/api/webhooks/pagamento`: responde 501 até existir provedor. A rota já
-  existe para a URL ser estável no dia do cadastro no provedor.
+A troca de fluxo segue a regra do app: o fluxo do advogado aparece para
+verificação APROVADA (lawyer_verifications), o do escritório para vínculo
+ATIVO (law_firm_members). Opção que a pessoa não tem não aparece.
+
+**Cliente** (todo mundo logado)
+- `/inicio`: busca com expansão de intenção no servidor ("meu chefe não me
+  paga" acha trabalhista), advogados e escritórios recomendados, e o botão
+  Conversar, que abre ou reaproveita a conversa pela RPC.
+- `/conversas` e `/conversas/[id]`: lista e chat.
+- `/casos`: solicitações pendentes com aceitar/recusar, e os casos.
+
+**Advogado**
+- `/advogado`: mensagens. `/advogado/casos`: casos com status.
+
+**Escritório**
+- `/escritorio`: mensagens com segmento Clientes | Equipe.
+- `/escritorio/casos`: a carteira, com urgência e responsável.
+- `/escritorio/equipe`: quem trabalha no escritório e convites pendentes.
+- `/escritorio/assinatura` e `/escritorio/planos`: plano, ciclo, troca pela
+  RPC `choose_law_firm_plan`. Acessíveis também SEM vínculo ativo, porque o
+  contratante escolhe o plano antes de o escritório existir (a paywall do
+  app exige).
+
+**Chat**: histórico das 100 mais recentes (o teto do app), envio por insert
+em `messages` sob RLS, `sender_type` conforme o fluxo, tempo real por
+assinatura de INSERT, e `mark_conversation_read` ao abrir e ao receber.
 
 ## O que NÃO existe, de propósito
 
-- **Pagamento.** A escolha do provedor (Stripe, Asaas, Pagar.me, Iugu) foi
-  adiada em 10/08/2026. A interface está pronta em
+- **Pagamento.** A escolha do provedor (Stripe, Asaas, Pagar.me, Iugu) está
+  adiada desde 10/08/2026. A interface está em
   `src/lib/pagamentos/provedor.ts`; enquanto `provedorConfigurado()` devolve
-  `null`, nenhuma tela oferece pagamento. Botão de pagar que não paga é
-  link morto, e link morto é reprovado neste projeto.
-- **Expiração do teste grátis.** Hoje nada expira (o portão
-  `has_law_firm_license` só olha o status). A expiração entra JUNTO com o
-  checkout, nunca antes: vencer o teste sem existir como pagar tranca a
-  pessoa do lado de fora.
-- **Cadastro de conta.** Conta nasce no aplicativo, junto com o escritório.
+  `null`, tela nenhuma oferece pagar e `/api/webhooks/pagamento` responde
+  501. Botão de pagar que não paga é link morto, e link morto é reprovado
+  neste projeto.
+- **Expiração do teste grátis.** Entra JUNTO com o checkout, nunca antes:
+  vencer o teste sem existir como pagar tranca a pessoa do lado de fora.
+- **Cadastro de conta e verificações.** Nascem no aplicativo (upload de
+  documentos, OAB, CNPJ). A conta é a mesma cá e lá.
+- **Anexos no chat, favoritos, notificações, triagem por IA, patrocínio.**
+  Ficam no app até merecerem porta na web; nenhum item de menu promete o que
+  não entrega.
 
 ## Rodar
 
@@ -48,15 +69,15 @@ npm run build
 ## Segurança, as regras da casa
 
 - A `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` é pública por desenho (é a mesma
-  do binário do app). A segurança é a RLS.
+  do binário do app). A segurança é a RLS: o webapp autentica a PESSOA e o
+  banco recorta o que ela vê.
 - A `service_role` NUNCA entra neste repositório nem em variável
   `NEXT_PUBLIC_`. Quando o webhook for real, ela entra SÓ nas variáveis de
   ambiente da Vercel, lida SÓ pelo código do webhook.
-- Nenhuma escrita direta nas tabelas de assinatura pelo navegador: escolha
-  e troca de plano passam pela RPC, e `active`/`past_due`/`canceled` serão
-  movidos exclusivamente pelo webhook.
+- Escolha e troca de plano passam pela RPC; `active`/`past_due`/`canceled`
+  serão movidos exclusivamente pelo webhook.
 
 ## Deploy
 
-Vercel, projeto apontando para este repositório. Variáveis de ambiente:
-as duas `NEXT_PUBLIC_` do `.env.example`. Nada mais até o provedor existir.
+Vercel, projeto apontando para este repositório. Variáveis de ambiente: as
+duas `NEXT_PUBLIC_` do `.env.example`. Nada mais até o provedor existir.
