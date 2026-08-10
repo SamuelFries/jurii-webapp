@@ -1,9 +1,14 @@
 # jurii-webapp
 
-O Jurii na web: os três fluxos do aplicativo (cliente, advogado, escritório)
-falando com o MESMO banco pelas MESMAS RPCs e RLS, mais o lugar onde o
-pagamento vai viver. O pagamento fica AQUI e não no app por decisão, não por
-acaso: compra dentro do app entrega 30% para a Apple.
+O Jurii no computador, com FOCO NO PROFISSIONAL: o dia de trabalho de
+advogados e escritórios (mensagens, casos, carteira, equipe, assinatura)
+numa tela grande, falando com o MESMO banco pelas MESMAS RPCs e RLS do
+aplicativo. O fluxo do cliente também existe e é completo, mas a casa é do
+profissional: quem tem escritório entra no escritório, quem é advogado
+entra no advogado, e a troca de área fica no topo.
+
+O pagamento também vai viver aqui, e não no app, por decisão: compra dentro
+do app entrega 30% para a Apple.
 
 Convive com dois vizinhos e não os substitui:
 

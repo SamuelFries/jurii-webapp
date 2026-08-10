@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
 
-/** A raiz não tem conteúdo próprio: o middleware manda quem não tem sessão
- * para /entrar; quem tem cai na home do fluxo do cliente. */
-export default function PaginaRaiz() {
-  redirect("/inicio");
+import { contextoLogado } from "@/lib/contexto";
+import { destinoInicial } from "@/lib/fluxos";
+
+export const dynamic = "force-dynamic";
+
+/** A raiz decide a casa da pessoa: escritório primeiro, advogado depois,
+ * cliente por fim. É o mesmo critério do destino pós-login. */
+export default async function PaginaRaiz() {
+  const contexto = await contextoLogado();
+  redirect(destinoInicial(contexto.fluxos));
 }

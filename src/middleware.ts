@@ -4,9 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Renova a sessão a cada requisição e faz o portão das rotas:
  *
- *  - /assinatura e /planos exigem login e mandam para /entrar sem ele;
- *  - /entrar com sessão ativa manda para /assinatura, senão a pessoa
- *    logada cai num formulário de login sem motivo.
+ *  - toda rota exige login e manda para /entrar sem ele;
+ *  - /entrar com sessão ativa manda para a raiz, que roteia a pessoa para
+ *    o fluxo dela (escritório > advogado > cliente).
  *
  * O portão DE VERDADE continua sendo a RLS: sem sessão, o banco não
  * devolve nada. Este aqui existe para a pessoa nunca ver uma tela vazia
@@ -54,7 +54,7 @@ export async function middleware(requisicao: NextRequest) {
 
   if (rota.startsWith("/entrar") && user) {
     const destino = requisicao.nextUrl.clone();
-    destino.pathname = "/assinatura";
+    destino.pathname = "/";
     return NextResponse.redirect(destino);
   }
 

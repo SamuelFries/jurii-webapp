@@ -6,10 +6,11 @@ export default function PaginaDeEntrada() {
       <div className="marca">
         jurii<span className="ouro">.</span>
       </div>
-      <h1>Área do escritório</h1>
+      <h1>O Jurii no seu computador</h1>
       <p className="subtitulo">
-        Entre com a mesma conta do aplicativo para gerenciar o plano do seu
-        escritório.
+        Mensagens, casos e a gestão do escritório, com a mesma conta do
+        aplicativo. Feito para o dia de trabalho de advogados e escritórios;
+        clientes também entram por aqui.
       </p>
       <div className="cartao">
         <FormularioDeEntrada />

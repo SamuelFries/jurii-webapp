@@ -45,12 +45,9 @@ export function Casca({
   caminhoAtivo: string;
   children: React.ReactNode;
 }) {
-  const trocas: { rotulo: string; href: string; fluxo: FluxoAtivo }[] = [
-    { rotulo: "Cliente", href: "/inicio", fluxo: "cliente" },
-  ];
-  if (fluxos.advogadoAprovado) {
-    trocas.push({ rotulo: "Advogado", href: "/advogado", fluxo: "advogado" });
-  }
+  // Profissional primeiro: o webapp existe para o dia de trabalho de
+  // advogados e escritórios; o fluxo do cliente fica por último.
+  const trocas: { rotulo: string; href: string; fluxo: FluxoAtivo }[] = [];
   if (fluxos.escritorio !== null) {
     trocas.push({
       rotulo: "Escritório",
@@ -58,13 +55,17 @@ export function Casca({
       fluxo: "escritorio",
     });
   }
+  if (fluxos.advogadoAprovado) {
+    trocas.push({ rotulo: "Advogado", href: "/advogado", fluxo: "advogado" });
+  }
+  trocas.push({ rotulo: "Cliente", href: "/inicio", fluxo: "cliente" });
 
   return (
     <>
       <header className="cabecalho">
         <div className="cabecalho-interno">
           <div className="linha-topo">
-            <Link href="/inicio" className="marca marca-pequena">
+            <Link href="/" className="marca marca-pequena">
               jurii<span className="ouro">.</span>
             </Link>
             <div className="acoes-do-topo">

@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Jurii, área do escritório",
+  title: "Jurii na web",
   description:
-    "Gestão da assinatura do seu escritório no Jurii: plano, ciclo de cobrança e pagamento.",
+    "O Jurii no computador: mensagens, casos e a gestão do escritório para advogados e escritórios.",
   robots: { index: false, follow: false },
 };
 

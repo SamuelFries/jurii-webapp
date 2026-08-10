@@ -44,8 +44,9 @@ export function FormularioDeEntrada() {
       return;
     }
 
-    // refresh: as páginas do servidor precisam reler os cookies novos.
-    roteador.push("/assinatura");
+    // A raiz roteia para o fluxo da pessoa (escritório > advogado >
+    // cliente); refresh para as páginas do servidor relerem os cookies.
+    roteador.push("/");
     roteador.refresh();
   }
 

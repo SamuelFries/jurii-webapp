@@ -86,6 +86,18 @@ export function papeisDaLinha(
   return ["lawyer"];
 }
 
+/**
+ * Onde a pessoa CAI ao entrar. O webapp existe para o profissional
+ * trabalhar no computador, então escritório vem primeiro, advogado depois,
+ * e o fluxo do cliente é a casa de quem não é profissional. Todos os
+ * fluxos continuam alcançáveis pela troca no topo.
+ */
+export function destinoInicial(fluxos: FluxosDoUsuario): string {
+  if (fluxos.escritorio !== null) return "/escritorio";
+  if (fluxos.advogadoAprovado) return "/advogado";
+  return "/inicio";
+}
+
 export function rotuloDoPapel(papel: PapelNoEscritorio): string {
   switch (papel) {
     case "owner":
