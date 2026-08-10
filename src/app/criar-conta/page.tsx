@@ -1,0 +1,46 @@
+import Image from "next/image";
+import Link from "next/link";
+
+import { FundoAnimado } from "../entrar/fundo-animado";
+
+import { FormularioDeCadastro } from "./formulario";
+
+/** O cadastro espelha o RegisterScreen do app: mesmos campos, mesmas
+ * validações (nome e sobrenome, CPF com dígito verificador, senha de 8),
+ * mesmo signUp com full_name e cpf nos metadados, que é o que o gatilho do
+ * banco usa para criar o perfil. */
+export default function PaginaDeCadastro() {
+  return (
+    <div className="tela-de-entrada">
+      <FundoAnimado />
+      <main className="cartao-de-entrada">
+        <h1 className="so-para-leitores">Criar conta no Jurii</h1>
+        <Image
+          src="/marca/jurii-lockup-empilhado-claro.png"
+          alt="Jurii"
+          width={666}
+          height={666}
+          priority
+          className="lockup-da-entrada lockup-claro"
+        />
+        <Image
+          src="/marca/jurii-lockup-empilhado-escuro.png"
+          alt=""
+          aria-hidden
+          width={666}
+          height={666}
+          priority
+          className="lockup-da-entrada lockup-escuro"
+        />
+        <p className="subtitulo subtitulo-da-entrada">
+          Crie sua conta e encontre o suporte jurídico que você precisa. A
+          conta vale aqui e no aplicativo.
+        </p>
+        <FormularioDeCadastro />
+        <p className="detalhe" style={{ marginTop: 14 }}>
+          Já tem conta? <Link href="/entrar">Entrar</Link>
+        </p>
+      </main>
+    </div>
+  );
+}

@@ -8,6 +8,8 @@
  * cliente é o escritório; nos outros, o cliente ou o colega.
  */
 
+import { urlDoAvatar } from "../avatar";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Linha = Record<string, any>;
 
@@ -37,7 +39,7 @@ export function conversaDaLinha(row: Linha): Conversa {
     id: String(row.id),
     titulo: String(row.title ?? ""),
     iniciais: String(row.initials ?? "?"),
-    avatarUrl: row.avatar_url == null ? null : String(row.avatar_url),
+    avatarUrl: urlDoAvatar(row.avatar_url == null ? null : String(row.avatar_url)),
     especialidade: String(row.specialty ?? ""),
     ultimaMensagem: String(row.last_message ?? ""),
     ultimaMensagemEm: row.last_message_at

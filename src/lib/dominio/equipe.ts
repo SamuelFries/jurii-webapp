@@ -1,3 +1,4 @@
+import { urlDoAvatar } from "../avatar";
 import { papeisDaLinha, type PapelNoEscritorio } from "../fluxos";
 
 /** A equipe do escritório, espelho de _fetchTeamMembers do app: linhas de
@@ -23,8 +24,9 @@ export function membroDaLinha(row: Linha): MembroDaEquipe {
     profileId: String(row.profile_id ?? ""),
     nome: String(perfil?.full_name ?? "Integrante"),
     iniciais: String(perfil?.initials ?? "?"),
-    avatarUrl:
+    avatarUrl: urlDoAvatar(
       perfil?.avatar_url == null ? null : String(perfil.avatar_url),
+    ),
     papeis: papeisDaLinha(row.roles, row.member_role ?? row.role),
     ativo: status === "active",
     convitePendente: status === "invited" || status === "pending",

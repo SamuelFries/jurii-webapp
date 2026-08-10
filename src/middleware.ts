@@ -46,6 +46,7 @@ export async function middleware(requisicao: NextRequest) {
   // está fora do matcher, porque chamada de máquina não tem cookie).
   const rotaPublica =
     rota.startsWith("/entrar") ||
+    rota.startsWith("/criar-conta") ||
     rota.startsWith("/recuperar") ||
     rota.startsWith("/redefinir");
   const precisaDeLogin = !rotaPublica;
@@ -56,7 +57,7 @@ export async function middleware(requisicao: NextRequest) {
     return NextResponse.redirect(destino);
   }
 
-  if (rota.startsWith("/entrar") && user) {
+  if ((rota.startsWith("/entrar") || rota.startsWith("/criar-conta")) && user) {
     const destino = requisicao.nextUrl.clone();
     destino.pathname = "/";
     return NextResponse.redirect(destino);

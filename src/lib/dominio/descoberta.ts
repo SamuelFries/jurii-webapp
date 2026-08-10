@@ -5,6 +5,8 @@
  * (discovery_returns_contract_test.sql) força as RPCs a devolver.
  */
 
+import { urlDoAvatar } from "../avatar";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Linha = Record<string, any>;
 
@@ -39,7 +41,7 @@ export function advogadoDaLinha(row: Linha): AdvogadoRecomendado {
     id: String(row.id),
     nome: String(row.full_name ?? ""),
     iniciais: String(row.initials ?? "AJ"),
-    avatarUrl: row.avatar_url == null ? null : String(row.avatar_url),
+    avatarUrl: urlDoAvatar(row.avatar_url == null ? null : String(row.avatar_url)),
     areaPrincipal: String(row.primary_area ?? "Atendimento jurídico"),
     areas: listaDeTexto(row.practice_areas),
     bio: String(row.bio ?? ""),
@@ -61,7 +63,7 @@ export function escritorioDaLinha(row: Linha): EscritorioRecomendado {
     id: String(row.id),
     nome: String(row.name ?? ""),
     iniciais: String(row.initials ?? "JE"),
-    avatarUrl: row.avatar_url == null ? null : String(row.avatar_url),
+    avatarUrl: urlDoAvatar(row.avatar_url == null ? null : String(row.avatar_url)),
     especialidade: String(row.specialty ?? "Atendimento jurídico"),
     areas: listaDeTexto(row.practice_areas),
     descricao: String(row.description ?? ""),
