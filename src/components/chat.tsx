@@ -5,12 +5,21 @@ import { useEffect, useRef, useState } from "react";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
 import { clienteDoNavegador } from "@/lib/supabase/navegador";
 
+export interface AnexoParaTela {
+  nome: string;
+  tipoMime: string;
+  /** Assinada por 1h; nula quando o servidor não conseguiu assinar. */
+  url: string | null;
+}
+
 export interface MensagemParaTela {
   id: string;
   corpo: string;
   minha: boolean;
   criadaEmIso: string;
   apagadaParaTodos: boolean;
+  tipo: "texto" | "anexo" | "solicitacao_de_caso";
+  anexo: AnexoParaTela | null;
 }
 
 /**
@@ -61,18 +70,56 @@ export function Chat({
         },
         (evento) => {
           const linha = evento.new as Record<string, unknown>;
+          const metadata = (linha.metadata ?? {}) as Record<string, unknown>;
+          const tipo =
+            metadata.type === "chat_attachment"
+              ? "anexo"
+              : metadata.type === "case_request"
+                ? "solicitacao_de_caso"
+                : "texto";
           const nova: MensagemParaTela = {
             id: String(linha.id),
             corpo: String(linha.body ?? ""),
             minha: String(linha.sender_id) === meuId,
             criadaEmIso: String(linha.created_at),
             apagadaParaTodos: linha.deleted_for_all_at != null,
+            tipo,
+            anexo: null,
           };
           setMensagens((atuais) =>
             atuais.some((mensagem) => mensagem.id === nova.id)
               ? atuais
               : [...atuais, nova],
           );
+          if (tipo === "anexo") {
+            // O conteúdo mora em message_attachments: busca e assina, e a
+            // bolha troca o "Anexo" seco pelo arquivo de verdade.
+            void (async () => {
+              const { data: anexo } = await supabase
+                .from("message_attachments")
+                .select("file_name, mime_type, storage_path")
+                .eq("message_id", String(linha.id))
+                .maybeSingle();
+              if (!anexo) return;
+              const { data: assinada } = await supabase.storage
+                .from("chat-attachments")
+                .createSignedUrl(String(anexo.storage_path), 3600);
+              setMensagens((atuais) =>
+                atuais.map((mensagem) =>
+                  mensagem.id === String(linha.id)
+                    ? {
+                        ...mensagem,
+                        anexo: {
+                          nome: String(anexo.file_name ?? "arquivo"),
+                          tipoMime: String(anexo.mime_type ?? ""),
+                          url: assinada?.signedUrl ?? null,
+                        },
+                      }
+                    : mensagem,
+                ),
+              );
+            })();
+          }
           if (!nova.minha) {
             void supabase.rpc("mark_conversation_read", {
               conversation_id_value: conversaId,
@@ -126,6 +173,8 @@ export function Chat({
               minha: true,
               criadaEmIso: String(data.created_at),
               apagadaParaTodos: false,
+              tipo: "texto",
+              anexo: null,
             },
           ],
     );
@@ -152,7 +201,7 @@ export function Chat({
               .filter(Boolean)
               .join(" ")}
           >
-            {mensagem.apagadaParaTodos ? "Mensagem apagada" : mensagem.corpo}
+            <CorpoDaMensagem mensagem={mensagem} />
             <span className="horario">
               {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
             </span>
@@ -183,4 +232,57 @@ export function Chat({
       </div>
     </>
   );
+}
+
+/** O conteúdo da bolha conforme o tipo. Mensagem de anexo NUNCA vira bolha
+ * vazia: o corpo dela é vazio de verdade (o conteúdo mora no storage), e
+ * bolha em branco parece defeito. */
+function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
+  if (mensagem.apagadaParaTodos) return <>Mensagem apagada</>;
+
+  if (mensagem.tipo === "anexo") {
+    if (mensagem.anexo === null) return <>Anexo</>;
+    const ehImagem =
+      mensagem.anexo.tipoMime.startsWith("image/") &&
+      mensagem.anexo.url !== null;
+    if (ehImagem) {
+      return (
+        <a href={mensagem.anexo.url!} target="_blank" rel="noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={mensagem.anexo.url!}
+            alt={mensagem.anexo.nome}
+            className="imagem-do-anexo"
+          />
+        </a>
+      );
+    }
+    if (mensagem.anexo.url !== null) {
+      return (
+        <a
+          href={mensagem.anexo.url}
+          target="_blank"
+          rel="noreferrer"
+          className="ficha-de-anexo"
+        >
+          {mensagem.anexo.nome}
+        </a>
+      );
+    }
+    return <>Anexo: {mensagem.anexo.nome}</>;
+  }
+
+  if (mensagem.tipo === "solicitacao_de_caso") {
+    return (
+      <>
+        <span className="selo-de-solicitacao">Solicitação de caso</span>
+        {mensagem.corpo !== "" && <span>{mensagem.corpo}</span>}
+        <span className="dica-de-solicitacao">
+          O cliente responde em Meus casos.
+        </span>
+      </>
+    );
+  }
+
+  return <>{mensagem.corpo}</>;
 }

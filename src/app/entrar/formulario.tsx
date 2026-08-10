@@ -79,6 +79,9 @@ export function FormularioDeEntrada() {
       </button>
 
       <p className="detalhe">
+        <a href="/recuperar">Esqueci minha senha</a>
+      </p>
+      <p className="detalhe">
         Ainda não tem conta? Ela é criada no aplicativo Jurii, junto com o
         cadastro do escritório.
       </p>

@@ -44,7 +44,11 @@ export async function middleware(requisicao: NextRequest) {
   const rota = requisicao.nextUrl.pathname;
   // Tudo é logado, menos a porta de entrada (o webhook nem passa por aqui:
   // está fora do matcher, porque chamada de máquina não tem cookie).
-  const precisaDeLogin = !rota.startsWith("/entrar");
+  const rotaPublica =
+    rota.startsWith("/entrar") ||
+    rota.startsWith("/recuperar") ||
+    rota.startsWith("/redefinir");
+  const precisaDeLogin = !rotaPublica;
 
   if (precisaDeLogin && !user) {
     const destino = requisicao.nextUrl.clone();

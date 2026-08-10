@@ -605,3 +605,120 @@ body:has(.tela-de-entrada) footer.rodape {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ---- Anexos e solicitações no chat ---- */
+
+.imagem-do-anexo {
+  display: block;
+  max-width: 280px;
+  max-height: 320px;
+  border-radius: 10px;
+}
+
+.ficha-de-anexo {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(238, 241, 248, 0.6);
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.bolha.minha .ficha-de-anexo {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.selo-de-solicitacao {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+
+.dica-de-solicitacao {
+  display: block;
+  font-size: 12px;
+  opacity: 0.65;
+  margin-top: 4px;
+}
+
+/* ---- Cabeçalho do chat e detalhe de caso ---- */
+
+.cabecalho-do-chat {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cabecalho-do-chat a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.cabecalho-do-chat .nome {
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.cabecalho-do-chat .area {
+  color: var(--text-2);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linha-do-tempo {
+  display: grid;
+  gap: 12px;
+}
+
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .metricas {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.metrica {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.metrica .numero {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.metrica .rotulo {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.seletor {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}

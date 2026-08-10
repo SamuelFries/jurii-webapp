@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Casca } from "@/components/casca";
 import { contextoLogado } from "@/lib/contexto";
 import {
@@ -81,7 +83,11 @@ export default async function PaginaDeCasosDoCliente({
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {listaDeCasos.map((caso) => (
-            <div key={caso.id} className="cartao-de-lista">
+            <Link
+              key={caso.id}
+              href={`/casos/${caso.id}`}
+              className="cartao-de-lista"
+            >
               <span className="conteudo">
                 <span className="titulo">{caso.titulo}</span>
                 <p className="linha-2">
@@ -93,7 +99,7 @@ export default async function PaginaDeCasosDoCliente({
                 )}
               </span>
               <span className="selo">{caso.status}</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

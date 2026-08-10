@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Casca } from "@/components/casca";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { casoDoAdvogadoDaLinha } from "@/lib/dominio/casos";
@@ -37,7 +39,11 @@ export default async function PaginaDeCasosDoAdvogado() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {casos.map((caso) => (
-            <div key={caso.id} className="cartao-de-lista">
+            <Link
+              key={caso.id}
+              href={`/advogado/casos/${caso.id}`}
+              className="cartao-de-lista"
+            >
               <span className="avatar" aria-hidden>
                 {caso.iniciaisDoCliente}
               </span>
@@ -57,7 +63,7 @@ export default async function PaginaDeCasosDoAdvogado() {
               >
                 {rotuloDeStatus[caso.status]}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

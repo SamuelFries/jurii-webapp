@@ -44,6 +44,27 @@ ATIVO (law_firm_members). Opção que a pessoa não tem não aparece.
 **Chat**: histórico das 100 mais recentes (o teto do app), envio por insert
 em `messages` sob RLS, `sender_type` conforme o fluxo, tempo real por
 assinatura de INSERT, e `mark_conversation_read` ao abrir e ao receber.
+Anexos aparecem de verdade: imagem inline e arquivo como link, com URL
+assinada em lote (1h); mensagem de solicitação de caso vira cartão rotulado.
+Cabeçalho com o nome de quem está do outro lado.
+
+**Detalhe de caso** (os três fluxos, mesma tela, permissões do servidor):
+linha do tempo de atualizações, registrar atualização e editar o CNJ
+(`can_manage`), encerrar e reabrir (`can_manage_lifecycle`), andamento do
+tribunal (`fetch_case_movements`) e, no escritório, atribuir advogado
+(sócio, admin e secretária, a régua da própria RPC).
+
+**Visão geral do escritório**: os números da operação
+(`fetch_law_firm_operation_metrics`) e os casos que precisam de atenção
+(sem responsável, aguardando resposta).
+
+**Recuperação de senha**: `/recuperar` envia o link e `/redefinir` troca a
+senha. A resposta é a mesma com e-mail cadastrado ou não, de propósito:
+confirmar que um e-mail existe entrega a lista de clientes de um escritório
+de advocacia para quem quiser enumerar. IMPORTANTE: a URL
+`https://SEU-DOMINIO/redefinir` precisa estar em Authentication > URL
+Configuration > Redirect URLs no painel do Supabase, senão o link do e-mail
+não volta para cá.
 
 ## O que NÃO existe, de propósito
 
