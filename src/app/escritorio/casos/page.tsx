@@ -1,7 +1,7 @@
-import Link from "next/link";
-
 import { Casca } from "@/components/casca";
+import { CasosDoEscritorioComBusca } from "@/components/listas/casos-do-escritorio-com-busca";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
+import { casoDoEscritorioParaTela } from "@/lib/busca/mapeia";
 import { casoDoEscritorioDaLinha } from "@/lib/dominio/casos";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,9 @@ export default async function PaginaDeCasosDoEscritorio() {
   });
 
   const casos = ((data as unknown[]) ?? []).map((linha) =>
-    casoDoEscritorioDaLinha(linha as Record<string, unknown>),
+    casoDoEscritorioParaTela(
+      casoDoEscritorioDaLinha(linha as Record<string, unknown>),
+    ),
   );
 
   return (
@@ -28,44 +30,7 @@ export default async function PaginaDeCasosDoEscritorio() {
       <p className="subtitulo">
         Visão geral dos casos por cliente e advogado responsável.
       </p>
-
-      {casos.length === 0 ? (
-        <p className="vazio">
-          Quando um cliente aceitar um caso do escritório, ele aparece aqui.
-        </p>
-      ) : (
-        <div className="lista-empilhada">
-          {casos.map((caso) => (
-            <Link
-              key={caso.id}
-              href={`/escritorio/casos/${caso.id}`}
-              className="cartao-de-lista"
-            >
-              <span className="avatar" aria-hidden>
-                {caso.iniciaisDoCliente}
-              </span>
-              <span className="conteudo">
-                <span className="titulo">
-                  {caso.titulo}
-                  {caso.urgente && (
-                    <span className="selo dourado">Aguardando resposta</span>
-                  )}
-                </span>
-                <p className="linha-2">
-                  {caso.cliente} · {caso.area}
-                </p>
-                <p className="linha-2">
-                  {caso.advogadoId === null
-                    ? "Sem advogado definido"
-                    : caso.advogado}
-                  {caso.proximoPasso !== "" ? ` · ${caso.proximoPasso}` : ""}
-                </p>
-              </span>
-              <span className="selo">{caso.statusRotulo}</span>
-            </Link>
-          ))}
-        </div>
-      )}
+      <CasosDoEscritorioComBusca casos={casos} />
     </Casca>
   );
 }

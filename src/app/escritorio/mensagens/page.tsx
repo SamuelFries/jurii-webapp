@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 import { Casca } from "@/components/casca";
-import { ListaDeConversas } from "@/components/lista-de-conversas";
+import { ConversasComBusca } from "@/components/listas/conversas-com-busca";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
+import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +26,9 @@ export default async function PaginaDeConversasDoEscritorio({
     },
   );
 
+  const agora = new Date();
   const conversas = ((data as unknown[]) ?? []).map((linha) =>
-    conversaDaLinha(linha as Record<string, unknown>),
+    conversaParaTela(conversaDaLinha(linha as Record<string, unknown>), agora),
   );
 
   return (
@@ -49,13 +51,19 @@ export default async function PaginaDeConversasDoEscritorio({
       </nav>
       <div style={{ height: 14 }} />
 
-      <ListaDeConversas
+      <ConversasComBusca
         conversas={conversas}
         baseHref="/escritorio/conversas"
         vazio={
           segmentoEquipe
             ? "Nenhuma conversa interna ainda."
             : "Quando um cliente falar com o escritório, a conversa aparece aqui."
+        }
+        rotuloNaoLidas="Ninguém abriu"
+        placeholder={
+          segmentoEquipe
+            ? "Buscar por pessoa da equipe"
+            : "Buscar por cliente ou advogado"
         }
       />
     </Casca>
