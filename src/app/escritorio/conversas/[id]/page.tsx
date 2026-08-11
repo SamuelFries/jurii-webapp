@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Chat } from "@/components/chat";
 import { PainelDeMensagens } from "@/components/paineis";
+import { ProporCaso } from "@/components/propor-caso";
 import { carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
@@ -14,10 +15,10 @@ export default async function ChatDoEscritorio({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aba?: string }>;
+  searchParams: Promise<{ aba?: string; ok?: string; erro?: string }>;
 }) {
   const { id } = await params;
-  const { aba } = await searchParams;
+  const { aba, ok, erro } = await searchParams;
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto);
   const segmentoEquipe = aba === "equipe";
@@ -92,6 +93,19 @@ export default async function ChatDoEscritorio({
           <span className="area">{conversa.especialidade}</span>
         )}
       </div>
+      {erro !== undefined && <p className="erro">{erro}</p>}
+      {ok === "proposta" && (
+        <p className="aviso-bom">
+          Solicitação enviada. O cliente decide em Meus casos; quando
+          aceitar, o caso entra na carteira do escritório.
+        </p>
+      )}
+      {!segmentoEquipe && (
+        <ProporCaso
+          conversaId={id}
+          voltar={`/escritorio/conversas/${id}${sufixo}`}
+        />
+      )}
       <Chat
         conversaId={id}
         meuId={contexto.usuario.id}

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Chat } from "@/components/chat";
 import { PainelDeMensagens } from "@/components/paineis";
+import { ProporCaso } from "@/components/propor-caso";
 import { carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
@@ -11,10 +12,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ChatDoAdvogado({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ ok?: string; erro?: string }>;
 }) {
   const { id } = await params;
+  const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
@@ -57,6 +61,14 @@ export default async function ChatDoAdvogado({
           <span className="area">{conversa.especialidade}</span>
         )}
       </div>
+      {erro !== undefined && <p className="erro">{erro}</p>}
+      {ok === "proposta" && (
+        <p className="aviso-bom">
+          Solicitação enviada. O cliente decide em Meus casos; quando
+          aceitar, o caso aparece na sua carteira.
+        </p>
+      )}
+      <ProporCaso conversaId={id} voltar={`/advogado/conversas/${id}`} />
       <Chat
         conversaId={id}
         meuId={contexto.usuario.id}
