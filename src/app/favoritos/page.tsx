@@ -48,6 +48,7 @@ export default async function PaginaDeFavoritos() {
                 key={advogado.id}
                 tipo="lawyer"
                 id={advogado.id}
+                href={`/profissionais/${advogado.id}`}
                 nome={advogado.nome}
                 iniciais={advogado.iniciais}
                 avatarUrl={advogado.avatarUrl}
