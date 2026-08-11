@@ -107,3 +107,22 @@ export async function carregaConversa(
   );
   return linha ? conversaDaLinha(linha as Record<string, unknown>) : null;
 }
+
+/** Bloqueada, e por quem, pela MESMA RPC do app. Falha vira "não
+ * bloqueada": errar para o lado aberto só faz o servidor recusar o envio
+ * com a mensagem certa. */
+export async function carregaBloqueio(
+  supabase: SupabaseClient,
+  conversaId: string,
+): Promise<{ bloqueada: boolean; porMim: boolean }> {
+  const { data } = await supabase.rpc("fetch_conversation_block_state", {
+    conversation_id_value: conversaId,
+  });
+  const linha = ((data as unknown[]) ?? [])[0] as
+    | Record<string, unknown>
+    | undefined;
+  return {
+    bloqueada: linha?.is_blocked === true,
+    porMim: linha?.blocked_by_me === true,
+  };
+}

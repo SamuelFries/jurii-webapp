@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { Chat } from "@/components/chat";
+import { ModeracaoDaConversa } from "@/components/moderacao-da-conversa";
 import { PainelDeMensagens } from "@/components/paineis";
 import { ProporCaso } from "@/components/propor-caso";
-import { carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
+import { carregaBloqueio, carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
@@ -23,12 +24,13 @@ export default async function ChatDoEscritorio({
   const escritorio = exigeEscritorio(contexto);
   const segmentoEquipe = aba === "equipe";
 
-  const [conversasRes, mensagens] = await Promise.all([
+  const [conversasRes, mensagens, bloqueio] = await Promise.all([
     contexto.supabase.rpc("fetch_conversations_for_current_user", {
       scope_value: segmentoEquipe ? "firmTeam" : "firmClient",
       law_firm_id_value: escritorio.id,
     }),
     carregaMensagens(contexto.supabase, id, contexto.usuario.id),
+    carregaBloqueio(contexto.supabase, id),
   ]);
 
   const agora = new Date();
@@ -92,6 +94,12 @@ export default async function ChatDoEscritorio({
         {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
         )}
+        <ModeracaoDaConversa
+          conversaId={id}
+          voltar={`/escritorio/conversas/${id}${sufixo}`}
+          bloqueada={bloqueio.bloqueada}
+          bloqueadaPorMim={bloqueio.porMim}
+        />
       </div>
       {erro !== undefined && <p className="erro">{erro}</p>}
       {ok === "proposta" && (
@@ -111,6 +119,7 @@ export default async function ChatDoEscritorio({
         meuId={contexto.usuario.id}
         senderType="lawyer"
         mensagensIniciais={mensagens}
+        bloqueada={bloqueio.bloqueada}
       />
     </PainelDeMensagens>
   );
