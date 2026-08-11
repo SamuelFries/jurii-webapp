@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AlcanceDoProfissional } from "@/components/alcance-do-profissional";
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { casoDoEscritorioDaLinha } from "@/lib/dominio/casos";
@@ -84,6 +85,12 @@ export default async function PaginaDoEscritorio() {
           </Link>
         ))}
       </div>
+
+      <AlcanceDoProfissional
+        supabase={contexto.supabase}
+        tipo="law_firm"
+        id={escritorio.id}
+      />
 
       {(semResponsavel > 0 || aguardando > 0) && (
         <>
