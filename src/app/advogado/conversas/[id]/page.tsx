@@ -1,13 +1,15 @@
 import Link from "next/link";
 
-import { Casca } from "@/components/casca";
 import { Chat } from "@/components/chat";
+import { PainelDeMensagens } from "@/components/paineis";
 import { carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
+import { conversaParaTela } from "@/lib/busca/mapeia";
+import { conversaDaLinha } from "@/lib/dominio/conversas";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeChatDoAdvogado({
+export default async function ChatDoAdvogado({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -16,17 +18,42 @@ export default async function PaginaDeChatDoAdvogado({
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
-  const [mensagens, conversa] = await Promise.all([
+  const [conversasRes, mensagens] = await Promise.all([
+    contexto.supabase.rpc("fetch_conversations_for_current_user", {
+      scope_value: "lawyer",
+      law_firm_id_value: null,
+    }),
     carregaMensagens(contexto.supabase, id, contexto.usuario.id),
-    carregaConversa(contexto.supabase, id, "lawyer", null),
   ]);
 
+  const agora = new Date();
+  const conversas = ((conversasRes.data as unknown[]) ?? []).map((linha) =>
+    conversaParaTela(conversaDaLinha(linha as Record<string, unknown>), agora),
+  );
+  const conversa =
+    conversas.find((c) => c.id === id) ??
+    (await carregaConversa(contexto.supabase, id, "lawyer", null).then(
+      (c) => c && conversaParaTela(c, agora),
+    ));
+
   return (
-    <Casca fluxo="advogado" fluxos={contexto.fluxos} caminhoAtivo="/advogado">
+    <PainelDeMensagens
+      fluxo="advogado"
+      fluxos={contexto.fluxos}
+      caminhoAtivo="/advogado"
+      titulo="Mensagens"
+      subtitulo="Converse com clientes e acompanhe contatos."
+      conversas={conversas}
+      baseHref="/advogado/conversas"
+      vazio="Quando um cliente falar com você, a conversa aparece aqui."
+      placeholder="Buscar por cliente ou área"
+      ativoId={id}
+      comDetalhe
+    >
       <div className="cabecalho-do-chat">
         <Link href="/advogado">← Conversas</Link>
         <span className="nome">{conversa?.titulo ?? "Conversa"}</span>
-        {conversa !== null && conversa.especialidade !== "" && (
+        {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
         )}
       </div>
@@ -36,6 +63,6 @@ export default async function PaginaDeChatDoAdvogado({
         senderType="lawyer"
         mensagensIniciais={mensagens}
       />
-    </Casca>
+    </PainelDeMensagens>
   );
 }

@@ -1,4 +1,4 @@
-import { Casca } from "@/components/casca";
+import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { membroDaLinha } from "@/lib/dominio/equipe";
 import { rotuloDoPapel } from "@/lib/fluxos";
@@ -26,11 +26,12 @@ export default async function PaginaDaEquipe() {
   const pendentes = membros.filter((membro) => membro.convitePendente);
 
   return (
-    <Casca
+    <CascaDeTrabalho
       fluxo="escritorio"
       fluxos={contexto.fluxos}
       caminhoAtivo="/escritorio/equipe"
     >
+      <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
       <p className="subtitulo">
         Quem trabalha em {escritorio.nome}. Convites e permissões são feitos
@@ -84,6 +85,7 @@ export default async function PaginaDaEquipe() {
           </div>
         </>
       )}
-    </Casca>
+      </div></div>
+    </CascaDeTrabalho>
   );
 }

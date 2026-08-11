@@ -21,12 +21,18 @@ export function ConversasComBusca({
   vazio,
   rotuloNaoLidas = "Não lidas",
   placeholder,
+  ativoId,
+  hrefSufixo = "",
 }: {
   conversas: ConversaParaTela[];
   baseHref: string;
   vazio: string;
   rotuloNaoLidas?: string;
   placeholder: string;
+  /** Conversa aberta no painel ao lado (modo área de trabalho). */
+  ativoId?: string;
+  /** Ex.: "?aba=equipe", para o chat reabrir a lista no segmento certo. */
+  hrefSufixo?: string;
 }) {
   const [termo, setTermo] = useState("");
   const [soNaoLidas, setSoNaoLidas] = useState(false);
@@ -72,8 +78,13 @@ export function ConversasComBusca({
           {visiveis.map((conversa) => (
             <Link
               key={conversa.id}
-              href={`${baseHref}/${conversa.id}`}
-              className="cartao-de-lista"
+              href={`${baseHref}/${conversa.id}${hrefSufixo}`}
+              className={
+                conversa.id === ativoId
+                  ? "cartao-de-lista ativa"
+                  : "cartao-de-lista"
+              }
+              aria-current={conversa.id === ativoId ? "page" : undefined}
             >
               <span className="avatar" aria-hidden>
                 {conversa.avatarUrl !== null ? (

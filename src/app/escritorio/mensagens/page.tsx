@@ -1,14 +1,13 @@
 import Link from "next/link";
 
-import { Casca } from "@/components/casca";
-import { ConversasComBusca } from "@/components/listas/conversas-com-busca";
+import { PainelDeMensagens } from "@/components/paineis";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeConversasDoEscritorio({
+export default async function MensagensDoEscritorio({
   searchParams,
 }: {
   searchParams: Promise<{ aba?: string }>;
@@ -32,40 +31,53 @@ export default async function PaginaDeConversasDoEscritorio({
   );
 
   return (
-    <Casca fluxo="escritorio" fluxos={contexto.fluxos} caminhoAtivo="/escritorio/mensagens">
-      <h1>Mensagens</h1>
-      <p className="subtitulo">
-        Conversas de {escritorio.nome} com clientes e equipe.
-      </p>
-
-      <nav className="troca-de-fluxo" aria-label="Segmento">
-        <Link href="/escritorio/mensagens" className={segmentoEquipe ? "" : "ativa"}>
-          Clientes
-        </Link>
-        <Link
-          href="/escritorio/mensagens?aba=equipe"
-          className={segmentoEquipe ? "ativa" : ""}
+    <PainelDeMensagens
+      fluxo="escritorio"
+      fluxos={contexto.fluxos}
+      caminhoAtivo="/escritorio/mensagens"
+      titulo="Mensagens"
+      subtitulo={`Conversas de ${escritorio.nome}.`}
+      conversas={conversas}
+      baseHref="/escritorio/conversas"
+      vazio={
+        segmentoEquipe
+          ? "Nenhuma conversa interna ainda."
+          : "Quando um cliente falar com o escritório, a conversa aparece aqui."
+      }
+      placeholder={
+        segmentoEquipe
+          ? "Buscar por pessoa da equipe"
+          : "Buscar por cliente ou advogado"
+      }
+      rotuloNaoLidas="Ninguém abriu"
+      hrefSufixo={segmentoEquipe ? "?aba=equipe" : ""}
+      cabecalhoDaLista={
+        <nav
+          className="troca-de-fluxo"
+          aria-label="Segmento"
+          style={{ marginBottom: 12 }}
         >
-          Equipe
-        </Link>
-      </nav>
-      <div style={{ height: 14 }} />
-
-      <ConversasComBusca
-        conversas={conversas}
-        baseHref="/escritorio/conversas"
-        vazio={
-          segmentoEquipe
-            ? "Nenhuma conversa interna ainda."
-            : "Quando um cliente falar com o escritório, a conversa aparece aqui."
-        }
-        rotuloNaoLidas="Ninguém abriu"
-        placeholder={
-          segmentoEquipe
-            ? "Buscar por pessoa da equipe"
-            : "Buscar por cliente ou advogado"
-        }
-      />
-    </Casca>
+          <Link
+            href="/escritorio/mensagens"
+            className={segmentoEquipe ? "" : "ativa"}
+          >
+            Clientes
+          </Link>
+          <Link
+            href="/escritorio/mensagens?aba=equipe"
+            className={segmentoEquipe ? "ativa" : ""}
+          >
+            Equipe
+          </Link>
+        </nav>
+      }
+    >
+      <div className="painel-vazio">
+        <p>
+          Escolha uma conversa ao lado. Ela abre aqui do lado, com a lista
+          sempre à mão.
+        </p>
+      </div>
+    </PainelDeMensagens>
   );
 }

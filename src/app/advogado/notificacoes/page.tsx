@@ -1,24 +1,28 @@
-import { Casca } from "@/components/casca";
+import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { ListaDeNotificacoes } from "@/components/lista-de-notificacoes";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeNotificacoesDoAdvogado() {
+export default async function NotificacoesDoAdvogado() {
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
   return (
-    <Casca
+    <CascaDeTrabalho
       fluxo="advogado"
       fluxos={contexto.fluxos}
       caminhoAtivo="/advogado/notificacoes"
     >
-      <ListaDeNotificacoes
-        supabase={contexto.supabase}
-        escopo="lawyer"
-        fluxo="advogado"
-        voltar="/advogado/notificacoes"
-      />
-    </Casca>
+      <div className="pagina-de-trabalho">
+        <div className="miolo">
+          <ListaDeNotificacoes
+            supabase={contexto.supabase}
+            escopo="lawyer"
+            fluxo="advogado"
+            voltar="/advogado/notificacoes"
+          />
+        </div>
+      </div>
+    </CascaDeTrabalho>
   );
 }

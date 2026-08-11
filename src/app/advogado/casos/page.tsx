@@ -1,12 +1,12 @@
-import { Casca } from "@/components/casca";
 import { CasosDoAdvogadoComBusca } from "@/components/listas/casos-do-advogado-com-busca";
+import { PainelDeCasos } from "@/components/paineis";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { casoDoAdvogadoParaTela } from "@/lib/busca/mapeia";
 import { casoDoAdvogadoDaLinha } from "@/lib/dominio/casos";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeCasosDoAdvogado() {
+export default async function CasosDoAdvogado() {
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
@@ -16,16 +16,20 @@ export default async function PaginaDeCasosDoAdvogado() {
   );
 
   return (
-    <Casca
+    <PainelDeCasos
       fluxo="advogado"
       fluxos={contexto.fluxos}
       caminhoAtivo="/advogado/casos"
+      titulo="Casos"
+      subtitulo="O caso nasce na conversa: proponha pelo chat."
+      lista={<CasosDoAdvogadoComBusca casos={casos} />}
     >
-      <h1>Casos</h1>
-      <p className="subtitulo">
-        O caso nasce na conversa: proponha pelo chat e o cliente aceita.
-      </p>
-      <CasosDoAdvogadoComBusca casos={casos} />
-    </Casca>
+      <div className="painel-vazio">
+        <p>
+          Escolha um caso ao lado para ver a linha do tempo, registrar
+          atualizações e cuidar do processo.
+        </p>
+      </div>
+    </PainelDeCasos>
   );
 }
