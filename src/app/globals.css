@@ -1196,3 +1196,59 @@ body:has(.tela-de-entrada) footer.rodape {
   color: var(--accent-ink);
   font-size: 14px;
 }
+
+/* ---- Perfil profissional ---- */
+
+.grade-de-areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 14px;
+}
+
+.area-marcavel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.area-marcavel:hover {
+  background: var(--surface-2);
+}
+
+.area-marcavel input {
+  accent-color: var(--gold);
+  width: 15px;
+  height: 15px;
+}
+
+.dia-de-atendimento {
+  padding: 10px 0 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dia-de-atendimento:last-of-type {
+  border-bottom: 0;
+}
+
+.intervalo-de-atendimento {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.intervalo-de-atendimento input[type="time"] {
+  width: auto;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
