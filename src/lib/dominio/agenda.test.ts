@@ -7,6 +7,8 @@ import {
   localParaIsoUtc,
   rotuloDoDia,
   rotuloDoHorarioDoCompromisso,
+  urlDoFeedDeCalendario,
+  urlWebcalDoFeed,
 } from "./agenda";
 
 const agora = new Date("2026-08-11T18:00:00Z"); // 15:00 em SP
@@ -66,5 +68,19 @@ describe("agrupamento por dia", () => {
       agora,
     );
     expect(grupos[0].dia).toBe("Amanhã");
+  });
+});
+
+describe("urls do feed de calendário (contrato do app)", () => {
+  test("https aponta para a edge function calendar-feed", () => {
+    expect(
+      urlDoFeedDeCalendario("https://exemplo.supabase.co", "tok123"),
+    ).toBe("https://exemplo.supabase.co/functions/v1/calendar-feed?token=tok123");
+  });
+
+  test("webcal troca só o esquema, preservando o resto", () => {
+    expect(urlWebcalDoFeed("https://exemplo.supabase.co", "tok123")).toBe(
+      "webcal://exemplo.supabase.co/functions/v1/calendar-feed?token=tok123",
+    );
   });
 });

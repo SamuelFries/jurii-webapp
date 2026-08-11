@@ -8,12 +8,17 @@ import {
   isoUtcParaLocal,
   rotuloDoHorarioDoCompromisso,
   rotuloDoStatusDoCompromisso,
+  urlDoFeedDeCalendario,
+  urlWebcalDoFeed,
 } from "@/lib/dominio/agenda";
 
 import {
+  ativarFeed,
   atualizarCompromisso,
   cancelarCompromisso,
   criarCompromisso,
+  desativarFeed,
+  rotacionarFeed,
 } from "./acoes";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +50,10 @@ export default async function AgendaDoAdvogado({
   consulta = passados
     ? consulta.lt("starts_at", corte)
     : consulta.gte("starts_at", corte);
-  const { data } = await consulta
-    .order("starts_at", { ascending: !passados })
-    .limit(60);
+  const [{ data }, { data: tokenDoFeed }] = await Promise.all([
+    consulta.order("starts_at", { ascending: !passados }).limit(60),
+    contexto.supabase.rpc("get_calendar_feed_token"),
+  ]);
 
   const compromissos = ((data as unknown[]) ?? []).map((linha) =>
     compromissoDaLinha(linha as Record<string, unknown>),
@@ -73,6 +79,19 @@ export default async function AgendaDoAdvogado({
           {ok === "salvo" && <p className="aviso-bom">Compromisso salvo.</p>}
           {ok === "cancelado" && (
             <p className="aviso-bom">Compromisso cancelado.</p>
+          )}
+          {ok === "feed-ativado" && (
+            <p className="aviso-bom">
+              Sincronização ativada. Copie o link abaixo no seu calendário.
+            </p>
+          )}
+          {ok === "feed-rotacionado" && (
+            <p className="aviso-bom">
+              Novo link gerado. O link anterior parou de funcionar.
+            </p>
+          )}
+          {ok === "feed-desativado" && (
+            <p className="aviso-bom">Sincronização desativada.</p>
           )}
 
           <nav className="troca-de-fluxo" aria-label="Janela">
@@ -148,6 +167,68 @@ export default async function AgendaDoAdvogado({
               </form>
             </details>
           )}
+
+          <details className="propor-caso">
+            <summary>Sincronizar com meu calendário</summary>
+            <div className="cartao" style={{ marginTop: 10 }}>
+              {tokenDoFeed == null ? (
+                <>
+                  <p className="subtitulo" style={{ marginTop: 0 }}>
+                    Assine sua agenda da Jurii no Google, Apple ou Outlook.
+                    Todo compromisso aparece lá automaticamente.
+                  </p>
+                  <form action={ativarFeed}>
+                    <button type="submit">Ativar sincronização</button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="link-do-feed">
+                    Link da agenda (cole em &quot;adicionar agenda por
+                    URL&quot;)
+                  </label>
+                  <input
+                    id="link-do-feed"
+                    type="text"
+                    readOnly
+                    value={urlDoFeedDeCalendario(
+                      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+                      String(tokenDoFeed),
+                    )}
+                  />
+                  <p className="detalhe">
+                    Qualquer pessoa com este link vê seus compromissos. Gere
+                    um novo link para revogar o acesso.
+                  </p>
+                  <div className="acoes-em-linha">
+                    <a
+                      className="botao secundario"
+                      href={urlWebcalDoFeed(
+                        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+                        String(tokenDoFeed),
+                      )}
+                    >
+                      Abrir no meu calendário
+                    </a>
+                    <form action={rotacionarFeed}>
+                      <button type="submit" className="secundario">
+                        Gerar novo link
+                      </button>
+                    </form>
+                    <form action={desativarFeed}>
+                      <button
+                        type="submit"
+                        className="discreto"
+                        style={{ color: "var(--danger)" }}
+                      >
+                        Desativar
+                      </button>
+                    </form>
+                  </div>
+                </>
+              )}
+            </div>
+          </details>
 
           {grupos.length === 0 ? (
             <p className="vazio" style={{ marginTop: 16 }}>
