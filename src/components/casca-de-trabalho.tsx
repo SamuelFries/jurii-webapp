@@ -21,6 +21,7 @@ const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
       tambem: ["/advogado/conversas"],
     },
     { rotulo: "Casos", href: "/advogado/casos" },
+    { rotulo: "Agenda", href: "/advogado/agenda" },
     { rotulo: "Meu perfil", href: "/advogado/perfil" },
     { rotulo: "Notificações", href: "/advogado/notificacoes" },
   ],
