@@ -895,3 +895,11 @@ body:has(.tela-de-entrada) footer.rodape {
   color: var(--accent-ink);
   border-color: var(--gold);
 }
+
+.botao-de-anexo {
+  width: 46px;
+  margin: 0;
+  align-self: flex-end;
+  font-size: 16px;
+  line-height: 1;
+}
