@@ -1,13 +1,23 @@
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
+
+import { convidarAdvogado } from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
 import { rotuloDoPapel } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDaEquipe() {
+export default async function PaginaDaEquipe({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; erro?: string }>;
+}) {
+  const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto);
+  const podeConvidar = escritorio.papeis.some((papel) =>
+    ["owner", "admin"].includes(papel),
+  );
 
   // O MESMO select do app (_fetchTeamMemberRows): membros não desativados
   // com o perfil junto. Convites e edição de papéis continuam no app.
@@ -34,9 +44,59 @@ export default async function PaginaDaEquipe() {
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
       <p className="subtitulo">
-        Quem trabalha em {escritorio.nome}. Convites e permissões são feitos
-        pelo aplicativo.
+        Quem trabalha em {escritorio.nome}. Permissões por pessoa são
+        editadas no aplicativo.
       </p>
+
+      {erro !== undefined && <p className="erro">{erro}</p>}
+      {ok === "convite" && (
+        <p className="aviso-bom">
+          Convite enviado. O advogado decide pelo aplicativo, e aparece em
+          Convites pendentes até responder.
+        </p>
+      )}
+
+      {podeConvidar && (
+        <details className="propor-caso">
+          <summary>Convidar advogado</summary>
+          <form
+            action={convidarAdvogado}
+            className="cartao"
+            style={{ marginTop: 10, maxWidth: 480 }}
+          >
+            <input type="hidden" name="escritorio" value={escritorio.id} />
+            <p className="detalhe" style={{ marginTop: 0 }}>
+              Só advogado já verificado na OAB pode ser convidado. A vaga
+              conta no plano.
+            </p>
+            <div className="acoes-em-linha">
+              <div style={{ flex: "0 0 110px" }}>
+                <label htmlFor="uf-da-oab">UF</label>
+                <input
+                  id="uf-da-oab"
+                  type="text"
+                  name="uf"
+                  required
+                  maxLength={2}
+                  placeholder="RS"
+                  style={{ textTransform: "uppercase" }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="numero-da-oab">Número da OAB</label>
+                <input
+                  id="numero-da-oab"
+                  type="text"
+                  name="oab"
+                  required
+                  placeholder="123456"
+                />
+              </div>
+            </div>
+            <button type="submit">Enviar convite</button>
+          </form>
+        </details>
+      )}
 
       {ativos.length === 0 ? (
         <p className="vazio">Nenhum integrante ativo ainda.</p>
