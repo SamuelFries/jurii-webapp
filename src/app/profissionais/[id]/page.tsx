@@ -11,13 +11,14 @@ import { estrelas } from "@/lib/dominio/avaliacoes";
 export const dynamic = "force-dynamic";
 
 /**
- * O perfil público do advogado, via fetch_lawyer_public_profile (migration
- * 20260826120000 no repo do app): a única porta que entrega o NOME por id,
- * porque profiles não é público e a descoberta é SECURITY DEFINER.
+ * O perfil público do advogado, via fetch_lawyer_public_profile: a única
+ * porta que entrega o NOME por id, porque profiles não é público e a
+ * consulta precisa de SECURITY DEFINER. A função existe desde a migration
+ * 20260718180000 e é a MESMA que o app usa na tela de caso e no chat, com
+ * o argumento lawyer_profile_id_value.
  *
- * Enquanto a migration não estiver aplicada em produção, a RPC não existe
- * e a página diz isso sem fingir: perfil indisponível, com o Conversar
- * ainda funcional (a conversa só precisa do id).
+ * Ela não devolve is_featured: o selo de destaque fica fora até existir
+ * decisão de mexer numa função compartilhada com o app.
  */
 export default async function PaginaDoAdvogado({
   params,
@@ -32,8 +33,11 @@ export default async function PaginaDoAdvogado({
   const voltar = `/profissionais/${id}`;
 
   const [perfilRes, favoritosRes] = await Promise.all([
+    // lawyer_profile_id_value, e nao lawyer_id_value: PostgREST resolve RPC
+    // por NOME de argumento, e este e o nome que a funcao tem em produção
+    // desde a 20260718180000 (a mesma que o app chama).
     contexto.supabase.rpc("fetch_lawyer_public_profile", {
-      lawyer_id_value: id,
+      lawyer_profile_id_value: id,
     }),
     contexto.supabase.rpc("fetch_favorite_ids"),
   ]);
@@ -70,7 +74,6 @@ export default async function PaginaDoAdvogado({
     linha.oab_number != null && linha.oab_state != null
       ? `OAB ${String(linha.oab_number)}/${String(linha.oab_state)}`
       : null;
-  const destaque = linha.is_featured === true;
   const favorito = new Set(
     (((favoritosRes.data as unknown[]) ?? []) as Record<string, unknown>[]).map(
       (item) => `${item.target_type}:${item.target_id}`,
@@ -98,7 +101,6 @@ export default async function PaginaDoAdvogado({
             )}
           </span>
           <span className="acoes-do-topo">
-            {destaque && <span className="selo dourado">Destaque</span>}
             <span className="selo dourado">
               {advogado.avaliacoes > 0
                 ? `${estrelas(advogado.nota)} ${advogado.nota.toFixed(1)} (${advogado.avaliacoes})`
