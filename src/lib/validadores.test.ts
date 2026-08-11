@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { cpfValido, mascaraDeCpf, nomeCompleto } from "./validadores";
+import { cpfValido, mascaraDeCpf, nomeCompleto, telefoneValido } from "./validadores";
 
 describe("cpf", () => {
   test("dígito verificador de verdade, o algoritmo do app", () => {
@@ -31,5 +31,14 @@ describe("nome completo", () => {
     expect(nomeCompleto("Samuel")).toBe(false);
     expect(nomeCompleto("Samuel Fries")).toBe(true);
     expect(nomeCompleto("  Ana   Souza  ")).toBe(true);
+  });
+});
+
+describe("telefone opcional", () => {
+  test("vazio passa; com DDD passa; +55 é descartado", () => {
+    expect(telefoneValido("")).toBe(true);
+    expect(telefoneValido("(51) 99999-8888")).toBe(true);
+    expect(telefoneValido("+55 51 99999-8888")).toBe(true);
+    expect(telefoneValido("9999-8888")).toBe(false);
   });
 });

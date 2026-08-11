@@ -137,6 +137,9 @@ export async function Casca({
                   ))}
                 </nav>
               )}
+              <Link href="/conta" className="discreto botao-de-conta">
+                Conta
+              </Link>
               <form action={sair}>
                 <button type="submit" className="discreto">
                   Sair
