@@ -111,6 +111,7 @@ export default async function PaginaInicial({
               key={escritorio.id}
               tipo="law_firm"
               id={escritorio.id}
+              href={`/escritorios/${escritorio.id}`}
               nome={escritorio.nome}
               iniciais={escritorio.iniciais}
               avatarUrl={escritorio.avatarUrl}
