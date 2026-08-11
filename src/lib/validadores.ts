@@ -47,3 +47,17 @@ export function mascaraDeCpf(valor: string): string {
   }
   return saida;
 }
+
+/** Telefone opcional com DDD, espelho de validateOptionalPhoneField do app:
+ * vazio passa; "+55" na frente é descartado; fora disso, 10 ou 11 dígitos. */
+export function telefoneValido(valor: string): boolean {
+  let telefone = somenteDigitos(valor);
+  if (
+    (telefone.length === 12 || telefone.length === 13) &&
+    telefone.startsWith("55")
+  ) {
+    telefone = telefone.slice(2);
+  }
+  if (telefone === "") return true;
+  return telefone.length === 10 || telefone.length === 11;
+}

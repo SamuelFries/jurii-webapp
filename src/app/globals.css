@@ -903,3 +903,15 @@ body:has(.tela-de-entrada) footer.rodape {
   font-size: 16px;
   line-height: 1;
 }
+
+.botao-de-conta {
+  padding: 8px 12px;
+  color: var(--text-2);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.botao-de-conta:hover {
+  color: var(--text);
+}
