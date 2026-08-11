@@ -5,8 +5,10 @@ import {
   apagarNotificacao,
   marcarComoLida,
   marcarTodasComoLidas,
+  responderConviteDeEquipe,
 } from "@/app/notificacoes/acoes";
 import {
+  conviteDeEquipePendente,
   destinoDaNotificacao,
   notificacaoDaLinha,
   type EscopoDeNotificacao,
@@ -74,6 +76,8 @@ export async function ListaDeNotificacoes({
         <div className="lista-empilhada">
           {notificacoes.map((notificacao) => {
             const destino = destinoDaNotificacao(notificacao, fluxo);
+            const convite =
+              fluxo === "advogado" && conviteDeEquipePendente(notificacao);
             return (
               <div
                 key={notificacao.id}
@@ -96,6 +100,32 @@ export async function ListaDeNotificacoes({
                     </p>
                   )}
                   <span className="acoes-em-linha">
+                    {convite && (
+                      <>
+                        <form action={responderConviteDeEquipe}>
+                          <input
+                            type="hidden"
+                            name="membership"
+                            value={notificacao.membershipId ?? ""}
+                          />
+                          <input type="hidden" name="resposta" value="aceitar" />
+                          <input type="hidden" name="voltar" value={voltar} />
+                          <button type="submit">Aceitar convite</button>
+                        </form>
+                        <form action={responderConviteDeEquipe}>
+                          <input
+                            type="hidden"
+                            name="membership"
+                            value={notificacao.membershipId ?? ""}
+                          />
+                          <input type="hidden" name="resposta" value="recusar" />
+                          <input type="hidden" name="voltar" value={voltar} />
+                          <button type="submit" className="secundario">
+                            Recusar
+                          </button>
+                        </form>
+                      </>
+                    )}
                     {destino !== null && (
                       <form action={abrirNotificacao}>
                         <input type="hidden" name="id" value={notificacao.id} />

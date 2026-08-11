@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  conviteDeEquipePendente,
   destinoDaNotificacao,
   notificacaoDaLinha,
 } from "./notificacoes";
@@ -63,5 +64,39 @@ describe("parse", () => {
     expect(lida.lida).toBe(true);
     expect(lida.conversaId).toBe("123");
     expect(informativa.lida).toBe(false);
+  });
+});
+
+describe("convite de equipe pendente (predicado do app)", () => {
+  const base = {
+    id: "n1",
+    title: "Convite de equipe",
+    body: "",
+    type: "team_invite",
+    metadata: { membership_id: "m1" },
+    read_at: null,
+    created_at: "2026-08-11T12:00:00Z",
+  };
+
+  test("pendente: team_invite com vínculo e sem invite_status", () => {
+    expect(conviteDeEquipePendente(notificacaoDaLinha(base))).toBe(true);
+  });
+
+  test("respondido deixa de ser pendente (o servidor carimba invite_status)", () => {
+    const respondida = notificacaoDaLinha({
+      ...base,
+      metadata: { membership_id: "m1", invite_status: "accepted" },
+    });
+    expect(conviteDeEquipePendente(respondida)).toBe(false);
+  });
+
+  test("sem membership_id não há o que responder", () => {
+    const semVinculo = notificacaoDaLinha({ ...base, metadata: {} });
+    expect(conviteDeEquipePendente(semVinculo)).toBe(false);
+  });
+
+  test("outro tipo com os mesmos campos não vira convite", () => {
+    const outro = notificacaoDaLinha({ ...base, type: "case_request" });
+    expect(conviteDeEquipePendente(outro)).toBe(false);
   });
 });
