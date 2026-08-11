@@ -796,17 +796,26 @@ body:has(.tela-de-entrada) footer.rodape {
 }
 
 .sino {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 13px;
-  font-weight: 700;
   text-decoration: none;
+}
+
+.sino .pilula-nao-lidas {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
 }
 
 .sino:hover {
