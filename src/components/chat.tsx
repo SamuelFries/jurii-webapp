@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { caminhoDoAnexo, validaAnexo } from "@/lib/anexos";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
 import { clienteDoNavegador } from "@/lib/supabase/navegador";
 
@@ -47,8 +48,10 @@ export function Chat({
   const [mensagens, setMensagens] = useState(mensagensIniciais);
   const [rascunho, setRascunho] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [subindoAnexo, setSubindoAnexo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const fimDaLista = useRef<HTMLDivElement>(null);
+  const seletorDeArquivo = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = clienteDoNavegador();
@@ -182,6 +185,101 @@ export function Chat({
     setEnviando(false);
   }
 
+  /**
+   * O MESMO fluxo do app: sobe para chat-attachments (na pasta do próprio
+   * usuário, que a RPC exige), registra por send_chat_attachment e, se a
+   * RPC recusar, REMOVE o arquivo órfão do storage. A validação local só
+   * evita subir 10 MB para ouvir não: quem manda é o servidor.
+   */
+  async function enviarAnexo(arquivo: File) {
+    const veredito = validaAnexo(arquivo.type, arquivo.size);
+    if ("erro" in veredito) {
+      setErro(veredito.erro);
+      return;
+    }
+    setSubindoAnexo(true);
+    setErro(null);
+
+    const supabase = clienteDoNavegador();
+    const caminho = caminhoDoAnexo(
+      meuId,
+      conversaId,
+      arquivo.name,
+      Date.now() * 1000,
+    );
+
+    const { error: erroDeUpload } = await supabase.storage
+      .from("chat-attachments")
+      .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
+    if (erroDeUpload) {
+      setErro("Não foi possível enviar o arquivo. Tente de novo.");
+      setSubindoAnexo(false);
+      return;
+    }
+
+    const { data, error: erroDaRpc } = await supabase.rpc(
+      "send_chat_attachment",
+      {
+        conversation_id_value: conversaId,
+        file_name_value: arquivo.name,
+        mime_type_value: arquivo.type,
+        file_size_bytes_value: arquivo.size,
+        storage_path_value: caminho,
+        kind_value: veredito.kind,
+        sender_type_value: senderType,
+      },
+    );
+
+    if (erroDaRpc || data == null) {
+      // Arquivo sem registro é órfão: limpa, como o app faz.
+      await supabase.storage.from("chat-attachments").remove([caminho]);
+      setErro("O servidor recusou o anexo. Confira o tipo e o tamanho.");
+      setSubindoAnexo(false);
+      return;
+    }
+
+    const linha = (data as Record<string, unknown>[])[0] ?? {};
+    const idDaMensagem = String(linha.id ?? linha.message_id ?? "");
+    const { data: assinada } = await supabase.storage
+      .from("chat-attachments")
+      .createSignedUrl(caminho, 3600);
+
+    if (idDaMensagem !== "") {
+      setMensagens((atuais) =>
+        atuais.some((mensagem) => mensagem.id === idDaMensagem)
+          ? atuais.map((mensagem) =>
+              mensagem.id === idDaMensagem && mensagem.anexo === null
+                ? {
+                    ...mensagem,
+                    anexo: {
+                      nome: arquivo.name,
+                      tipoMime: arquivo.type,
+                      url: assinada?.signedUrl ?? null,
+                    },
+                  }
+                : mensagem,
+            )
+          : [
+              ...atuais,
+              {
+                id: idDaMensagem,
+                corpo: "",
+                minha: true,
+                criadaEmIso: new Date().toISOString(),
+                apagadaParaTodos: false,
+                tipo: "anexo",
+                anexo: {
+                  nome: arquivo.name,
+                  tipoMime: arquivo.type,
+                  url: assinada?.signedUrl ?? null,
+                },
+              },
+            ],
+      );
+    }
+    setSubindoAnexo(false);
+  }
+
   const agora = new Date();
 
   return (
@@ -213,6 +311,27 @@ export function Chat({
       {erro !== null && <p className="erro">{erro}</p>}
 
       <div className="caixa-de-envio">
+        <input
+          ref={seletorDeArquivo}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx"
+          hidden
+          onChange={(evento) => {
+            const arquivo = evento.target.files?.[0];
+            evento.target.value = "";
+            if (arquivo) void enviarAnexo(arquivo);
+          }}
+        />
+        <button
+          type="button"
+          className="secundario botao-de-anexo"
+          onClick={() => seletorDeArquivo.current?.click()}
+          disabled={subindoAnexo}
+          aria-label="Anexar arquivo"
+          title="Anexar imagem ou documento"
+        >
+          {subindoAnexo ? "…" : "📎"}
+        </button>
         <textarea
           rows={2}
           placeholder="Escreva sua mensagem"
