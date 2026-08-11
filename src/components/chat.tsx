@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { caminhoDoAnexo, validaAnexo } from "@/lib/anexos";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
+import { conversarComAdvogado } from "@/app/inicio/acoes";
+import {
+  indicacaoDaMetadata,
+  type IndicacaoDeAdvogado,
+} from "@/lib/dominio/conversas";
 import { clienteDoNavegador } from "@/lib/supabase/navegador";
 
 export interface AnexoParaTela {
@@ -19,8 +24,9 @@ export interface MensagemParaTela {
   minha: boolean;
   criadaEmIso: string;
   apagadaParaTodos: boolean;
-  tipo: "texto" | "anexo" | "solicitacao_de_caso";
+  tipo: "texto" | "anexo" | "solicitacao_de_caso" | "indicacao";
   anexo: AnexoParaTela | null;
+  indicacao?: IndicacaoDeAdvogado | null;
 }
 
 /**
@@ -77,12 +83,15 @@ export function Chat({
         (evento) => {
           const linha = evento.new as Record<string, unknown>;
           const metadata = (linha.metadata ?? {}) as Record<string, unknown>;
+          const indicacao = indicacaoDaMetadata(metadata);
           const tipo =
             metadata.type === "chat_attachment"
               ? "anexo"
               : metadata.type === "case_request"
                 ? "solicitacao_de_caso"
-                : "texto";
+                : indicacao !== null
+                  ? "indicacao"
+                  : "texto";
           const nova: MensagemParaTela = {
             id: String(linha.id),
             corpo: String(linha.body ?? ""),
@@ -91,6 +100,7 @@ export function Chat({
             apagadaParaTodos: linha.deleted_for_all_at != null,
             tipo,
             anexo: null,
+            indicacao,
           };
           setMensagens((atuais) =>
             atuais.some((mensagem) => mensagem.id === nova.id)
@@ -323,7 +333,7 @@ export function Chat({
               .filter(Boolean)
               .join(" ")}
           >
-            <CorpoDaMensagem mensagem={mensagem} />
+            <CorpoDaMensagem mensagem={mensagem} souCliente={senderType === "client"} />
             <span className="horario">
               {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
             </span>
@@ -401,7 +411,13 @@ export function Chat({
 /** O conteúdo da bolha conforme o tipo. Mensagem de anexo NUNCA vira bolha
  * vazia: o corpo dela é vazio de verdade (o conteúdo mora no storage), e
  * bolha em branco parece defeito. */
-function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
+function CorpoDaMensagem({
+  mensagem,
+  souCliente,
+}: {
+  mensagem: MensagemParaTela;
+  souCliente: boolean;
+}) {
   if (mensagem.apagadaParaTodos) return <>Mensagem apagada</>;
 
   if (mensagem.tipo === "anexo") {
@@ -434,6 +450,35 @@ function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
       );
     }
     return <>Anexo: {mensagem.anexo.nome}</>;
+  }
+
+  if (mensagem.tipo === "indicacao" && mensagem.indicacao != null) {
+    const indicacao = mensagem.indicacao;
+    return (
+      <span className="indicacao-no-chat">
+        <span className="selo-de-solicitacao">Indicação do escritório</span>
+        <strong>{indicacao.nome}</strong>
+        <span className="detalhe">
+          {indicacao.oab}
+          {indicacao.area !== null ? ` · ${indicacao.area}` : ""}
+        </span>
+        {indicacao.nota !== null && <span>{indicacao.nota}</span>}
+        {souCliente && !mensagem.minha && (
+          <span className="acoes-em-linha">
+            <a
+              className="botao secundario"
+              href={`/profissionais/${indicacao.lawyerId}`}
+            >
+              Ver perfil
+            </a>
+            <form action={conversarComAdvogado}>
+              <input type="hidden" name="id" value={indicacao.lawyerId} />
+              <button type="submit">Conversar com o advogado</button>
+            </form>
+          </span>
+        )}
+      </span>
+    );
   }
 
   if (mensagem.tipo === "solicitacao_de_caso") {

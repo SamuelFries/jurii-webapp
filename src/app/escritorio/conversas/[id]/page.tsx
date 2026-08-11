@@ -3,11 +3,13 @@ import Link from "next/link";
 import { Chat } from "@/components/chat";
 import { ModeracaoDaConversa } from "@/components/moderacao-da-conversa";
 import { PainelDeMensagens } from "@/components/paineis";
+import { IndicarAdvogado } from "@/components/indicar-advogado";
 import { ProporCaso } from "@/components/propor-caso";
 import { carregaBloqueio, carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
+import { membroDaLinha } from "@/lib/dominio/equipe";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +26,27 @@ export default async function ChatDoEscritorio({
   const escritorio = exigeEscritorio(contexto);
   const segmentoEquipe = aba === "equipe";
 
-  const [conversasRes, mensagens, bloqueio] = await Promise.all([
+  const [conversasRes, mensagens, bloqueio, equipeRes] = await Promise.all([
     contexto.supabase.rpc("fetch_conversations_for_current_user", {
       scope_value: segmentoEquipe ? "firmTeam" : "firmClient",
       law_firm_id_value: escritorio.id,
     }),
     carregaMensagens(contexto.supabase, id, contexto.usuario.id),
     carregaBloqueio(contexto.supabase, id),
+    contexto.supabase
+      .from("law_firm_members")
+      .select(
+        "profile_id, lawyer_id, roles, member_role, role, status, profiles(full_name, initials, avatar_url)",
+      )
+      .eq("law_firm_id", escritorio.id)
+      .eq("status", "active"),
   ]);
+
+  const advogadosDaEquipe = ((equipeRes.data as unknown[]) ?? [])
+    .map((linha) => membroDaLinha(linha as Record<string, unknown>))
+    .filter((membro) => membro.lawyerId !== null)
+    .map((membro) => ({ id: membro.lawyerId as string, nome: membro.nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   const agora = new Date();
   const conversas = ((conversasRes.data as unknown[]) ?? []).map((linha) =>
@@ -102,6 +117,9 @@ export default async function ChatDoEscritorio({
         />
       </div>
       {erro !== undefined && <p className="erro">{erro}</p>}
+      {ok === "indicado" && (
+        <p className="aviso-bom">Advogado sugerido ao cliente.</p>
+      )}
       {ok === "proposta" && (
         <p className="aviso-bom">
           Solicitação enviada. O cliente decide em Meus casos; quando
@@ -109,10 +127,17 @@ export default async function ChatDoEscritorio({
         </p>
       )}
       {!segmentoEquipe && (
-        <ProporCaso
-          conversaId={id}
-          voltar={`/escritorio/conversas/${id}${sufixo}`}
-        />
+        <>
+          <ProporCaso
+            conversaId={id}
+            voltar={`/escritorio/conversas/${id}${sufixo}`}
+          />
+          <IndicarAdvogado
+            conversaId={id}
+            voltar={`/escritorio/conversas/${id}${sufixo}`}
+            advogados={advogadosDaEquipe}
+          />
+        </>
       )}
       <Chat
         conversaId={id}

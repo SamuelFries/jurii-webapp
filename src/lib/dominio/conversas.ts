@@ -87,3 +87,34 @@ export function rotuloDeHorario(data: Date, agora: Date): string {
   const mes = String(local.getUTCMonth() + 1).padStart(2, "0");
   return `${dia}/${mes} às ${hora}`;
 }
+
+/**
+ * Indicação de advogado dentro da conversa do escritório, espelho de
+ * LawyerRecommendation.fromMetadata do app: retrato gravado pelo servidor
+ * no momento da sugestão; nulo sem lawyer_id, porque sem advogado para
+ * abrir conversa o card não teria o que fazer.
+ */
+export interface IndicacaoDeAdvogado {
+  lawyerId: string;
+  nome: string;
+  oab: string;
+  area: string | null;
+  nota: string | null;
+}
+
+export function indicacaoDaMetadata(
+  metadata: Record<string, unknown>,
+): IndicacaoDeAdvogado | null {
+  if (metadata.type !== "lawyer_recommendation") return null;
+  if (metadata.lawyer_id == null) return null;
+  return {
+    lawyerId: String(metadata.lawyer_id),
+    nome: String(metadata.lawyer_name ?? "Advogado"),
+    oab: String(metadata.oab_label ?? "OAB verificada"),
+    area: metadata.primary_area == null ? null : String(metadata.primary_area),
+    nota:
+      metadata.note == null || String(metadata.note).trim() === ""
+        ? null
+        : String(metadata.note),
+  };
+}

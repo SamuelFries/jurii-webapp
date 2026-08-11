@@ -1306,3 +1306,14 @@ body:has(.tela-de-entrada) footer.rodape {
   opacity: 1;
   background: transparent;
 }
+
+/* Indicação de advogado dentro da bolha: um cartão de conteúdo, não texto
+   corrido. As ações só aparecem para o cliente. */
+.indicacao-no-chat {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+}
+.indicacao-no-chat .acoes-em-linha {
+  margin-top: 4px;
+}
