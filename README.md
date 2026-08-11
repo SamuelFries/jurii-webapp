@@ -62,9 +62,10 @@ tribunal (`fetch_case_movements`) e, no escritório, atribuir advogado
 senha. A resposta é a mesma com e-mail cadastrado ou não, de propósito:
 confirmar que um e-mail existe entrega a lista de clientes de um escritório
 de advocacia para quem quiser enumerar. IMPORTANTE: a URL
-`https://SEU-DOMINIO/redefinir` precisa estar em Authentication > URL
+`https://app.jurii.com.br/redefinir` precisa estar em Authentication > URL
 Configuration > Redirect URLs no painel do Supabase, senão o link do e-mail
-não volta para cá.
+não volta para cá. Em desenvolvimento, `http://localhost:3000/redefinir`
+também precisa estar lá.
 
 ## O que NÃO existe, de propósito
 
@@ -105,5 +106,30 @@ npm run build
 
 ## Deploy
 
-Vercel, projeto apontando para este repositório. Variáveis de ambiente: as
-duas `NEXT_PUBLIC_` do `.env.example`. Nada mais até o provedor existir.
+**Domínio: `app.jurii.com.br`.** Subdomínio, e não caminho dentro de
+`jurii.com.br`, por três motivos medidos:
+
+1. a CSP do site é `default-src 'self'`; sem `connect-src` próprio o
+   navegador **bloqueia** as chamadas daqui ao Supabase. Os dois no mesmo
+   host exigiriam afrouxar a CSP da landing ou manter duas por rota;
+2. o cookie de sessão do Supabase é host-only: aqui ele não viaja nas
+   requisições da landing, nem para script de terceiro que entre lá depois;
+3. raio de explosão: deploy daqui não derruba a página de aquisição.
+
+O HSTS de `jurii.com.br` já usa `includeSubDomains`, então este subdomínio
+**precisa** servir HTTPS desde o primeiro dia (a Vercel faz sozinha).
+
+Vercel, projeto apontando para este repositório, domínio
+`app.jurii.com.br`. Variáveis de ambiente: as duas `NEXT_PUBLIC_` do
+`.env.example`. Nada mais até o provedor de pagamento existir.
+
+Do outro lado, `jurii-site` já tem o botão **Entrar** apontando para cá.
+
+### Se um dia os perfis públicos precisarem de Google
+
+`/escritorios/[id]` e `/profissionais/[id]` são as únicas páginas com
+interesse de indexação (perfil de escritório ranqueando é canal de
+aquisição). Hoje elas exigem login e o site inteiro responde
+`X-Robots-Tag: noindex`. Levá-las para `jurii.com.br` é um recorte
+cirúrgico de duas rotas, e exige torná-las públicas: decisão de produto,
+não de infraestrutura.
