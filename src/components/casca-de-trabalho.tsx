@@ -21,6 +21,7 @@ const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
       tambem: ["/advogado/conversas"],
     },
     { rotulo: "Casos", href: "/advogado/casos" },
+    { rotulo: "Meu perfil", href: "/advogado/perfil" },
     { rotulo: "Notificações", href: "/advogado/notificacoes" },
   ],
   escritorio: [
@@ -32,6 +33,7 @@ const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
     },
     { rotulo: "Casos", href: "/escritorio/casos" },
     { rotulo: "Equipe", href: "/escritorio/equipe" },
+    { rotulo: "Perfil", href: "/escritorio/perfil" },
     { rotulo: "Notificações", href: "/escritorio/notificacoes" },
     {
       rotulo: "Assinatura",
