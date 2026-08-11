@@ -1,6 +1,7 @@
 import { Casca } from "@/components/casca";
-import { ListaDeConversas } from "@/components/lista-de-conversas";
+import { ConversasComBusca } from "@/components/listas/conversas-com-busca";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
+import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
 
 export const dynamic = "force-dynamic";
@@ -14,18 +15,20 @@ export default async function PaginaDeConversasDoAdvogado() {
     { scope_value: "lawyer", law_firm_id_value: null },
   );
 
+  const agora = new Date();
   const conversas = ((data as unknown[]) ?? []).map((linha) =>
-    conversaDaLinha(linha as Record<string, unknown>),
+    conversaParaTela(conversaDaLinha(linha as Record<string, unknown>), agora),
   );
 
   return (
     <Casca fluxo="advogado" fluxos={contexto.fluxos} caminhoAtivo="/advogado">
       <h1>Mensagens</h1>
       <p className="subtitulo">Converse com clientes e acompanhe contatos.</p>
-      <ListaDeConversas
+      <ConversasComBusca
         conversas={conversas}
         baseHref="/advogado/conversas"
         vazio="Quando um cliente falar com você, a conversa aparece aqui."
+        placeholder="Buscar por cliente ou área"
       />
     </Casca>
   );

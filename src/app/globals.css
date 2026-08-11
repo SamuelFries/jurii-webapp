@@ -873,3 +873,25 @@ body:has(.tela-de-entrada) footer.rodape {
   color: var(--accent-ink);
   text-decoration: underline;
 }
+
+.chip-de-filtro {
+  width: auto;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+
+.chip-de-filtro:hover {
+  background: var(--surface-2);
+}
+
+.chip-de-filtro.ativo {
+  background: rgba(184, 151, 42, 0.16);
+  color: var(--accent-ink);
+  border-color: var(--gold);
+}

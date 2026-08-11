@@ -1,16 +1,10 @@
-import Link from "next/link";
-
 import { Casca } from "@/components/casca";
+import { CasosDoAdvogadoComBusca } from "@/components/listas/casos-do-advogado-com-busca";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
+import { casoDoAdvogadoParaTela } from "@/lib/busca/mapeia";
 import { casoDoAdvogadoDaLinha } from "@/lib/dominio/casos";
 
 export const dynamic = "force-dynamic";
-
-const rotuloDeStatus = {
-  updated: "Atualizado",
-  new_message: "Nova mensagem",
-  closed: "Encerrado",
-} as const;
 
 export default async function PaginaDeCasosDoAdvogado() {
   const contexto = await contextoLogado();
@@ -18,7 +12,7 @@ export default async function PaginaDeCasosDoAdvogado() {
 
   const { data } = await contexto.supabase.rpc("fetch_lawyer_cases");
   const casos = ((data as unknown[]) ?? []).map((linha) =>
-    casoDoAdvogadoDaLinha(linha as Record<string, unknown>),
+    casoDoAdvogadoParaTela(casoDoAdvogadoDaLinha(linha as Record<string, unknown>)),
   );
 
   return (
@@ -31,42 +25,7 @@ export default async function PaginaDeCasosDoAdvogado() {
       <p className="subtitulo">
         O caso nasce na conversa: proponha pelo chat e o cliente aceita.
       </p>
-
-      {casos.length === 0 ? (
-        <p className="vazio">
-          Nenhum caso ativo. Abra a conversa com o cliente para propor um.
-        </p>
-      ) : (
-        <div className="lista-empilhada">
-          {casos.map((caso) => (
-            <Link
-              key={caso.id}
-              href={`/advogado/casos/${caso.id}`}
-              className="cartao-de-lista"
-            >
-              <span className="avatar" aria-hidden>
-                {caso.iniciaisDoCliente}
-              </span>
-              <span className="conteudo">
-                <span className="titulo">{caso.titulo}</span>
-                <p className="linha-2">
-                  {caso.cliente} · {caso.area}
-                </p>
-                {caso.cnj !== null && (
-                  <p className="linha-2">Processo {caso.cnj}</p>
-                )}
-              </span>
-              <span
-                className={
-                  caso.status === "new_message" ? "selo dourado" : "selo"
-                }
-              >
-                {rotuloDeStatus[caso.status]}
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
+      <CasosDoAdvogadoComBusca casos={casos} />
     </Casca>
   );
 }
