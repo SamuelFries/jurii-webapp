@@ -12,8 +12,10 @@ import { CampoDeBusca, FileiraDeChips, NadaEncontrado } from "./controles";
 
 export function CasosDoEscritorioComBusca({
   casos,
+  ativoId,
 }: {
   casos: CasoDoEscritorioParaTela[];
+  ativoId?: string;
 }) {
   const [termo, setTermo] = useState("");
   const [soEmAndamento, setSoEmAndamento] = useState(false);
@@ -86,7 +88,10 @@ export function CasosDoEscritorioComBusca({
             <Link
               key={caso.id}
               href={`/escritorio/casos/${caso.id}`}
-              className="cartao-de-lista"
+              className={
+                caso.id === ativoId ? "cartao-de-lista ativa" : "cartao-de-lista"
+              }
+              aria-current={caso.id === ativoId ? "page" : undefined}
             >
               <span className="avatar" aria-hidden>
                 {caso.iniciaisDoCliente}

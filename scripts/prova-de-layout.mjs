@@ -165,6 +165,119 @@ for (const largura of [1280, 1728, 2402]) {
   await pagina.close();
 }
 
+/* ---- Fixture 2: a área de trabalho (fluxos profissionais) ----
+   Sidebar fixa + mestre-detalhe. O que não pode acontecer: rolagem
+   horizontal, painéis fora da régua, e a caixa de envio do chat fugindo
+   da tela quando a conversa é longa. */
+
+const muitasMensagens = Array.from({ length: 40 }, (_, i) =>
+  `<div class="bolha ${i % 2 ? "minha" : "deles"}">Mensagem número ${i} com um texto de tamanho razoável para empurrar a rolagem.</div>`,
+).join("");
+
+const fixtureTrabalho = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><style>${css}</style></head>
+<body>
+  <div class="area-de-trabalho">
+    <aside class="lateral" id="lateral">
+      <a href="#" class="marca marca-pequena">jurii<span class="ouro">.</span></a>
+      <nav>
+        <a class="ativa" href="#">Mensagens</a>
+        <a href="#">Casos</a>
+        <a href="#">Notificações <span class="pilula-nao-lidas">3</span></a>
+      </nav>
+      <div class="rodape-da-lateral"><nav><a href="#">Conta</a></nav></div>
+    </aside>
+    <div class="conteudo-de-trabalho">
+      <div class="painel-dividido">
+        <aside class="painel-lista" id="lista">
+          <h1>Mensagens</h1>
+          <div class="lista-empilhada">
+            <a class="cartao-de-lista ativa" href="#"><span class="avatar">AS</span>
+              <span class="conteudo"><span class="titulo">Ana Souza</span>
+              <p class="linha-2">Triagem da assistente Jurii Resumo do caso: Cliente relata um texto bem longo que precisa truncar</p></span></a>
+            <a class="cartao-de-lista" href="#"><span class="avatar">BL</span>
+              <span class="conteudo"><span class="titulo">Bruno Lima</span>
+              <p class="linha-2">ok</p></span></a>
+          </div>
+        </aside>
+        <section class="painel-principal" id="principal">
+          <div class="cabecalho-do-chat"><a href="#">← Conversas</a>
+            <span class="nome">Ana Souza</span></div>
+          <div class="chat" id="chat">${muitasMensagens}</div>
+          <div class="caixa-de-envio" id="caixa">
+            <textarea rows="2"></textarea><button>Enviar</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</body></html>`;
+
+for (const largura of [1280, 1728, 2402]) {
+  const pagina = await navegador.newPage({
+    viewport: { width: largura, height: 900 },
+  });
+  await pagina.setContent(fixtureTrabalho);
+
+  const medidas = await pagina.evaluate(() => {
+    const lateral = document.getElementById("lateral").getBoundingClientRect();
+    const lista = document.getElementById("lista").getBoundingClientRect();
+    const principal = document
+      .getElementById("principal")
+      .getBoundingClientRect();
+    const caixa = document.getElementById("caixa").getBoundingClientRect();
+    const chat = document.getElementById("chat");
+    return {
+      janela: window.innerWidth,
+      alturaDaJanela: window.innerHeight,
+      lateral: lateral.width,
+      lista: lista.width,
+      principalDireita: principal.right,
+      caixaFundo: caixa.bottom,
+      chatRola: chat.scrollHeight > chat.clientHeight,
+      rolagemHorizontal:
+        document.documentElement.scrollWidth > window.innerWidth + 1,
+      rolagemVertical:
+        document.documentElement.scrollHeight > window.innerHeight + 1,
+    };
+  });
+
+  console.log(
+    `trabalho @${largura}: lateral ${medidas.lateral.toFixed(0)} | lista ${medidas.lista.toFixed(0)} | direita do principal ${medidas.principalDireita.toFixed(0)}/${medidas.janela} | caixa no fundo ${medidas.caixaFundo.toFixed(0)}/${medidas.alturaDaJanela}`,
+  );
+
+  if (medidas.rolagemHorizontal) {
+    falhas.push(`trabalho @${largura}: rolagem horizontal na área de trabalho`);
+  }
+  if (medidas.rolagemVertical) {
+    falhas.push(
+      `trabalho @${largura}: a PÁGINA rola em vez de os painéis rolarem`,
+    );
+  }
+  if (Math.abs(medidas.lateral - 248) > 1) {
+    falhas.push(`trabalho @${largura}: lateral fora da régua de 248`);
+  }
+  if (Math.abs(medidas.lista - 380) > 1) {
+    falhas.push(`trabalho @${largura}: painel de lista fora da régua de 380`);
+  }
+  if (medidas.principalDireita < medidas.janela - 1) {
+    falhas.push(
+      `trabalho @${largura}: o painel principal NÃO usa a tela inteira (sobra à direita)`,
+    );
+  }
+  if (!medidas.chatRola) {
+    falhas.push(
+      `trabalho @${largura}: o chat não rola por conta própria (a fixture tem 40 mensagens)`,
+    );
+  }
+  if (medidas.caixaFundo > medidas.alturaDaJanela + 1) {
+    falhas.push(
+      `trabalho @${largura}: a caixa de envio fugiu da tela com conversa longa`,
+    );
+  }
+  await pagina.close();
+}
+
 await navegador.close();
 
 if (falhas.length > 0) {

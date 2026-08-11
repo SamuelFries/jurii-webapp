@@ -915,3 +915,248 @@ body:has(.tela-de-entrada) footer.rodape {
 .botao-de-conta:hover {
   color: var(--text);
 }
+
+/* ==== Área de trabalho (fluxos advogado e escritório) ====
+   O profissional fica o dia inteiro com isto aberto: barra lateral fixa,
+   conteúdo na tela inteira, e mestre-detalhe (lista ao lado do aberto).
+   Cada painel rola por conta própria; a página nunca rola inteira. */
+
+.area-de-trabalho {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 14px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.lateral .marca-pequena {
+  padding: 0 10px 14px;
+}
+
+.lateral nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lateral nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+
+.lateral nav a:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.lateral nav a.ativa {
+  background: var(--surface-2);
+  color: var(--text);
+  border-left-color: var(--gold);
+}
+
+.lateral .rodape-da-lateral {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.lateral .rotulo-da-secao {
+  padding: 14px 12px 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.conteudo-de-trabalho {
+  min-width: 0;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Página simples dentro da área (equipe, assinatura, notificações). */
+.pagina-de-trabalho {
+  overflow-y: auto;
+  padding: 28px 32px 48px;
+  width: 100%;
+}
+
+.pagina-de-trabalho > .miolo {
+  max-width: 920px;
+}
+
+/* ---- Mestre-detalhe ---- */
+
+.painel-dividido {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.painel-lista {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 18px 16px 24px;
+  min-width: 0;
+}
+
+.painel-lista h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.painel-lista p.subtitulo {
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.painel-lista .cartao-de-lista {
+  padding: 12px;
+  border-radius: 12px;
+  gap: 10px;
+}
+
+.painel-lista .cartao-de-lista.ativa {
+  border-color: var(--gold);
+  background: var(--surface-2);
+}
+
+.painel-lista .avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+}
+
+.painel-principal {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 28px;
+}
+
+.painel-principal > .rolavel {
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: 24px;
+}
+
+/* O chat dentro do painel: as mensagens rolam, a caixa fica sempre à
+   vista. Nada de min-height de página: o painel manda na altura. */
+.painel-principal .chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.painel-principal .caixa-de-envio {
+  position: static;
+  background: transparent;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.painel-vazio {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  text-align: center;
+  padding: 32px;
+}
+
+/* Em tela estreita o par vira um painel só: com detalhe aberto, a lista
+   sai de cena (o link Voltar do cabeçalho leva de volta). */
+@media (max-width: 960px) {
+  .area-de-trabalho {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  .lateral {
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+
+  .lateral nav {
+    flex-direction: row;
+  }
+
+  .lateral .rodape-da-lateral {
+    margin: 0 0 0 auto;
+    flex-direction: row;
+    border: 0;
+    padding: 0;
+  }
+
+  .lateral .marca-pequena {
+    padding: 0 8px 0 0;
+  }
+
+  .lateral .rotulo-da-secao {
+    display: none;
+  }
+
+  .conteudo-de-trabalho {
+    height: auto;
+    overflow: visible;
+  }
+
+  .painel-dividido {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  .painel-dividido.com-detalhe .painel-lista {
+    display: none;
+  }
+
+  .painel-lista {
+    border-right: 0;
+  }
+
+  .painel-principal {
+    overflow: visible;
+    padding: 0 16px;
+  }
+
+  .painel-principal .chat {
+    overflow: visible;
+    min-height: 40vh;
+  }
+}

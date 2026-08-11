@@ -1,10 +1,13 @@
-import { Casca } from "@/components/casca";
+import { CasosDoAdvogadoComBusca } from "@/components/listas/casos-do-advogado-com-busca";
 import { DetalheDoCaso } from "@/components/detalhe-do-caso";
+import { PainelDeCasos } from "@/components/paineis";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
+import { casoDoAdvogadoParaTela } from "@/lib/busca/mapeia";
+import { casoDoAdvogadoDaLinha } from "@/lib/dominio/casos";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeCasoDoAdvogado({
+export default async function CasoDoAdvogado({
   params,
   searchParams,
 }: {
@@ -16,11 +19,20 @@ export default async function PaginaDeCasoDoAdvogado({
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
+  const { data } = await contexto.supabase.rpc("fetch_lawyer_cases");
+  const casos = ((data as unknown[]) ?? []).map((linha) =>
+    casoDoAdvogadoParaTela(casoDoAdvogadoDaLinha(linha as Record<string, unknown>)),
+  );
+
   return (
-    <Casca
+    <PainelDeCasos
       fluxo="advogado"
       fluxos={contexto.fluxos}
       caminhoAtivo="/advogado/casos"
+      titulo="Casos"
+      subtitulo="O caso nasce na conversa: proponha pelo chat."
+      lista={<CasosDoAdvogadoComBusca casos={casos} ativoId={id} />}
+      comDetalhe
     >
       <DetalheDoCaso
         supabase={contexto.supabase}
@@ -29,6 +41,6 @@ export default async function PaginaDeCasoDoAdvogado({
         listaHref="/advogado/casos"
         erro={erro}
       />
-    </Casca>
+    </PainelDeCasos>
   );
 }

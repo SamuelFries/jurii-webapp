@@ -18,8 +18,10 @@ const rotuloDeStatus = {
 
 export function CasosDoAdvogadoComBusca({
   casos,
+  ativoId,
 }: {
   casos: CasoDoAdvogadoParaTela[];
+  ativoId?: string;
 }) {
   const [termo, setTermo] = useState("");
   const [soEmAndamento, setSoEmAndamento] = useState(false);
@@ -82,7 +84,10 @@ export function CasosDoAdvogadoComBusca({
             <Link
               key={caso.id}
               href={`/advogado/casos/${caso.id}`}
-              className="cartao-de-lista"
+              className={
+                caso.id === ativoId ? "cartao-de-lista ativa" : "cartao-de-lista"
+              }
+              aria-current={caso.id === ativoId ? "page" : undefined}
             >
               <span className="avatar" aria-hidden>
                 {caso.iniciaisDoCliente}

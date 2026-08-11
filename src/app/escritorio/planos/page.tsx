@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Casca } from "@/components/casca";
+import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado } from "@/lib/contexto";
 import { assinaturaDaLinha, planoDaLinha } from "@/lib/licenca";
 
@@ -56,13 +56,17 @@ export default async function PaginaDePlanos({
 
   if (contexto.fluxos.escritorio !== null) {
     return (
-      <Casca
+      <CascaDeTrabalho
         fluxo="escritorio"
         fluxos={contexto.fluxos}
         caminhoAtivo="/escritorio/assinatura"
       >
-        {conteudo}
-      </Casca>
+        <div className="pagina-de-trabalho">
+          <div className="miolo" style={{ maxWidth: 560 }}>
+            {conteudo}
+          </div>
+        </div>
+      </CascaDeTrabalho>
     );
   }
 
