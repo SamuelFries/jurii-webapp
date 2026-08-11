@@ -9,6 +9,9 @@ type Linha = Record<string, any>;
 
 export interface MembroDaEquipe {
   profileId: string;
+  /** Perfil profissional, quando o membro é advogado; é o id que a
+   * indicação ao cliente usa. */
+  lawyerId: string | null;
   nome: string;
   iniciais: string;
   avatarUrl: string | null;
@@ -22,6 +25,7 @@ export function membroDaLinha(row: Linha): MembroDaEquipe {
   const status = String(row.status ?? "active");
   return {
     profileId: String(row.profile_id ?? ""),
+    lawyerId: row.lawyer_id == null ? null : String(row.lawyer_id),
     nome: String(perfil?.full_name ?? "Integrante"),
     iniciais: String(perfil?.initials ?? "?"),
     avatarUrl: urlDoAvatar(

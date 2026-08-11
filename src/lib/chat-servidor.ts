@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { MensagemParaTela } from "@/components/chat";
-import { conversaDaLinha, type Conversa, type EscopoDeConversa } from "@/lib/dominio/conversas";
+import {
+  conversaDaLinha,
+  indicacaoDaMetadata,
+  type Conversa,
+  type EscopoDeConversa,
+} from "@/lib/dominio/conversas";
 
 /**
  * Histórico da conversa, o mesmo contrato do app: as 100 mais recentes
@@ -68,12 +73,15 @@ export async function carregaMensagens(
 
   return linhas.map((linha) => {
     const metadata = (linha.metadata ?? {}) as Record<string, unknown>;
+    const indicacao = indicacaoDaMetadata(metadata);
     const tipo =
       metadata.type === "chat_attachment"
         ? "anexo"
         : metadata.type === "case_request"
           ? "solicitacao_de_caso"
-          : "texto";
+          : indicacao !== null
+            ? "indicacao"
+            : "texto";
     return {
       id: String(linha.id),
       corpo: String(linha.body ?? ""),
@@ -82,6 +90,7 @@ export async function carregaMensagens(
       apagadaParaTodos: linha.deleted_for_all_at != null,
       tipo,
       anexo: anexosPorMensagem.get(String(linha.id)) ?? null,
+      indicacao,
     };
   });
 }

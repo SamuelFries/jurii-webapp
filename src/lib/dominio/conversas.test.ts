@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 
-import { conversaDaLinha, rotuloDeHorario } from "./conversas";
+import {
+  conversaDaLinha,
+  indicacaoDaMetadata,
+  rotuloDeHorario,
+} from "./conversas";
 
 describe("rótulo de horário", () => {
   // São Paulo é UTC-3 estável: o Brasil aboliu o horário de verão em 2019.
@@ -41,5 +45,47 @@ describe("parse da conversa", () => {
     expect(conversa.titulo).toBe("Ana Souza");
     expect(conversa.naoLidas).toBe(2);
     expect(conversa.avatarUrl).toBeNull();
+  });
+});
+
+describe("indicação de advogado (espelho de fromMetadata do app)", () => {
+  test("metadata completa vira card", () => {
+    const indicacao = indicacaoDaMetadata({
+      type: "lawyer_recommendation",
+      lawyer_id: "adv1",
+      lawyer_name: "Rita Souza",
+      oab_label: "OAB/RS 123.456",
+      primary_area: "Direito Cível",
+      note: "Ela cuida de casos assim toda semana.",
+    });
+    expect(indicacao).toEqual({
+      lawyerId: "adv1",
+      nome: "Rita Souza",
+      oab: "OAB/RS 123.456",
+      area: "Direito Cível",
+      nota: "Ela cuida de casos assim toda semana.",
+    });
+  });
+
+  test("sem lawyer_id não há card (regra do app)", () => {
+    expect(
+      indicacaoDaMetadata({ type: "lawyer_recommendation", note: "x" }),
+    ).toBeNull();
+  });
+
+  test("outro tipo de metadata não vira indicação", () => {
+    expect(
+      indicacaoDaMetadata({ type: "case_request", lawyer_id: "adv1" }),
+    ).toBeNull();
+  });
+
+  test("nota vazia vira nula, não string em branco", () => {
+    const indicacao = indicacaoDaMetadata({
+      type: "lawyer_recommendation",
+      lawyer_id: "adv1",
+      note: "   ",
+    });
+    expect(indicacao?.nota).toBeNull();
+    expect(indicacao?.nome).toBe("Advogado");
   });
 });
