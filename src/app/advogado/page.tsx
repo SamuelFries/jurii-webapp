@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AlcanceDoProfissional } from "@/components/alcance-do-profissional";
 import { PainelDeMensagens } from "@/components/paineis";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
@@ -114,6 +115,12 @@ export default async function MesaDoAdvogado() {
             </div>
           </>
         )}
+
+        <AlcanceDoProfissional
+          supabase={contexto.supabase}
+          tipo="lawyer"
+          id={contexto.usuario.id}
+        />
 
         {naoLidas.length === 0 && comNovaMensagem.length === 0 && (
           <p className="vazio" style={{ maxWidth: 560 }}>
