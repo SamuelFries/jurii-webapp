@@ -863,3 +863,13 @@ body:has(.tela-de-entrada) footer.rodape {
 .lista-empilhada > * {
   min-width: 0;
 }
+
+.link-do-nome {
+  color: inherit;
+  text-decoration: none;
+}
+
+.link-do-nome:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}

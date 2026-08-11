@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   conversarComAdvogado,
   conversarComEscritorio,
@@ -20,6 +22,7 @@ export function CartaoDeProfissional({
   selo,
   favorito,
   voltar,
+  href,
 }: {
   tipo: "lawyer" | "law_firm";
   id: string;
@@ -31,6 +34,9 @@ export function CartaoDeProfissional({
   selo?: string;
   favorito: boolean;
   voltar: string;
+  /** Perfil público, quando existe. Sem href o nome fica texto: link morto
+   * é proibido nesta casa. */
+  href?: string;
 }) {
   return (
     <div className="cartao-de-lista">
@@ -44,7 +50,13 @@ export function CartaoDeProfissional({
       </span>
       <span className="conteudo">
         <span className="titulo">
-          {nome}
+          {href !== undefined ? (
+            <Link href={href} className="link-do-nome">
+              {nome}
+            </Link>
+          ) : (
+            nome
+          )}
           {selo !== undefined && <span className="selo dourado">{selo}</span>}
         </span>
         <p className="linha-2">{linha1}</p>
