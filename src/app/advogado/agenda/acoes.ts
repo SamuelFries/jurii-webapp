@@ -76,3 +76,38 @@ export async function cancelarCompromisso(dados: FormData): Promise<void> {
   }
   volta("ok=cancelado");
 }
+
+/**
+ * O feed .ics assinável, MESMAS RPCs do app (CalendarFeedRepository). O
+ * token é capability URL: revogar = gerar outro (o anterior morre) ou
+ * desativar de vez.
+ */
+export async function ativarFeed(): Promise<void> {
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("enable_calendar_feed");
+  redirect(
+    error
+      ? `/advogado/agenda?erro=${encodeURIComponent("Não foi possível ativar a sincronização. Tente novamente.")}`
+      : "/advogado/agenda?ok=feed-ativado",
+  );
+}
+
+export async function rotacionarFeed(): Promise<void> {
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("reset_calendar_feed");
+  redirect(
+    error
+      ? `/advogado/agenda?erro=${encodeURIComponent("Não foi possível gerar o novo link. Tente novamente.")}`
+      : "/advogado/agenda?ok=feed-rotacionado",
+  );
+}
+
+export async function desativarFeed(): Promise<void> {
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("disable_calendar_feed");
+  redirect(
+    error
+      ? `/advogado/agenda?erro=${encodeURIComponent("Não foi possível desativar. Tente novamente.")}`
+      : "/advogado/agenda?ok=feed-desativado",
+  );
+}

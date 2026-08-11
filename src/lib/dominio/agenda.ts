@@ -141,3 +141,23 @@ export function isoUtcParaLocal(data: Date | null): string {
   const local = new Date(data.getTime() - fusoMs);
   return local.toISOString().slice(0, 16);
 }
+
+/**
+ * URLs do feed .ics, espelho do CalendarFeedRepository do app. O token é
+ * uma capability URL: quem tem o link vê a agenda, por isso é revogável
+ * (gerar outro derruba o anterior).
+ */
+export function urlDoFeedDeCalendario(
+  supabaseUrl: string,
+  token: string,
+): string {
+  return `${supabaseUrl}/functions/v1/calendar-feed?token=${token}`;
+}
+
+/** webcal:// abre direto o diálogo de assinatura no Apple/Google/Outlook. */
+export function urlWebcalDoFeed(supabaseUrl: string, token: string): string {
+  return urlDoFeedDeCalendario(supabaseUrl, token).replace(
+    /^https?:\/\//,
+    "webcal://",
+  );
+}
