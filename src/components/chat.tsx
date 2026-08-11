@@ -39,11 +39,14 @@ export function Chat({
   meuId,
   senderType,
   mensagensIniciais,
+  bloqueada = false,
 }: {
   conversaId: string;
   meuId: string;
   senderType: "client" | "lawyer";
   mensagensIniciais: MensagemParaTela[];
+  /** Conversa bloqueada: o servidor recusa envio; a tela avisa antes. */
+  bloqueada?: boolean;
 }) {
   const [mensagens, setMensagens] = useState(mensagensIniciais);
   const [rascunho, setRascunho] = useState("");
@@ -280,6 +283,27 @@ export function Chat({
     setSubindoAnexo(false);
   }
 
+  /** Apagar para todos, a MESMA RPC do app (delete_messages_for_everyone):
+   * a bolha vira "Mensagem apagada" na hora; o servidor decide se pode. */
+  async function apagarMensagem(id: string) {
+    if (!window.confirm("Apagar esta mensagem para todos?")) return;
+    const supabase = clienteDoNavegador();
+    const { error } = await supabase.rpc("delete_messages_for_everyone", {
+      message_ids_value: [id],
+    });
+    if (error) {
+      setErro("Não foi possível apagar a mensagem.");
+      return;
+    }
+    setMensagens((atuais) =>
+      atuais.map((mensagem) =>
+        mensagem.id === id
+          ? { ...mensagem, apagadaParaTodos: true, corpo: "", anexo: null }
+          : mensagem,
+      ),
+    );
+  }
+
   const agora = new Date();
 
   return (
@@ -303,12 +327,28 @@ export function Chat({
             <span className="horario">
               {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
             </span>
+            {mensagem.minha && !mensagem.apagadaParaTodos && (
+              <button
+                type="button"
+                className="apagar-mensagem"
+                onClick={() => void apagarMensagem(mensagem.id)}
+              >
+                Apagar
+              </button>
+            )}
           </div>
         ))}
         <div ref={fimDaLista} />
       </div>
 
       {erro !== null && <p className="erro">{erro}</p>}
+
+      {bloqueada && (
+        <p className="erro">
+          Esta conversa está bloqueada. Nenhum dos lados consegue enviar
+          mensagens enquanto o bloqueio durar.
+        </p>
+      )}
 
       <div className="caixa-de-envio">
         <input
@@ -326,7 +366,7 @@ export function Chat({
           type="button"
           className="secundario botao-de-anexo"
           onClick={() => seletorDeArquivo.current?.click()}
-          disabled={subindoAnexo}
+          disabled={subindoAnexo || bloqueada}
           aria-label="Anexar arquivo"
           title="Anexar imagem ou documento"
         >
@@ -334,7 +374,8 @@ export function Chat({
         </button>
         <textarea
           rows={2}
-          placeholder="Escreva sua mensagem"
+          disabled={bloqueada}
+          placeholder={bloqueada ? "Conversa bloqueada" : "Escreva sua mensagem"}
           aria-label="Escreva sua mensagem"
           value={rascunho}
           onChange={(evento) => setRascunho(evento.target.value)}
@@ -345,7 +386,11 @@ export function Chat({
             }
           }}
         />
-        <button type="button" onClick={() => void enviar()} disabled={enviando}>
+        <button
+          type="button"
+          onClick={() => void enviar()}
+          disabled={enviando || bloqueada}
+        >
           Enviar
         </button>
       </div>

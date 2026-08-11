@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { Chat } from "@/components/chat";
+import { ModeracaoDaConversa } from "@/components/moderacao-da-conversa";
 import { PainelDeMensagens } from "@/components/paineis";
 import { ProporCaso } from "@/components/propor-caso";
-import { carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
+import { carregaBloqueio, carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
@@ -22,12 +23,13 @@ export default async function ChatDoAdvogado({
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
-  const [conversasRes, mensagens] = await Promise.all([
+  const [conversasRes, mensagens, bloqueio] = await Promise.all([
     contexto.supabase.rpc("fetch_conversations_for_current_user", {
       scope_value: "lawyer",
       law_firm_id_value: null,
     }),
     carregaMensagens(contexto.supabase, id, contexto.usuario.id),
+    carregaBloqueio(contexto.supabase, id),
   ]);
 
   const agora = new Date();
@@ -60,6 +62,12 @@ export default async function ChatDoAdvogado({
         {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
         )}
+        <ModeracaoDaConversa
+          conversaId={id}
+          voltar={`/advogado/conversas/${id}`}
+          bloqueada={bloqueio.bloqueada}
+          bloqueadaPorMim={bloqueio.porMim}
+        />
       </div>
       {erro !== undefined && <p className="erro">{erro}</p>}
       {ok === "proposta" && (
@@ -74,6 +82,7 @@ export default async function ChatDoAdvogado({
         meuId={contexto.usuario.id}
         senderType="lawyer"
         mensagensIniciais={mensagens}
+        bloqueada={bloqueio.bloqueada}
       />
     </PainelDeMensagens>
   );

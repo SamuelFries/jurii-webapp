@@ -1252,3 +1252,57 @@ body:has(.tela-de-entrada) footer.rodape {
   background: var(--surface);
   color: var(--text);
 }
+
+/* ---- Moderação da conversa ---- */
+
+.moderacao {
+  position: relative;
+  margin-left: auto;
+}
+
+.moderacao summary {
+  list-style: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-weight: 800;
+}
+
+.moderacao summary::-webkit-details-marker {
+  display: none;
+}
+
+.moderacao[open] summary {
+  background: var(--surface-2);
+}
+
+.painel-de-moderacao {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 320px;
+  z-index: 20;
+}
+
+.apagar-mensagem {
+  width: auto;
+  margin: 6px 0 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: 0.6;
+  text-decoration: underline;
+}
+
+.apagar-mensagem:hover {
+  opacity: 1;
+  background: transparent;
+}
