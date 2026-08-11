@@ -1160,3 +1160,39 @@ body:has(.tela-de-entrada) footer.rodape {
     min-height: 40vh;
   }
 }
+
+/* ---- Propor caso (chat profissional) ---- */
+
+.propor-caso {
+  margin: 12px 0 4px;
+}
+
+.propor-caso summary {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.propor-caso summary::-webkit-details-marker {
+  display: none;
+}
+
+.propor-caso[open] summary {
+  background: rgba(184, 151, 42, 0.16);
+}
+
+.aviso-bom {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 151, 42, 0.14);
+  border: 1px solid var(--gold-soft);
+  color: var(--accent-ink);
+  font-size: 14px;
+}
