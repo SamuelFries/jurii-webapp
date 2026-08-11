@@ -20,6 +20,10 @@ export interface Notificacao {
   criadaEm: Date | null;
   conversaId: string | null;
   casoId: string | null;
+  /** Convite de equipe: o vínculo a responder (metadata.membership_id). */
+  membershipId: string | null;
+  /** Preenchido pelo servidor DEPOIS de respondido (accepted/declined). */
+  conviteStatus: string | null;
 }
 
 export function notificacaoDaLinha(row: Linha): Notificacao {
@@ -36,7 +40,25 @@ export function notificacaoDaLinha(row: Linha): Notificacao {
         ? null
         : String(metadata.conversation_id),
     casoId: metadata.case_id == null ? null : String(metadata.case_id),
+    membershipId:
+      metadata.membership_id == null ? null : String(metadata.membership_id),
+    conviteStatus:
+      metadata.invite_status == null ? null : String(metadata.invite_status),
   };
+}
+
+/**
+ * Convite de equipe ainda sem resposta, o MESMO predicado do app
+ * (isPendingTeamInvite): tipo team_invite, com vínculo, e sem
+ * invite_status, que é o carimbo que o servidor grava ao responder. Depois
+ * de respondido os botões somem sozinhos na próxima renderização.
+ */
+export function conviteDeEquipePendente(notificacao: Notificacao): boolean {
+  return (
+    notificacao.tipo === "team_invite" &&
+    notificacao.membershipId !== null &&
+    notificacao.conviteStatus === null
+  );
 }
 
 /**
