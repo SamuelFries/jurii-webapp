@@ -1757,10 +1757,16 @@ body:has(.tela-de-entrada) footer.rodape {
   align-self: flex-end;
 }
 
-.botao-do-mais {
+/* Escopado em .caixa-de-envio DE PROPOSITO: a regra `.caixa-de-envio
+   button { width: auto }` tem especificidade (0,1,1) e vencia o
+   `.botao-do-mais` (0,1,0), espremendo o circulo num oval de 22px. */
+.caixa-de-envio .botao-do-mais {
   margin: 0;
-  width: 42px;
-  height: 42px;
+  /* O mesmo diametro da altura de uma linha do compositor: o + fica do
+     tamanho do botao Enviar, e nao um caroco menor ao lado. */
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   padding: 0;
   display: grid;
   place-items: center;
@@ -1771,22 +1777,22 @@ body:has(.tela-de-entrada) footer.rodape {
   cursor: pointer;
 }
 
-.botao-do-mais svg {
+.caixa-de-envio .botao-do-mais svg {
   width: 20px;
   height: 20px;
   transition: transform 0.18s var(--ease);
 }
 
-.botao-do-mais.aberto {
+.caixa-de-envio .botao-do-mais.aberto {
   border-color: var(--gold);
   color: var(--gold);
 }
 
-.botao-do-mais.aberto svg {
+.caixa-de-envio .botao-do-mais.aberto svg {
   transform: rotate(45deg);
 }
 
-.botao-do-mais:disabled {
+.caixa-de-envio .botao-do-mais:disabled {
   opacity: 0.6;
   cursor: default;
 }
