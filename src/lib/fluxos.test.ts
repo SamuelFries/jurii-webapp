@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
 
-import { destinoInicial, papeisDaLinha } from "./fluxos";
+import {
+  destinoInicial,
+  normalizaPapeis,
+  papeisDaLinha,
+  papelPrincipal,
+  rotuloDoPapel,
+} from "./fluxos";
 
 describe("papéis do vínculo", () => {
   test("array novo vence o texto legado", () => {
@@ -43,5 +49,33 @@ describe("destino inicial", () => {
     expect(destinoInicial({ advogadoAprovado: false, escritorio: null })).toBe(
       "/cliente",
     );
+  });
+});
+
+describe("papéis do escritório", () => {
+  test("normaliza na ordem canônica, sem duplicata", () => {
+    expect(normalizaPapeis(["secretary", "owner", "owner", "lawyer"])).toEqual([
+      "owner",
+      "lawyer",
+      "secretary",
+    ]);
+  });
+
+  test("lista vazia vira advogado: o servidor recusa conjunto vazio", () => {
+    expect(normalizaPapeis([])).toEqual(["lawyer"]);
+  });
+
+  test("o principal é o primeiro da ordem, não o primeiro digitado", () => {
+    expect(papelPrincipal(["secretary", "admin"])).toBe("admin");
+    expect(papelPrincipal(["intern"])).toBe("intern");
+  });
+
+  test("estagiário é papel de verdade, e era lido como advogado", () => {
+    expect(papeisDaLinha(["intern"], null)).toEqual(["intern"]);
+    expect(rotuloDoPapel("intern")).toBe("Estagiário");
+  });
+
+  test("a leitura também normaliza a ordem vinda do banco", () => {
+    expect(papeisDaLinha(["lawyer", "owner"], null)).toEqual(["owner", "lawyer"]);
   });
 });

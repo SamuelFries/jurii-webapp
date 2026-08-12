@@ -1,9 +1,9 @@
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
-import { convidarAdvogado } from "./acoes";
+import { convidarAdvogado, salvarPapeis } from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
-import { rotuloDoPapel } from "@/lib/fluxos";
+import { papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +55,7 @@ export default async function PaginaDaEquipe({
           Convites pendentes até responder.
         </p>
       )}
+      {ok === "papeis" && <p className="aviso-bom">Papéis atualizados.</p>}
 
       {podeConvidar && (
         <details className="propor-caso">
@@ -121,6 +122,46 @@ export default async function PaginaDaEquipe({
                     </span>
                   ))}
                 </p>
+                {podeConvidar && (
+                  <details className="papeis-do-membro">
+                    <summary className="detalhe" style={{ cursor: "pointer" }}>
+                      Mudar papéis
+                    </summary>
+                    <form action={salvarPapeis} style={{ marginTop: 8 }}>
+                      <input
+                        type="hidden"
+                        name="escritorio"
+                        value={escritorio.id}
+                      />
+                      <input
+                        type="hidden"
+                        name="membro"
+                        value={membro.profileId}
+                      />
+                      <div className="grade-de-areas">
+                        {papeisEmOrdem.map((papel) => (
+                          <label key={papel} className="area-marcavel">
+                            <input
+                              type="checkbox"
+                              name="papeis"
+                              value={papel}
+                              defaultChecked={membro.papeis.includes(papel)}
+                            />
+                            {rotuloDoPapel(papel)}
+                          </label>
+                        ))}
+                      </div>
+                      <p className="detalhe">
+                        Sócio e admin administram a equipe; secretária também
+                        atribui casos. Só um sócio concede o papel de sócio, e
+                        o escritório precisa manter pelo menos um.
+                      </p>
+                      <button type="submit" className="secundario">
+                        Salvar papéis
+                      </button>
+                    </form>
+                  </details>
+                )}
               </span>
             </div>
           ))}
