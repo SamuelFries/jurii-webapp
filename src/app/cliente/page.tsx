@@ -35,11 +35,21 @@ export default async function AreaDoCliente() {
           no aplicativo, no seu celular.
         </p>
         <p className="detalhe">
-          Sua conta é a mesma nos dois lugares. Se você é advogado ou
-          advogada e já enviou a verificação da OAB, esta área abre assim
-          que ela for aprovada.
+          Sua conta é a mesma nos dois lugares.
         </p>
-        <div className="acoes-em-linha">
+
+        <div className="cartao" style={{ marginTop: 16, textAlign: "left" }}>
+          <strong>É advogado ou advogada?</strong>
+          <p className="detalhe" style={{ marginTop: 4 }}>
+            Envie a verificação da OAB por aqui mesmo. Quando ela for
+            aprovada, a mesa de trabalho abre nesta conta.
+          </p>
+          <Link className="botao" href="/verificacao">
+            Verificar minha OAB
+          </Link>
+        </div>
+
+        <div className="acoes-em-linha" style={{ marginTop: 14 }}>
           <a className="botao secundario" href="https://jurii.com.br">
             Ir para jurii.com.br
           </a>

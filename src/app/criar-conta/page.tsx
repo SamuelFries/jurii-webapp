@@ -33,8 +33,9 @@ export default function PaginaDeCadastro() {
           className="lockup-da-entrada lockup-escuro"
         />
         <p className="subtitulo subtitulo-da-entrada">
-          Crie sua conta e encontre o suporte jurídico que você precisa. A
-          conta vale aqui e no aplicativo.
+          Crie sua conta de advogado ou escritório. A conta vale aqui e no
+          aplicativo; a mesa de trabalho abre depois que a Jurii verifica
+          sua OAB.
         </p>
         <FormularioDeCadastro />
         <p className="detalhe" style={{ marginTop: 14 }}>

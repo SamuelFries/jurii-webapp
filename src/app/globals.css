@@ -164,8 +164,19 @@ label {
 input[type="email"],
 input[type="password"],
 input[type="text"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
 input[type="search"],
 textarea,
+/* O `select` estava CRU: o navegador desenhava o dele, cinza e miúdo, no
+   meio de campos estilizados. Oito telas usavam select (propor caso,
+   atribuir advogado, moderação, perfis, verificação), e todas mostravam o
+   controle do sistema em vez do da casa. */
+select,
 .seletor {
   width: 100%;
   padding: 12px 14px;
@@ -177,7 +188,48 @@ textarea,
   color: var(--text);
 }
 
+select {
+  /* Sem isto o navegador ignora fundo e borda no macOS. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  cursor: pointer;
+  /* A seta desenhada aqui: chevron em traço, na cor do texto secundário. */
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 19px) calc(50% + 2px),
+    calc(100% - 14px) calc(50% + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* O input de arquivo: o botão do sistema vira botão da casa, e o nome do
+   arquivo escolhido fica legível ao lado. */
+input[type="file"] {
+  width: 100%;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  border-color: var(--text-2);
+}
+
 input:focus,
+select:focus,
 textarea:focus,
 .seletor:focus {
   outline: 2px solid var(--gold-soft);
@@ -186,7 +238,8 @@ textarea:focus,
 }
 
 button,
-a.botao {
+a.botao,
+label.botao {
   display: inline-block;
   width: 100%;
   margin-top: 18px;
@@ -203,7 +256,8 @@ a.botao {
 }
 
 button:hover,
-a.botao:hover {
+a.botao:hover,
+label.botao:hover {
   background: var(--botao-hover);
 }
 
@@ -213,14 +267,16 @@ button:disabled {
 }
 
 button.secundario,
-a.botao.secundario {
+a.botao.secundario,
+label.botao.secundario {
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
 }
 
 button.secundario:hover,
-a.botao.secundario:hover {
+a.botao.secundario:hover,
+label.botao.secundario:hover {
   background: var(--surface-2);
 }
 
@@ -1631,6 +1687,46 @@ body:has(.tela-de-entrada) footer.rodape {
 }
 
 
+
+/* O input de arquivo nativo, escondido sem sumir do teclado: o rótulo ao
+   lado é quem abre o seletor, com texto em português. */
+.arquivo-escondido {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.escolha-de-arquivo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.escolha-de-arquivo label {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* O foco do input escondido precisa aparecer NO RÓTULO, senão quem navega
+   por teclado não vê onde está. */
+.arquivo-escondido:focus-visible + .escolha-de-arquivo label {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 177, 74, 0.22);
+}
+
+/* Botão que não estica na linha do topo: o global manda width 100%, e um
+   "Voltar" ocupando metade da tela ao lado do título é o resultado. */
+.botao.compacto,
+button.compacto {
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+}
 
 /* ---- Chat: seleção, cartões e o botão de mais opções ---- */
 
