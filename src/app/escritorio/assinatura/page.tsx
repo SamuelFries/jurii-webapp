@@ -104,7 +104,7 @@ export default async function PaginaDaAssinatura() {
   return (
     <main className="pagina">
       <div className="linha-topo">
-        <Link href="/inicio" className="marca marca-pequena">
+        <Link href="/" className="marca marca-pequena">
           jurii<span className="ouro">.</span>
         </Link>
         <form action={sair}>

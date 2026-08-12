@@ -1,8 +1,16 @@
 /**
  * Mede o layout nas PÁGINAS REAIS, logado de verdade: sobe contra o build
- * de produção local, entra pelo formulário como uma pessoa, e mede
- * /conversas e /inicio. A fixture (prova-de-layout.mjs) valida o CSS puro;
- * esta aqui pega o que só aparece com a árvore real de componentes.
+ * de produção local, entra pelo formulário como uma pessoa, e mede as
+ * páginas que a conta de teste alcança. A fixture (prova-de-layout.mjs)
+ * valida o CSS puro; esta aqui pega o que só aparece com a árvore real de
+ * componentes.
+ *
+ * LIMITE CONHECIDO, e ele é honesto: a conta de teste é de CLIENTE, e
+ * desde o recorte profissional o cliente só alcança /cliente e /conta. Medir
+ * a mesa de trabalho logada exige uma conta com OAB APROVADA, e aprovar
+ * verificação é operação de service_role, que este repositório não tem e
+ * não deve ter. Enquanto essa conta não existir, a mesa de trabalho é
+ * coberta pela fixture, que carrega o CSS real nas três larguras.
  *
  * Requer CONTA_EMAIL e CONTA_SENHA no ambiente (conta de teste descartável).
  * Roda com: npm run test:layout:real
@@ -29,18 +37,20 @@ for (const largura of [1280, 2311]) {
   await pagina.fill("#email", email);
   await pagina.fill("#senha", senha);
   await pagina.click("button[type=submit]");
-  await pagina.waitForURL(/inicio|advogado|escritorio/, { timeout: 20000 });
+  await pagina.waitForURL(/cliente|advogado|escritorio/, { timeout: 20000 });
 
-  for (const rota of ["/conversas", "/inicio"]) {
+  for (const rota of ["/cliente", "/conta"]) {
     await pagina.goto(`${base}${rota}`);
     await pagina.waitForSelector("main.pagina");
 
     const medidas = await pagina.evaluate(() => {
       const principal = document.querySelector("main").getBoundingClientRect();
-      const cabecalho = document
-        .querySelector(".cabecalho-interno")
-        .getBoundingClientRect();
-      const cartoes = [...document.querySelectorAll(".cartao-de-lista")].map(
+      // O cabeçalho interno é da casca do cliente, que saiu com o recorte
+      // profissional: agora ele é opcional, e a medida cai no próprio main
+      // quando não existe, em vez de estourar TypeError.
+      const alvo = document.querySelector(".cabecalho-interno") ?? document.querySelector("main");
+      const cabecalho = alvo.getBoundingClientRect();
+      const cartoes = [...document.querySelectorAll(".cartao, .cartao-de-lista")].map(
         (cartao) => cartao.getBoundingClientRect().width,
       );
       return {

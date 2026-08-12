@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { caminhoDoAnexo, validaAnexo } from "@/lib/anexos";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
-import { conversarComAdvogado } from "@/app/inicio/acoes";
 import {
   indicacaoDaMetadata,
   type IndicacaoDeAdvogado,
@@ -333,7 +332,7 @@ export function Chat({
               .filter(Boolean)
               .join(" ")}
           >
-            <CorpoDaMensagem mensagem={mensagem} souCliente={senderType === "client"} />
+            <CorpoDaMensagem mensagem={mensagem} />
             <span className="horario">
               {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
             </span>
@@ -411,13 +410,7 @@ export function Chat({
 /** O conteúdo da bolha conforme o tipo. Mensagem de anexo NUNCA vira bolha
  * vazia: o corpo dela é vazio de verdade (o conteúdo mora no storage), e
  * bolha em branco parece defeito. */
-function CorpoDaMensagem({
-  mensagem,
-  souCliente,
-}: {
-  mensagem: MensagemParaTela;
-  souCliente: boolean;
-}) {
+function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
   if (mensagem.apagadaParaTodos) return <>Mensagem apagada</>;
 
   if (mensagem.tipo === "anexo") {
@@ -463,20 +456,15 @@ function CorpoDaMensagem({
           {indicacao.area !== null ? ` · ${indicacao.area}` : ""}
         </span>
         {indicacao.nota !== null && <span>{indicacao.nota}</span>}
-        {souCliente && !mensagem.minha && (
-          <span className="acoes-em-linha">
-            <a
-              className="botao secundario"
-              href={`/profissionais/${indicacao.lawyerId}`}
-            >
-              Ver perfil
-            </a>
-            <form action={conversarComAdvogado}>
-              <input type="hidden" name="id" value={indicacao.lawyerId} />
-              <button type="submit">Conversar com o advogado</button>
-            </form>
-          </span>
-        )}
+        {/* O cliente aceita a indicação PELO APLICATIVO: o webapp é a mesa
+            do profissional e não tem mais telas de cliente. Aqui o cartão
+            é o registro do que foi sugerido. */}
+        <a
+          className="botao secundario"
+          href={`/profissionais/${indicacao.lawyerId}`}
+        >
+          Ver o cartão do advogado
+        </a>
       </span>
     );
   }

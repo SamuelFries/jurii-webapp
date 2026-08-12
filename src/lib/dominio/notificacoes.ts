@@ -67,10 +67,13 @@ export function conviteDeEquipePendente(notificacao: Notificacao): boolean {
  */
 export function destinoDaNotificacao(
   notificacao: Notificacao,
-  fluxo: "cliente" | "advogado" | "escritorio",
+  fluxo: "advogado" | "escritorio",
 ): string | null {
-  const base =
-    fluxo === "cliente" ? "" : fluxo === "advogado" ? "/advogado" : "/escritorio";
+  // O fluxo "cliente" saiu do TIPO, e não só do uso: com o recorte
+  // profissional as rotas /conversas e /casos do cliente não existem, então
+  // um destino de cliente seria link morto. Tirar do tipo faz o compilador
+  // recusar quem tentar reintroduzir.
+  const base = fluxo === "advogado" ? "/advogado" : "/escritorio";
 
   // Escritório nunca abre conversa a partir da notificação (regra do app).
   if (fluxo !== "escritorio" && notificacao.conversaId !== null) {

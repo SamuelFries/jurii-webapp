@@ -16,7 +16,7 @@ function caminhoSeguro(bruto: FormDataEntryValue | null, padrao: string): string
 
 /** Abrir é ler: marca e segue para o destino (conversa ou caso). */
 export async function abrirNotificacao(dados: FormData): Promise<void> {
-  const destino = caminhoSeguro(dados.get("destino"), "/notificacoes");
+  const destino = caminhoSeguro(dados.get("destino"), "/");
   const supabase = await clienteDoServidor();
   await supabase
     .from("notifications")
@@ -27,7 +27,7 @@ export async function abrirNotificacao(dados: FormData): Promise<void> {
 }
 
 export async function marcarComoLida(dados: FormData): Promise<void> {
-  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const voltar = caminhoSeguro(dados.get("voltar"), "/");
   const supabase = await clienteDoServidor();
   await supabase
     .from("notifications")
@@ -38,7 +38,7 @@ export async function marcarComoLida(dados: FormData): Promise<void> {
 }
 
 export async function marcarTodasComoLidas(dados: FormData): Promise<void> {
-  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const voltar = caminhoSeguro(dados.get("voltar"), "/");
   const escopo = String(dados.get("escopo") ?? "client");
   const lawFirmId = dados.get("escritorio");
 
@@ -56,7 +56,7 @@ export async function marcarTodasComoLidas(dados: FormData): Promise<void> {
 }
 
 export async function apagarNotificacao(dados: FormData): Promise<void> {
-  const voltar = caminhoSeguro(dados.get("voltar"), "/notificacoes");
+  const voltar = caminhoSeguro(dados.get("voltar"), "/");
   const supabase = await clienteDoServidor();
   await supabase
     .from("notifications")

@@ -20,7 +20,6 @@ const informativa = notificacaoDaLinha({ id: "n3", title: "Aviso" });
 
 describe("destino da notificação", () => {
   test("conversa abre no fluxo em que a pessoa está", () => {
-    expect(destinoDaNotificacao(comConversa, "cliente")).toBe("/conversas/c1");
     expect(destinoDaNotificacao(comConversa, "advogado")).toBe(
       "/advogado/conversas/c1",
     );
@@ -36,7 +35,7 @@ describe("destino da notificação", () => {
   });
 
   test("sem destino não vira link morto: é nulo e a tela não oferece Abrir", () => {
-    expect(destinoDaNotificacao(informativa, "cliente")).toBeNull();
+    expect(destinoDaNotificacao(informativa, "advogado")).toBeNull();
   });
 
   test("conversa vence caso quando a notificação tem os dois", () => {
@@ -45,7 +44,9 @@ describe("destino da notificação", () => {
       title: "x",
       metadata: { conversation_id: "c9", case_id: "k9" },
     });
-    expect(destinoDaNotificacao(dupla, "cliente")).toBe("/conversas/c9");
+    expect(destinoDaNotificacao(dupla, "advogado")).toBe(
+      "/advogado/conversas/c9",
+    );
     // No escritório, sem conversa, o caso assume.
     expect(destinoDaNotificacao(dupla, "escritorio")).toBe(
       "/escritorio/casos/k9",

@@ -101,7 +101,9 @@ export async function CascaDeTrabalho({
       ativa: fluxo === "advogado",
     });
   }
-  trocas.push({ rotulo: "Área do cliente", href: "/inicio", ativa: false });
+  // A "Área do cliente" NAO entra mais na troca: o webapp virou ferramenta
+  // profissional e /inicio deixou de existir. Item apontando para rota
+  // apagada e link morto na lateral de toda pagina.
 
   return (
     <div className="area-de-trabalho">

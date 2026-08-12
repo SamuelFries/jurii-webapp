@@ -72,7 +72,7 @@ export default async function PaginaDePlanos({
 
   return (
     <main className="pagina">
-      <Link href="/inicio" className="marca marca-pequena">
+      <Link href="/" className="marca marca-pequena">
         jurii<span className="ouro">.</span>
       </Link>
       {conteudo}

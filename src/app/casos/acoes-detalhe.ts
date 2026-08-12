@@ -1,5 +1,11 @@
 "use server";
 
+/* Esta pasta NAO e mais rota: com o recorte profissional, /casos do
+ * cliente saiu do webapp. O arquivo fica aqui porque e o vizinho natural
+ * das duas telas que o usam (/advogado/casos/[id] e
+ * /escritorio/casos/[id]), como acontece com notificacoes/acoes.ts. Pasta
+ * sem page.tsx nao vira rota no App Router. */
+
 import { redirect } from "next/navigation";
 
 import { clienteDoServidor } from "@/lib/supabase/servidor";
@@ -18,9 +24,9 @@ function volta(caminho: string, erro?: string): never {
 }
 
 function caminhoSeguro(dados: FormData): string {
-  const voltar = String(dados.get("voltar") ?? "/casos");
+  const voltar = String(dados.get("voltar") ?? "/");
   // Só caminho interno: redirect aberto é porta de phishing.
-  return voltar.startsWith("/") && !voltar.startsWith("//") ? voltar : "/casos";
+  return voltar.startsWith("/") && !voltar.startsWith("//") ? voltar : "/";
 }
 
 export async function adicionarAtualizacao(dados: FormData): Promise<void> {

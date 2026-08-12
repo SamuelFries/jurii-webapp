@@ -6,14 +6,14 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 function volta(caminho: string, erro?: string): never {
   const destino =
-    caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/inicio";
+    caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/";
   redirect(erro ? `${destino}?erro=${encodeURIComponent(erro)}` : destino);
 }
 
 /** Envia (ou substitui) a avaliação pela MESMA RPC do app; o servidor
  * decide a elegibilidade (só quem teve atendimento avalia). */
 export async function enviarAvaliacao(dados: FormData): Promise<void> {
-  const voltar = String(dados.get("voltar") ?? "/inicio");
+  const voltar = String(dados.get("voltar") ?? "/");
   const nota = Number(dados.get("nota"));
   if (!Number.isInteger(nota) || nota < 1 || nota > 5) {
     volta(voltar, "Escolha uma nota de 1 a 5.");
@@ -37,7 +37,7 @@ export async function enviarAvaliacao(dados: FormData): Promise<void> {
 }
 
 export async function apagarAvaliacao(dados: FormData): Promise<void> {
-  const voltar = String(dados.get("voltar") ?? "/inicio");
+  const voltar = String(dados.get("voltar") ?? "/");
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("delete_professional_review", {
     target_type_value: String(dados.get("tipo") ?? "law_firm"),
