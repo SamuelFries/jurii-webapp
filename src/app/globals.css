@@ -984,6 +984,9 @@ body:has(.tela-de-entrada) footer.rodape {
 }
 
 .campo-de-senha input {
+  /* block para o wrapper ter exatamente a altura do campo: inline-block
+     reservaria o vão de descida da linha embaixo. */
+  display: block;
   width: 100%;
   padding-right: 44px;
 }
@@ -993,6 +996,10 @@ body:has(.tela-de-entrada) footer.rodape {
   top: 50%;
   right: 6px;
   transform: translateY(-50%);
+  /* A regra global de `button` dá margin-top: 18px, e ela empurrava o olho
+     18px para baixo, para FORA da caixa da senha. Absoluto não anula
+     margem: ela desloca a partir da posição calculada. */
+  margin: 0;
   width: 32px;
   height: 32px;
   display: grid;
