@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { FundoAnimado } from "../entrar/fundo-animado";
+import { Aurora } from "../entrar/aurora";
 
 import { FormularioDeCadastro } from "./formulario";
 
@@ -12,7 +12,7 @@ import { FormularioDeCadastro } from "./formulario";
 export default function PaginaDeCadastro() {
   return (
     <div className="tela-de-entrada">
-      <FundoAnimado />
+      <Aurora />
       <main className="cartao-de-entrada">
         <h1 className="so-para-leitores">Criar conta no Jurii</h1>
         <Image

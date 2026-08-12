@@ -701,12 +701,12 @@ body:has(.tela-de-entrada) footer.rodape {
 .tela-de-entrada {
   position: relative;
   min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 440px);
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: 24px;
+  gap: clamp(32px, 6vw, 96px);
+  padding: 48px clamp(24px, 6vw, 96px);
   /* O azul do Jurii em profundidade, nos DOIS temas: a entrada é navy por
      identidade, não por tema. */
   background:
@@ -716,12 +716,137 @@ body:has(.tela-de-entrada) footer.rodape {
   overflow: hidden;
 }
 
-.fundo-da-entrada {
+.fundo-aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* O céu é um canvas MINÚSCULO esticado: o blur nasce do esticamento e do
+   filtro, sem custo de resolução cheia. O scale esconde as bordas moles. */
+.ceu-da-aurora {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  filter: blur(26px) saturate(1.2);
+  transform: scale(1.14);
+}
+
+.po-da-aurora {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* A vinheta: escurece as bordas e devolve o olho ao centro da cena. Vive
+   FORA do .fundo-aurora para não dançar com o parallax. */
+.tela-de-entrada::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 42%,
+    transparent 42%,
+    rgba(4, 10, 24, 0.34) 78%,
+    rgba(4, 10, 24, 0.55) 100%
+  );
+}
+
+/* O conteúdo fica acima da vinheta. */
+.palco-da-entrada,
+.coluna-do-cartao {
+  z-index: 1;
+}
+
+/* O palco: a voz da marca à esquerda do cartão. Some em tela estreita. */
+.palco-da-entrada {
+  position: relative;
+  max-width: 560px;
+  justify-self: end;
+  color: #fff;
+  animation: surge-da-entrada 0.55s var(--ease) both;
+}
+
+.chamada-do-palco {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(212, 177, 74, 0.9);
+}
+
+.titulo-do-palco {
+  margin: 0;
+  font-size: clamp(30px, 3.2vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.fala-do-palco {
+  margin: 18px 0 26px;
+  max-width: 46ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(238, 241, 248, 0.72);
+}
+
+.provas-do-palco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.provas-do-palco li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14.5px;
+  color: rgba(238, 241, 248, 0.82);
+}
+
+/* O traço dourado: a ponte da marca como marcador. */
+.provas-do-palco li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #d4b14a, #b8972a);
+}
+
+.coluna-do-cartao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  justify-self: start;
+  width: 100%;
+}
+
+/* Tela estreita: o palco sai de cena, o cartão volta ao centro. */
+@media (max-width: 1023px) {
+  .tela-de-entrada {
+    grid-template-columns: minmax(0, 440px);
+    padding: 32px 24px;
+  }
+
+  .palco-da-entrada {
+    display: none;
+  }
+
+  .coluna-do-cartao {
+    justify-self: center;
+  }
 }
 
 .cartao-de-entrada {
@@ -748,24 +873,23 @@ body:has(.tela-de-entrada) footer.rodape {
   transition: transform 0.18s ease-out;
   will-change: transform;
   animation: surge-da-entrada 0.55s var(--ease) both;
-  --mx: 50%;
-  --my: 0%;
 }
 
-/* A borda que acende perto do cursor: um véu dourado recortado em MOLDURA
-   (as duas máscaras compostas em exclusão deixam só o aro de 1.5px). O
-   ponto do brilho vem de --mx/--my, que o CartaoVivo atualiza. */
+/* O aro do cartão: um véu dourado FIXO, mais quente no alto, recortado em
+   moldura (máscaras em exclusão deixam só 1.5px). A versão que acendia
+   seguindo o cursor morreu por feedback: luz não persegue mais ninguém. */
 .cartao-de-entrada::before {
   content: "";
   position: absolute;
   inset: -1px;
   border-radius: var(--radius);
   padding: 1.5px;
-  background: radial-gradient(
-    240px circle at var(--mx) var(--my),
-    rgba(212, 177, 74, 0.65),
-    rgba(212, 177, 74, 0.12) 45%,
-    transparent 70%
+  background: linear-gradient(
+    180deg,
+    rgba(212, 177, 74, 0.45),
+    rgba(212, 177, 74, 0.10) 34%,
+    rgba(212, 177, 74, 0.05) 70%,
+    rgba(212, 177, 74, 0.16)
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
