@@ -701,8 +701,11 @@ body:has(.tela-de-entrada) footer.rodape {
 .tela-de-entrada {
   position: relative;
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
   padding: 24px;
   /* O azul do Jurii em profundidade, nos DOIS temas: a entrada é navy por
      identidade, não por tema. */
@@ -725,14 +728,89 @@ body:has(.tela-de-entrada) footer.rodape {
   position: relative;
   width: 100%;
   max-width: 420px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* Vidro de verdade: a constelação atravessa o cartão, borrada. O tom
+     segue o tema (claro fica leitoso, escuro fica fumê). */
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: var(--radius);
-  box-shadow: 0 24px 60px rgba(4, 12, 28, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 60px rgba(4, 12, 28, 0.45),
+    0 60px 140px rgba(4, 12, 28, 0.35);
   padding: 34px 30px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* O tilt do CartaoVivo escreve transform inline; a transição mora aqui
+     para a volta ao repouso ser macia. */
+  transition: transform 0.18s ease-out;
+  will-change: transform;
+  animation: surge-da-entrada 0.55s var(--ease) both;
+  --mx: 50%;
+  --my: 0%;
+}
+
+/* A borda que acende perto do cursor: um véu dourado recortado em MOLDURA
+   (as duas máscaras compostas em exclusão deixam só o aro de 1.5px). O
+   ponto do brilho vem de --mx/--my, que o CartaoVivo atualiza. */
+.cartao-de-entrada::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius);
+  padding: 1.5px;
+  background: radial-gradient(
+    240px circle at var(--mx) var(--my),
+    rgba(212, 177, 74, 0.65),
+    rgba(212, 177, 74, 0.12) 45%,
+    transparent 70%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* O fio de luz do topo: assinatura dourada permanente, discreta. */
+.cartao-de-entrada::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 177, 74, 0.55),
+    transparent
+  );
+  pointer-events: none;
+}
+
+@keyframes surge-da-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao-de-entrada {
+    animation: none;
+    transition: none;
+  }
 }
 
 .cartao-de-entrada form {
@@ -766,6 +844,174 @@ body:has(.tela-de-entrada) footer.rodape {
   text-align: center;
   font-size: 14px;
   margin: 10px 0 4px;
+}
+
+/* Campos da entrada: o foco acende dourado, a cor da casa, em vez do azul
+   genérico de navegador. */
+.cartao-de-entrada input:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 177, 74, 0.22);
+}
+
+.campo-de-senha {
+  position: relative;
+  width: 100%;
+}
+
+.campo-de-senha input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.olho-da-senha {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.olho-da-senha:hover {
+  color: var(--text);
+}
+
+.olho-da-senha svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* O botão de entrar: dourado com peso, brilho que atravessa no hover e
+   spinner honesto enquanto autentica. */
+.botao-de-entrar {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #d4b14a 0%, #b8972a 60%, #a9891f 100%);
+  box-shadow: 0 10px 26px rgba(184, 151, 42, 0.35);
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+
+.botao-de-entrar:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(184, 151, 42, 0.45);
+}
+
+.botao-de-entrar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 0.5s var(--ease);
+  pointer-events: none;
+}
+
+.botao-de-entrar:hover:not(:disabled)::after {
+  left: 120%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botao-de-entrar,
+  .botao-de-entrar::after {
+    transition: none;
+  }
+}
+
+.giro {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: gira 0.7s linear infinite;
+}
+
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* "Esqueci minha senha": texto dourado discreto, alinhado à direita como o
+   olho da senha, sem o azul de link padrão. */
+.esqueci-a-senha {
+  display: block;
+  width: 100%;
+  text-align: right;
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.esqueci-a-senha:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Divisor com rótulo entre entrar e criar conta: separa "quem já tem" de
+   "quem vai ter", sem pesar. */
+.divisor-da-entrada {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 18px 0 12px;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.divisor-da-entrada::before,
+.divisor-da-entrada::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+/* O selo sob o cartão: presença mínima, voz baixa. */
+.selo-da-entrada {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(238, 241, 248, 0.6);
+  animation: surge-da-entrada 0.55s var(--ease) 0.15s both;
+}
+
+.selo-da-entrada svg {
+  width: 13px;
+  height: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selo-da-entrada {
+    animation: none;
+  }
 }
 
 .so-para-leitores {
