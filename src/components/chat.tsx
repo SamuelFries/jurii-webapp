@@ -8,6 +8,13 @@ import {
   indicacaoDaMetadata,
   type IndicacaoDeAdvogado,
 } from "@/lib/dominio/conversas";
+import {
+  podeApagarSelecaoParaTodos,
+  podeSelecionar,
+  rotuloDoStatusDaSolicitacao,
+  solicitacaoDaMetadata,
+  type SolicitacaoDeCaso,
+} from "@/lib/dominio/chat";
 import { clienteDoNavegador } from "@/lib/supabase/navegador";
 
 export interface AnexoParaTela {
@@ -26,6 +33,7 @@ export interface MensagemParaTela {
   tipo: "texto" | "anexo" | "solicitacao_de_caso" | "indicacao";
   anexo: AnexoParaTela | null;
   indicacao?: IndicacaoDeAdvogado | null;
+  solicitacao?: SolicitacaoDeCaso | null;
 }
 
 /**
@@ -58,8 +66,15 @@ export function Chat({
   const [enviando, setEnviando] = useState(false);
   const [subindoAnexo, setSubindoAnexo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Modo de seleção, como no app: segurar entra, tocar marca e desmarca.
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [perguntandoApagar, setPerguntandoApagar] = useState(false);
+  const [apagando, setApagando] = useState(false);
+  const [menuAberto, setMenuAberto] = useState(false);
+  const seguraPor = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fimDaLista = useRef<HTMLDivElement>(null);
   const seletorDeArquivo = useRef<HTMLInputElement>(null);
+  const seletorDeImagem = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = clienteDoNavegador();
@@ -83,6 +98,7 @@ export function Chat({
           const linha = evento.new as Record<string, unknown>;
           const metadata = (linha.metadata ?? {}) as Record<string, unknown>;
           const indicacao = indicacaoDaMetadata(metadata);
+          const solicitacao = solicitacaoDaMetadata(metadata);
           const tipo =
             metadata.type === "chat_attachment"
               ? "anexo"
@@ -100,6 +116,7 @@ export function Chat({
             tipo,
             anexo: null,
             indicacao,
+            solicitacao,
           };
           setMensagens((atuais) =>
             atuais.some((mensagem) => mensagem.id === nova.id)
@@ -294,59 +311,186 @@ export function Chat({
 
   /** Apagar para todos, a MESMA RPC do app (delete_messages_for_everyone):
    * a bolha vira "Mensagem apagada" na hora; o servidor decide se pode. */
-  async function apagarMensagem(id: string) {
-    if (!window.confirm("Apagar esta mensagem para todos?")) return;
-    const supabase = clienteDoNavegador();
-    const { error } = await supabase.rpc("delete_messages_for_everyone", {
-      message_ids_value: [id],
+  function alternaSelecao(id: string) {
+    setSelecionadas((atuais) => {
+      const proxima = new Set(atuais);
+      if (!proxima.delete(id)) proxima.add(id);
+      return proxima;
     });
+  }
+
+  function iniciaSeguraDedo(mensagem: MensagemParaTela) {
+    if (!podeSelecionar(mensagem)) return;
+    seguraPor.current = setTimeout(() => alternaSelecao(mensagem.id), 450);
+  }
+
+  function cancelaSeguraDedo() {
+    if (seguraPor.current !== null) {
+      clearTimeout(seguraPor.current);
+      seguraPor.current = null;
+    }
+  }
+
+  /**
+   * Apagar, com as duas opções do app. "Para todos" reescreve o que o outro
+   * lado já leu e por isso tem janela de 60 horas no servidor; "para mim"
+   * some só daqui e não gera evento de tempo real, então a saída da tela é
+   * por conta do navegador.
+   */
+  async function apagar(escopo: "todos" | "mim") {
+    const ids = [...selecionadas];
+    if (ids.length === 0) return;
+    setApagando(true);
+    const supabase = clienteDoNavegador();
+    const { error } = await supabase.rpc(
+      escopo === "todos" ? "delete_messages_for_everyone" : "delete_messages_for_me",
+      { message_ids_value: ids },
+    );
+    setApagando(false);
+    setPerguntandoApagar(false);
     if (error) {
-      setErro("Não foi possível apagar a mensagem.");
+      setErro("Não foi possível apagar. Tente de novo.");
       return;
     }
+    setSelecionadas(new Set());
     setMensagens((atuais) =>
-      atuais.map((mensagem) =>
-        mensagem.id === id
-          ? { ...mensagem, apagadaParaTodos: true, corpo: "", anexo: null }
-          : mensagem,
-      ),
+      escopo === "todos"
+        ? atuais.map((mensagem) =>
+            ids.includes(mensagem.id)
+              ? { ...mensagem, apagadaParaTodos: true, corpo: "", anexo: null }
+              : mensagem,
+          )
+        : atuais.filter((mensagem) => !ids.includes(mensagem.id)),
     );
   }
 
   const agora = new Date();
+  const emSelecao = selecionadas.size > 0;
+  const escolhidas = mensagens.filter((mensagem) =>
+    selecionadas.has(mensagem.id),
+  );
+  const cabeApagarParaTodos = podeApagarSelecaoParaTodos(escolhidas, agora);
 
   return (
     <>
+      {emSelecao && (
+        <div className="barra-de-selecao">
+          <button
+            type="button"
+            className="discreto"
+            onClick={() => setSelecionadas(new Set())}
+            aria-label="Sair da seleção"
+          >
+            ✕
+          </button>
+          <span className="contagem">
+            {selecionadas.size === 1
+              ? "1 mensagem"
+              : `${selecionadas.size} mensagens`}
+          </span>
+          <button
+            type="button"
+            className="secundario"
+            onClick={() => setPerguntandoApagar(true)}
+          >
+            Apagar
+          </button>
+        </div>
+      )}
+
+      {perguntandoApagar && (
+        <div className="folha-de-apagar">
+          <strong>
+            {selecionadas.size === 1
+              ? "Apagar esta mensagem?"
+              : `Apagar ${selecionadas.size} mensagens?`}
+          </strong>
+          {cabeApagarParaTodos && (
+            <button
+              type="button"
+              className="secundario"
+              disabled={apagando}
+              onClick={() => void apagar("todos")}
+            >
+              <strong>Apagar para todos</strong>
+              <span className="detalhe">
+                O conteúdo some para os dois lados e não volta.
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="secundario"
+            disabled={apagando}
+            onClick={() => void apagar("mim")}
+          >
+            <strong>Apagar para mim</strong>
+            <span className="detalhe">
+              {cabeApagarParaTodos
+                ? "Some só da sua conversa."
+                : "Some só da sua conversa. A outra pessoa continua vendo."}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="discreto"
+            onClick={() => setPerguntandoApagar(false)}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       <div className="chat">
         {mensagens.length === 0 && (
           <p className="vazio">Nenhuma mensagem ainda. Comece a conversa.</p>
         )}
-        {mensagens.map((mensagem) => (
-          <div
-            key={mensagem.id}
-            className={[
-              "bolha",
-              mensagem.minha ? "minha" : "deles",
-              mensagem.apagadaParaTodos ? "apagada" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            <CorpoDaMensagem mensagem={mensagem} />
-            <span className="horario">
-              {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
-            </span>
-            {mensagem.minha && !mensagem.apagadaParaTodos && (
-              <button
-                type="button"
-                className="apagar-mensagem"
-                onClick={() => void apagarMensagem(mensagem.id)}
+        {mensagens.map((mensagem) => {
+          const marcada = selecionadas.has(mensagem.id);
+          const selecionavel = podeSelecionar(mensagem);
+          return (
+            // A faixa de seleção pinta a LINHA INTEIRA, não só o balão: é o
+            // alvo que a mão procura quando já está marcando várias.
+            <div
+              key={mensagem.id}
+              className={[
+                "linha-de-mensagem",
+                mensagem.minha ? "minha" : "deles",
+                marcada ? "marcada" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onPointerDown={() => iniciaSeguraDedo(mensagem)}
+              onPointerUp={cancelaSeguraDedo}
+              onPointerLeave={cancelaSeguraDedo}
+              onClick={() => {
+                if (emSelecao && selecionavel) alternaSelecao(mensagem.id);
+              }}
+              onContextMenu={(evento) => {
+                // No computador, o gesto natural é o botão direito.
+                if (!selecionavel) return;
+                evento.preventDefault();
+                alternaSelecao(mensagem.id);
+              }}
+            >
+              <div
+                className={[
+                  "bolha",
+                  mensagem.minha ? "minha" : "deles",
+                  mensagem.apagadaParaTodos ? "apagada" : "",
+                  mensagem.tipo === "solicitacao_de_caso" ? "cartao-no-chat" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
-                Apagar
-              </button>
-            )}
-          </div>
-        ))}
+                <CorpoDaMensagem mensagem={mensagem} />
+                <span className="horario">
+                  {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
         <div ref={fimDaLista} />
       </div>
 
@@ -360,27 +504,81 @@ export function Chat({
       )}
 
       <div className="caixa-de-envio">
+        {/* Dois seletores, e não um: o do app separa "Enviar foto" de
+            "Anexar arquivo", e o accept mais estreito faz o sistema abrir já
+            filtrado, em vez de listar tudo e recusar depois. */}
         <input
-          ref={seletorDeArquivo}
+          ref={seletorDeImagem}
           type="file"
-          accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx"
+          accept="image/jpeg,image/png,image/webp"
           hidden
           onChange={(evento) => {
             const arquivo = evento.target.files?.[0];
             evento.target.value = "";
+            setMenuAberto(false);
             if (arquivo) void enviarAnexo(arquivo);
           }}
         />
-        <button
-          type="button"
-          className="secundario botao-de-anexo"
-          onClick={() => seletorDeArquivo.current?.click()}
-          disabled={subindoAnexo || bloqueada}
-          aria-label="Anexar arquivo"
-          title="Anexar imagem ou documento"
-        >
-          {subindoAnexo ? "…" : "📎"}
-        </button>
+        <input
+          ref={seletorDeArquivo}
+          type="file"
+          accept="application/pdf,.doc,.docx"
+          hidden
+          onChange={(evento) => {
+            const arquivo = evento.target.files?.[0];
+            evento.target.value = "";
+            setMenuAberto(false);
+            if (arquivo) void enviarAnexo(arquivo);
+          }}
+        />
+
+        <div className="mais-opcoes">
+          {menuAberto && !subindoAnexo && (
+            <div className="menu-do-mais" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => seletorDeImagem.current?.click()}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+                Enviar foto
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => seletorDeArquivo.current?.click()}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+                Anexar arquivo
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            className={menuAberto ? "botao-do-mais aberto" : "botao-do-mais"}
+            onClick={() => setMenuAberto(!menuAberto)}
+            disabled={subindoAnexo || bloqueada}
+            aria-label={menuAberto ? "Fechar opções" : "Mais opções"}
+            aria-expanded={menuAberto}
+            title={menuAberto ? "Fechar opções" : "Mais opções"}
+          >
+            {subindoAnexo ? (
+              <span className="giro" aria-hidden />
+            ) : (
+              /* 45 graus: o "+" vira "×". Um quarto de volta literal
+                 deixaria o ícone idêntico ao estado inicial. */
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            )}
+          </button>
+        </div>
         <textarea
           rows={2}
           disabled={bloqueada}
@@ -470,12 +668,24 @@ function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
   }
 
   if (mensagem.tipo === "solicitacao_de_caso") {
+    // O cartão do app: título grande, "área" na segunda linha e o SELO DE
+    // ESTADO, que é o que o profissional volta para conferir. Aceitar e
+    // recusar são do cliente, no aplicativo, e por isso não há botão aqui:
+    // botão que só informa seria link morto.
+    const solicitacao = mensagem.solicitacao;
+    const status = solicitacao?.status ?? "pending";
     return (
       <>
         <span className="selo-de-solicitacao">Solicitação de caso</span>
+        <strong className="titulo-da-solicitacao">
+          {solicitacao?.titulo ?? "Solicitação de caso"}
+        </strong>
+        <span className="detalhe">
+          {solicitacao?.area ?? "Atendimento jurídico"}
+        </span>
         {mensagem.corpo !== "" && <span>{mensagem.corpo}</span>}
-        <span className="dica-de-solicitacao">
-          O cliente responde em Meus casos.
+        <span className={`estado-da-solicitacao ${status}`}>
+          {rotuloDoStatusDaSolicitacao(status)}
         </span>
       </>
     );

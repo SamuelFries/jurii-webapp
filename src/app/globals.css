@@ -23,6 +23,9 @@
   --botao-hover: var(--navy-2);
   --erro-fundo: #fdeeec;
   --erro-borda: #f2c6c0;
+  /* Os mesmos valores do app (app_colors.dart): o verde do "Caso aceito"
+     precisa ser o verde que o profissional já conhece do celular. */
+  --sucesso: #2d7a4f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +45,7 @@
     --botao-hover: #254173;
     --erro-fundo: #2a1512;
     --erro-borda: #5c2620;
+    --sucesso: #5bbd8b;
   }
 }
 
@@ -1239,13 +1243,6 @@ body:has(.tela-de-entrada) footer.rodape {
   border-color: var(--gold);
 }
 
-.botao-de-anexo {
-  width: 46px;
-  margin: 0;
-  align-self: flex-end;
-  font-size: 16px;
-  line-height: 1;
-}
 
 .botao-de-conta {
   padding: 8px 12px;
@@ -1633,21 +1630,208 @@ body:has(.tela-de-entrada) footer.rodape {
   z-index: 20;
 }
 
-.apagar-mensagem {
-  width: auto;
-  margin: 6px 0 0;
-  padding: 2px 8px;
-  font-size: 11px;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  opacity: 0.6;
-  text-decoration: underline;
+
+
+/* ---- Chat: seleção, cartões e o botão de mais opções ---- */
+
+/* A linha inteira é o alvo da seleção, não só o balão. */
+.linha-de-mensagem {
+  display: flex;
+  padding: 2px 4px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
 }
 
-.apagar-mensagem:hover {
-  opacity: 1;
+.linha-de-mensagem.minha {
+  justify-content: flex-end;
+}
+
+/* Cartão de solicitação NÃO segue o lado de quem enviou: no app ele é
+   centrado, porque é um controle da conversa e não uma fala. */
+.linha-de-mensagem:has(.cartao-no-chat) {
+  justify-content: center;
+}
+
+.linha-de-mensagem.marcada {
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+
+.linha-de-mensagem .bolha {
+  /* O balão já tem a margem da lista; dentro da linha ela some. */
+  margin: 0;
+}
+
+.barra-de-selecao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.barra-de-selecao .contagem {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.barra-de-selecao button {
+  margin: 0;
+  width: auto;
+}
+
+/* A folha de apagar: as duas opções do app, cada uma dizendo a consequência. */
+.folha-de-apagar {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.folha-de-apagar button {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.folha-de-apagar .detalhe {
+  font-weight: 500;
+}
+
+/* O cartão de solicitação dentro do chat: centrado, com aro dourado, como
+   no app. Não é balão de conversa, é controle. */
+.bolha.cartao-no-chat {
+  background: var(--surface);
+  /* A COR DO TEXTO vem junto do fundo: sem isto, o cartão enviado por mim
+     herdava o branco da bolha própria e sumia no tema claro. */
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border));
+  box-shadow: 0 8px 18px rgba(10, 28, 59, 0.06);
+  max-width: 420px;
+}
+
+.bolha.cartao-no-chat .detalhe,
+.bolha.cartao-no-chat .horario {
+  color: var(--text-2);
+}
+
+.bolha.cartao-no-chat .selo-de-solicitacao {
+  color: var(--gold);
+}
+
+.titulo-da-solicitacao {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.estado-da-solicitacao {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  color: var(--gold);
+}
+
+.estado-da-solicitacao.accepted {
+  background: color-mix(in srgb, var(--sucesso) 16%, transparent);
+  color: var(--sucesso);
+}
+
+.estado-da-solicitacao.declined {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+/* O "+" do compositor, no lugar do clipe: gira 45 graus e vira "×". */
+.mais-opcoes {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.botao-do-mais {
+  margin: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.botao-do-mais svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.18s var(--ease);
+}
+
+.botao-do-mais.aberto {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.botao-do-mais.aberto svg {
+  transform: rotate(45deg);
+}
+
+.botao-do-mais:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.menu-do-mais {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgba(10, 28, 59, 0.22);
+  z-index: 5;
+}
+
+.menu-do-mais button {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
   background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-do-mais button:hover {
+  background: var(--surface-2);
+}
+
+.menu-do-mais svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-2);
+  flex: 0 0 auto;
 }
 
 /* Indicação de advogado dentro da bolha: um cartão de conteúdo, não texto
