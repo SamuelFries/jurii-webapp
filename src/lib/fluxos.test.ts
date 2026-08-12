@@ -24,18 +24,24 @@ describe("papéis do vínculo", () => {
 });
 
 describe("destino inicial", () => {
-  test("escritório vence, advogado depois, cliente por fim", () => {
+  test("escritório vence, advogado depois", () => {
     // O webapp existe para o profissional trabalhar no computador: quem
     // tem escritório cai no escritório, mesmo sendo também advogado.
     const escritorio = { id: "f1", nome: "Firma", papeis: ["owner" as const] };
-    expect(
-      destinoInicial({ advogadoAprovado: true, escritorio }),
-    ).toBe("/escritorio");
-    expect(
-      destinoInicial({ advogadoAprovado: true, escritorio: null }),
-    ).toBe("/advogado");
-    expect(
-      destinoInicial({ advogadoAprovado: false, escritorio: null }),
-    ).toBe("/inicio");
+    expect(destinoInicial({ advogadoAprovado: true, escritorio })).toBe(
+      "/escritorio",
+    );
+    expect(destinoInicial({ advogadoAprovado: true, escritorio: null })).toBe(
+      "/advogado",
+    );
+  });
+
+  test("sem papel profissional, a porta que explica o aplicativo", () => {
+    // O webapp virou ferramenta de trabalho: cliente não tem mesa aqui, e
+    // mandá-lo para uma tela vazia seria pior do que dizer onde é a área
+    // dele. /cliente é essa porta.
+    expect(destinoInicial({ advogadoAprovado: false, escritorio: null })).toBe(
+      "/cliente",
+    );
   });
 });

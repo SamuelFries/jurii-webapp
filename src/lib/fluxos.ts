@@ -92,10 +92,15 @@ export function papeisDaLinha(
  * e o fluxo do cliente é a casa de quem não é profissional. Todos os
  * fluxos continuam alcançáveis pela troca no topo.
  */
+/**
+ * A casa da pessoa: escritório primeiro, advogado depois. Quem não tem
+ * papel profissional vai para a porta que explica que a área do cliente
+ * é no aplicativo (o webapp virou ferramenta de trabalho).
+ */
 export function destinoInicial(fluxos: FluxosDoUsuario): string {
   if (fluxos.escritorio !== null) return "/escritorio";
   if (fluxos.advogadoAprovado) return "/advogado";
-  return "/inicio";
+  return "/cliente";
 }
 
 export function rotuloDoPapel(papel: PapelNoEscritorio): string {

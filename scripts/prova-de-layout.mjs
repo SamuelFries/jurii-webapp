@@ -1,16 +1,19 @@
 /**
  * Prova de layout no Chromium de verdade, sem depender de print do Samuel.
  *
- * Monta uma página-fixture com o MARKUP da casca e das grades (o mesmo das
- * páginas) e o globals.css real, e mede:
+ * Monta uma página-fixture com o MARKUP das páginas e o globals.css real.
  *
- *  1. as duas grades (advogados e escritórios) têm a MESMA largura;
- *  2. nenhuma grade estoura o main (o defeito do print: o endereço longo,
- *     em nowrap, empurrava o trilho `1fr` além do contêiner, porque `1fr`
- *     tem piso de min-content, e a grade dos escritórios ficava mais larga
- *     que a dos advogados);
- *  3. cabeçalho e conteúdo dividem a mesma régua, centralizada;
- *  4. o texto longo termina em reticências, não corta seco.
+ * ENCOLHEU com o recorte profissional: as grades duplas e a casca do
+ * cliente (cabeçalho com abas, `.pagina-larga`) sumiram junto com as telas
+ * de cliente, e testar CSS que nenhuma página renderiza é teste que só
+ * pode dar falso verde. Ficou o que a mesa de trabalho usa de verdade:
+ *
+ *  1. cartão de lista com texto longo NÃO fica mais largo que o irmão (o
+ *     defeito do `1fr` com piso de min-content, que a prévia da triagem em
+ *     nowrap escancarava);
+ *  2. o texto longo termina em reticências, não corta seco;
+ *  3. a área de trabalho: lateral de 248, lista de 380, principal cravado
+ *     na direita e caixa de envio no fundo, sem rolagem de página.
  *
  * Roda com: npm run test:layout
  */
@@ -29,23 +32,7 @@ const enderecoLongo =
 const fixture = `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><style>${css}</style></head>
 <body>
-  <header class="cabecalho"><div class="cabecalho-interno">
-    <div class="linha-topo">
-      <a href="#" class="marca marca-pequena">jurii<span class="ouro">.</span></a>
-      <div class="acoes-do-topo"><button class="discreto">Sair</button></div>
-    </div>
-    <nav class="abas"><a class="ativa" href="#">Início</a><a href="#">Conversas</a></nav>
-  </div></header>
-  <main class="pagina pagina-larga">
-    <h2 class="secao">Advogados recomendados</h2>
-    <div class="grade-dupla" id="advogados">
-      <div class="cartao-de-lista"><span class="avatar">AB</span>
-        <span class="conteudo"><span class="titulo">André Kabke Bainy</span>
-        <p class="linha-2">Direito Administrativo</p></span></div>
-      <div class="cartao-de-lista"><span class="avatar">PN</span>
-        <span class="conteudo"><span class="titulo">Patrícia Helena Nunes</span>
-        <p class="linha-2">Direito Cível</p></span></div>
-    </div>
+  <main class="pagina-de-trabalho"><div class="miolo">
     <h2 class="secao">Conversas</h2>
     <div class="lista-empilhada" id="conversas">
       <div class="cartao-de-lista"><span class="avatar">PF</span>
@@ -55,17 +42,13 @@ const fixture = `<!doctype html>
         <span class="conteudo"><span class="titulo">Fábio Costa</span>
         <p class="linha-2" id="triagem">Triagem da assistente Jurii Resumo do caso: Cliente relata: "oi baterm". Categoria provável: Não identificada. Triagem manual recomendada. Urgência: Baixa: Relato ainda sem detalhes suficientes para classificar</p></span></div>
     </div>
-    <h2 class="secao">Escritórios recomendados</h2>
-    <div class="grade-dupla" id="escritorios">
+    <h2 class="secao">Casos</h2>
+    <div class="lista-empilhada" id="casos">
       <div class="cartao-de-lista"><span class="avatar">SA</span>
         <span class="conteudo"><span class="titulo">Sangiogo Advogados Associados</span>
-        <p class="linha-2">Direito do Consumidor</p>
         <p class="linha-2" id="endereco">${enderecoLongo}</p></span></div>
-      <div class="cartao-de-lista"><span class="avatar">H</span>
-        <span class="conteudo"><span class="titulo">Herzer &amp; Santos</span>
-        <p class="linha-2">${enderecoLongo}</p></span></div>
     </div>
-  </main>
+  </div></main>
 </body></html>`;
 
 const navegador = await chromium.launch();
@@ -107,35 +90,18 @@ for (const largura of [1280, 1728, 2402]) {
   }
 
   const medidas = await pagina.evaluate(() => {
-    const advogados = document.getElementById("advogados").getBoundingClientRect();
-    const escritorios = document.getElementById("escritorios").getBoundingClientRect();
+    const casos = document.getElementById("casos").getBoundingClientRect();
     const principal = document.querySelector("main").getBoundingClientRect();
-    const cabecalho = document
-      .querySelector(".cabecalho-interno")
-      .getBoundingClientRect();
-    const endereco = document.getElementById("endereco");
     return {
-      advogados: { largura: advogados.width, esquerda: advogados.left },
-      escritorios: { largura: escritorios.width, esquerda: escritorios.left },
+      casos: { largura: casos.width, esquerda: casos.left },
       principal: { largura: principal.width, esquerda: principal.left },
-      cabecalho: { largura: cabecalho.width, esquerda: cabecalho.left },
       janela: window.innerWidth,
-      enderecoTruncado: endereco.scrollWidth > endereco.clientWidth,
     };
   });
 
-  const iguais =
-    Math.abs(medidas.advogados.largura - medidas.escritorios.largura) < 1 &&
-    Math.abs(medidas.advogados.esquerda - medidas.escritorios.esquerda) < 1;
-  if (!iguais) {
+  if (medidas.casos.largura > medidas.principal.largura + 1) {
     falhas.push(
-      `@${largura}: grades DESALINHADAS: advogados ${medidas.advogados.largura.toFixed(0)}px, escritórios ${medidas.escritorios.largura.toFixed(0)}px`,
-    );
-  }
-
-  if (medidas.escritorios.largura > medidas.principal.largura + 1) {
-    falhas.push(
-      `@${largura}: a grade dos escritórios ESTOURA o main (${medidas.escritorios.largura.toFixed(0)} > ${medidas.principal.largura.toFixed(0)})`,
+      `@${largura}: a lista ESTOURA o main (${medidas.casos.largura.toFixed(0)} > ${medidas.principal.largura.toFixed(0)})`,
     );
   }
 
@@ -147,20 +113,14 @@ for (const largura of [1280, 1728, 2402]) {
     );
   }
 
-  if (Math.abs(medidas.cabecalho.largura - medidas.principal.largura) > 1) {
-    falhas.push(
-      `@${largura}: cabeçalho (${medidas.cabecalho.largura.toFixed(0)}) e conteúdo (${medidas.principal.largura.toFixed(0)}) em réguas diferentes`,
-    );
-  }
-
-  if (!medidas.enderecoTruncado) {
-    falhas.push(
-      `@${largura}: endereço longo não truncou em reticências (a linha empurrou a largura)`,
-    );
-  }
+  // A truncagem é medida na prévia da triagem (acima), que é longa o
+  // bastante para estourar QUALQUER largura. O endereço, que fazia esse
+  // papel quando vivia numa célula estreita de grade, hoje cabe no miolo
+  // largo: manter a asserção nele seria exigir reticências onde não há o
+  // que truncar.
 
   console.log(
-    `@${largura}px: main ${medidas.principal.largura.toFixed(0)} | advogados ${medidas.advogados.largura.toFixed(0)} | escritórios ${medidas.escritorios.largura.toFixed(0)} | margens ${medidas.principal.esquerda.toFixed(0)}/${(medidas.janela - medidas.principal.esquerda - medidas.principal.largura).toFixed(0)}`,
+    `@${largura}px: main ${medidas.principal.largura.toFixed(0)} | lista ${medidas.casos.largura.toFixed(0)} | margens ${medidas.principal.esquerda.toFixed(0)}/${(medidas.janela - medidas.principal.esquerda - medidas.principal.largura).toFixed(0)}`,
   );
   await pagina.close();
 }

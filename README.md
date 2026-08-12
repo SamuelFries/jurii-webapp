@@ -1,11 +1,17 @@
 # jurii-webapp
 
-O Jurii no computador, com FOCO NO PROFISSIONAL: o dia de trabalho de
-advogados e escritórios (mensagens, casos, carteira, equipe, assinatura)
-numa tela grande, falando com o MESMO banco pelas MESMAS RPCs e RLS do
-aplicativo. O fluxo do cliente também existe e é completo, mas a casa é do
-profissional: quem tem escritório entra no escritório, quem é advogado
-entra no advogado, e a troca de área fica no topo.
+A FERRAMENTA DE TRABALHO de advogados e escritórios: o dia inteiro
+(mensagens, casos, carteira, equipe, agenda, assinatura) numa tela grande,
+falando com o MESMO banco pelas MESMAS RPCs e RLS do aplicativo.
+
+**Não tem fluxo de cliente, e isso é decisão, não pendência.** Quem
+contrata advogado resolve a vida no aplicativo, que é onde a pessoa está
+quando o problema jurídico aparece; quem PAGA a Jurii é o profissional, e
+é ele que deixa a aba aberta o dia inteiro. Manter uma segunda
+implementação das telas de cliente custaria sincronia com o Flutter para
+sempre em troca de um caso de uso raro. Cliente que entrar aqui encontra
+`/cliente`, uma porta que explica onde é a área dele, em vez de uma mesa
+vazia.
 
 O pagamento também vai viver aqui, e não no app, por decisão: compra dentro
 do app entrega 30% para a Apple.
@@ -20,14 +26,8 @@ Convive com dois vizinhos e não os substitui:
 
 A troca de fluxo segue a regra do app: o fluxo do advogado aparece para
 verificação APROVADA (lawyer_verifications), o do escritório para vínculo
-ATIVO (law_firm_members). Opção que a pessoa não tem não aparece.
-
-**Cliente** (todo mundo logado)
-- `/inicio`: busca com expansão de intenção no servidor ("meu chefe não me
-  paga" acha trabalhista), advogados e escritórios recomendados, e o botão
-  Conversar, que abre ou reaproveita a conversa pela RPC.
-- `/conversas` e `/conversas/[id]`: lista e chat.
-- `/casos`: solicitações pendentes com aceitar/recusar, e os casos.
+ATIVO (law_firm_members). Opção que a pessoa não tem não aparece. Sem
+nenhum dos dois papéis, `destinoInicial` manda para `/cliente`.
 
 **Advogado**
 - `/advogado`: mensagens. `/advogado/casos`: casos com status.
@@ -53,6 +53,28 @@ linha do tempo de atualizações, registrar atualização e editar o CNJ
 (`can_manage`), encerrar e reabrir (`can_manage_lifecycle`), andamento do
 tribunal (`fetch_case_movements`) e, no escritório, atribuir advogado
 (sócio, admin e secretária, a régua da própria RPC).
+
+**Cartão público** (`/profissionais/[id]`, `/escritorios/[id]`): a vitrine
+do profissional, não uma tela de cliente. É a página que o escritório manda
+para um prospecto e onde a equipe confere como aparece para quem procura no
+aplicativo. Sem ações de cliente: contratar acontece no app.
+
+### Abrir a vitrine ao público (decisão pendente)
+
+Hoje as duas exigem login. Abri-las destrava o link para prospecto e o
+Google, e é o único ativo de SEO que a Jurii teria. É deliberadamente um
+passo separado porque é IRREVERSÍVEL na prática: uma vez indexada, a página
+fica em cache de terceiros mesmo se voltar atrás. O que muda:
+
+1. `src/middleware.ts`: somar `/profissionais` e `/escritorios` às rotas
+   públicas;
+2. as duas páginas: trocar `contextoLogado()` por um cliente anônimo e
+   servir uma casca própria (a de trabalho pressupõe sessão);
+3. o `X-Robots-Tag: noindex` do `next.config.ts`: liberar só essas rotas.
+
+Antes de virar a chave, decidir também se `fetch_recommended_lawyers` passa
+a ter portão de aprovação: hoje a lista da descoberta não filtra aprovação
+(ver a migration 20260827120000 no repo do app).
 
 **Visão geral do escritório**: os números da operação
 (`fetch_law_firm_operation_metrics`) e os casos que precisam de atenção

@@ -31,7 +31,7 @@ export async function ListaDeNotificacoes({
   supabase: SupabaseClient;
   escopo: EscopoDeNotificacao;
   lawFirmId?: string | null;
-  fluxo: "cliente" | "advogado" | "escritorio";
+  fluxo: "advogado" | "escritorio";
   voltar: string;
 }) {
   let consulta = supabase

@@ -74,10 +74,6 @@ body {
   padding: 48px 20px 64px;
 }
 
-.pagina.pagina-larga {
-  max-width: 880px;
-  padding-top: 28px;
-}
 
 .cabecalho-interno,
 footer.rodape {
@@ -103,9 +99,6 @@ h1 {
   margin: 28px 0 6px;
 }
 
-.pagina-larga h1 {
-  margin-top: 16px;
-}
 
 p.subtitulo {
   color: var(--text-2);
@@ -308,17 +301,7 @@ button.discreto:hover {
 
 /* ---- Casca das páginas logadas ---- */
 
-.cabecalho {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
 
-.cabecalho-interno {
-  padding: 14px 20px 0;
-}
 
 .marca-pequena {
   font-size: 22px;
@@ -823,25 +806,8 @@ body:has(.tela-de-entrada) footer.rodape {
   border-color: var(--gold-soft);
 }
 
-.forma-do-coracao {
-  flex: 0 0 auto !important;
-}
 
-.coracao {
-  width: 44px;
-  margin: 18px 0 0;
-  padding: 10px 0;
-  font-size: 18px;
-  line-height: 1;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-2);
-}
 
-.coracao:hover {
-  background: var(--surface-2);
-  color: var(--danger);
-}
 
 .coracao.ativo {
   color: var(--danger);
@@ -1313,7 +1279,4 @@ body:has(.tela-de-entrada) footer.rodape {
   display: grid;
   gap: 6px;
   min-width: 220px;
-}
-.indicacao-no-chat .acoes-em-linha {
-  margin-top: 4px;
 }
