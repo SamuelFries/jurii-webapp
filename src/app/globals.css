@@ -1705,6 +1705,12 @@ body:has(.tela-de-entrada) footer.rodape {
 /* O cartão de solicitação dentro do chat: centrado, com aro dourado, como
    no app. Não é balão de conversa, é controle. */
 .bolha.cartao-no-chat {
+  /* GRID, e não fluxo inline: sem isto o título, a área e o selo corriam
+     na MESMA linha quando o título era curto. A fixture antiga enganava:
+     títulos longos quebravam sozinhos e o cartão só parecia empilhado. */
+  display: grid;
+  gap: 4px;
+  justify-items: start;
   background: var(--surface);
   /* A COR DO TEXTO vem junto do fundo: sem isto, o cartão enviado por mim
      herdava o branco da bolha própria e sumia no tema claro. */
@@ -1730,8 +1736,7 @@ body:has(.tela-de-entrada) footer.rodape {
 
 .estado-da-solicitacao {
   display: inline-block;
-  align-self: flex-start;
-  margin-top: 6px;
+  margin-top: 2px;
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
