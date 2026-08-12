@@ -103,3 +103,33 @@ export function rotuloDoStatusDaSolicitacao(
       return "Aguardando aceite do cliente";
   }
 }
+
+/**
+ * O tique da própria mensagem, espelho de MessageDeliveryStatus: um risco
+ * (enviada), dois riscos (entregue) e dois riscos coloridos (visualizada).
+ *
+ * `read_at` implica `delivered_at` no banco, mas a ordem aqui também
+ * garante: lida vence entregue, entregue vence enviada.
+ */
+export type EstadoDeEntrega = "enviada" | "entregue" | "lida";
+
+export function estadoDeEntrega(entrada: {
+  entregueEm: string | null;
+  lidaEm: string | null;
+}): EstadoDeEntrega {
+  if (entrada.lidaEm !== null) return "lida";
+  if (entrada.entregueEm !== null) return "entregue";
+  return "enviada";
+}
+
+/** O rótulo para leitor de tela: sem ele, o tique some para quem não vê. */
+export function rotuloDoEstadoDeEntrega(estado: EstadoDeEntrega): string {
+  switch (estado) {
+    case "lida":
+      return "Visualizada";
+    case "entregue":
+      return "Entregue";
+    case "enviada":
+      return "Enviada";
+  }
+}
