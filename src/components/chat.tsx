@@ -683,7 +683,9 @@ function CorpoDaMensagem({ mensagem }: { mensagem: MensagemParaTela }) {
         <span className="detalhe">
           {solicitacao?.area ?? "Atendimento jurídico"}
         </span>
-        {mensagem.corpo !== "" && <span>{mensagem.corpo}</span>}
+        {/* O corpo NÃO aparece: o servidor grava textos como "Caso aceito:
+            titulo", que só repetem o que o selo de estado já diz. O app
+            também não mostra o corpo no cartão. */}
         <span className={`estado-da-solicitacao ${status}`}>
           {rotuloDoStatusDaSolicitacao(status)}
         </span>
