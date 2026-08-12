@@ -1,54 +1,75 @@
 import Image from "next/image";
 
+import { Aurora } from "./aurora";
 import { CartaoVivo } from "./cartao-vivo";
 import { FormularioDeEntrada } from "./formulario";
-import { FundoAnimado } from "./fundo-animado";
 
 /**
- * A entrada espelha a tela de login do app: o lockup empilhado da marca
- * sobre o cartão de credenciais. Aqui o cartão é VIDRO sobre o azul do
- * Jurii: a constelação atrás segue o cursor, o cartão inclina de leve na
- * direção da mão e a borda acende no ponto mais próximo dela. O retângulo
- * central continua sendo o protagonista; o resto é luz a serviço dele.
+ * A entrada é uma cena: a aurora do Jurii ao fundo (navy e dourado, lenta,
+ * indiferente ao cursor), um PALCO de marca à esquerda dizendo para quem
+ * isto existe, e o cartão de vidro à direita fazendo o trabalho. Em tela
+ * estreita o palco sai de cena e o cartão volta ao centro, que é a
+ * composição do aplicativo.
  */
 export default function PaginaDeEntrada() {
   return (
     <div className="tela-de-entrada">
-      <FundoAnimado />
-      <CartaoVivo>
-        <h1 className="so-para-leitores">Entrar no Jurii</h1>
-        {/* O lockup acompanha o tema do cartão: navy no claro, branco no
-            escuro. Duas imagens e o CSS decide, sem JavaScript. */}
-        <Image
-          src="/marca/jurii-lockup-empilhado-claro.png"
-          alt="Jurii"
-          width={666}
-          height={666}
-          priority
-          className="lockup-da-entrada lockup-claro"
-        />
-        <Image
-          src="/marca/jurii-lockup-empilhado-escuro.png"
-          alt=""
-          aria-hidden
-          width={666}
-          height={666}
-          priority
-          className="lockup-da-entrada lockup-escuro"
-        />
-        <p className="subtitulo subtitulo-da-entrada">
-          Mensagens, casos e a gestão do escritório no seu computador, com a
-          mesma conta do aplicativo.
+      <Aurora />
+
+      <section className="palco-da-entrada" aria-hidden>
+        <p className="chamada-do-palco">Para advogados e escritórios</p>
+        <h2 className="titulo-do-palco">
+          O dia inteiro do escritório,
+          <br />
+          numa tela só.
+        </h2>
+        <p className="fala-do-palco">
+          Mensagens, casos, agenda e equipe no computador, em sintonia com o
+          aplicativo do seu cliente.
         </p>
-        <FormularioDeEntrada />
-      </CartaoVivo>
-      <p className="selo-da-entrada">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <rect x="4" y="11" width="16" height="9" rx="2" />
-          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-        </svg>
-        A mesma conta do aplicativo, protegida do início ao fim.
-      </p>
+        <ul className="provas-do-palco">
+          <li>Conversas com clientes em tempo real</li>
+          <li>A carteira de casos com quem faz o quê</li>
+          <li>Agenda que vive no seu calendário</li>
+        </ul>
+      </section>
+
+      <div className="coluna-do-cartao">
+        <CartaoVivo>
+          <h1 className="so-para-leitores">Entrar no Jurii</h1>
+          {/* O lockup acompanha o tema do cartão: navy no claro, branco no
+              escuro. Duas imagens e o CSS decide, sem JavaScript. */}
+          <Image
+            src="/marca/jurii-lockup-empilhado-claro.png"
+            alt="Jurii"
+            width={666}
+            height={666}
+            priority
+            className="lockup-da-entrada lockup-claro"
+          />
+          <Image
+            src="/marca/jurii-lockup-empilhado-escuro.png"
+            alt=""
+            aria-hidden
+            width={666}
+            height={666}
+            priority
+            className="lockup-da-entrada lockup-escuro"
+          />
+          <p className="subtitulo subtitulo-da-entrada">
+            A mesa de trabalho do seu escritório, com a mesma conta do
+            aplicativo.
+          </p>
+          <FormularioDeEntrada />
+        </CartaoVivo>
+        <p className="selo-da-entrada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="4" y="11" width="16" height="9" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+          Conta única com o aplicativo, protegida do início ao fim.
+        </p>
+      </div>
     </div>
   );
 }
