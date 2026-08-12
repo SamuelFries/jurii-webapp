@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { MensagemParaTela } from "@/components/chat";
+import { solicitacaoDaMetadata } from "@/lib/dominio/chat";
 import {
   conversaDaLinha,
   indicacaoDaMetadata,
@@ -91,6 +92,7 @@ export async function carregaMensagens(
       tipo,
       anexo: anexosPorMensagem.get(String(linha.id)) ?? null,
       indicacao,
+      solicitacao: solicitacaoDaMetadata(metadata),
     };
   });
 }
