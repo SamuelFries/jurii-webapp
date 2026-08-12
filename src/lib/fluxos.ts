@@ -12,7 +12,45 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * nunca o que o banco entrega. Regra que só existe na tela não é portão.
  */
 
-export type PapelNoEscritorio = "owner" | "admin" | "secretary" | "lawyer";
+export type PapelNoEscritorio =
+  | "owner"
+  | "admin"
+  | "lawyer"
+  | "secretary"
+  | "intern";
+
+/**
+ * A ORDEM importa: é ela que decide o papel principal (o primeiro), e é a
+ * mesma de FirmRole.orderedValues no app. Estagiário existe no banco e no
+ * app, e faltava aqui: um estagiário era lido como advogado.
+ */
+export const papeisEmOrdem: PapelNoEscritorio[] = [
+  "owner",
+  "admin",
+  "lawyer",
+  "secretary",
+  "intern",
+];
+
+/**
+ * Normalização do app (FirmRole.normalize): sem duplicata, na ordem
+ * canônica, e lista vazia vira ["lawyer"], porque o servidor recusa
+ * conjunto vazio ("At least one firm role is required").
+ */
+export function normalizaPapeis(
+  papeis: Iterable<PapelNoEscritorio>,
+): PapelNoEscritorio[] {
+  const unicos = new Set(papeis);
+  const ordenados = papeisEmOrdem.filter((papel) => unicos.has(papel));
+  return ordenados.length > 0 ? ordenados : ["lawyer"];
+}
+
+/** O papel principal é o primeiro da ordem canônica. */
+export function papelPrincipal(
+  papeis: Iterable<PapelNoEscritorio>,
+): PapelNoEscritorio {
+  return normalizaPapeis(papeis)[0];
+}
 
 export interface FluxosDoUsuario {
   advogadoAprovado: boolean;
@@ -72,13 +110,13 @@ export function papeisDaLinha(
   roles: unknown,
   papelLegado: unknown,
 ): PapelNoEscritorio[] {
-  const validos: PapelNoEscritorio[] = ["owner", "admin", "secretary", "lawyer"];
+  const validos: PapelNoEscritorio[] = papeisEmOrdem;
 
   if (Array.isArray(roles)) {
     const lidos = roles.filter((papel): papel is PapelNoEscritorio =>
       validos.includes(papel as PapelNoEscritorio),
     );
-    if (lidos.length > 0) return lidos;
+    if (lidos.length > 0) return normalizaPapeis(lidos);
   }
   if (typeof papelLegado === "string" && validos.includes(papelLegado as PapelNoEscritorio)) {
     return [papelLegado as PapelNoEscritorio];
@@ -113,5 +151,7 @@ export function rotuloDoPapel(papel: PapelNoEscritorio): string {
       return "Secretária";
     case "lawyer":
       return "Advogado";
+    case "intern":
+      return "Estagiário";
   }
 }
