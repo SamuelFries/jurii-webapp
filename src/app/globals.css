@@ -1634,6 +1634,26 @@ body:has(.tela-de-entrada) footer.rodape {
 
 /* ---- Chat: seleção, cartões e o botão de mais opções ---- */
 
+/* O tique: enviada e entregue são discretas (não são notícia); só a
+   leitura ganha o dourado da casa. */
+.tique {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.75;
+}
+
+.tique svg {
+  width: 16px;
+  height: 10px;
+}
+
+.tique.lida {
+  color: var(--accent-ink, var(--gold));
+  opacity: 1;
+}
+
 /* A linha inteira é o alvo da seleção, não só o balão. */
 .linha-de-mensagem {
   display: flex;

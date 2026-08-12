@@ -8,6 +8,8 @@ import {
   podeSelecionar,
   rotuloDoStatusDaSolicitacao,
   solicitacaoDaMetadata,
+  estadoDeEntrega,
+  rotuloDoEstadoDeEntrega,
 } from "./chat";
 
 const agora = new Date("2026-08-12T12:00:00Z");
@@ -125,5 +127,33 @@ describe("cartão de solicitação de caso", () => {
     expect(rotuloDoStatusDaSolicitacao("pending")).toBe(
       "Aguardando aceite do cliente",
     );
+  });
+});
+
+describe("tique de entrega", () => {
+  test("um risco, dois riscos, dois coloridos", () => {
+    expect(estadoDeEntrega({ entregueEm: null, lidaEm: null })).toBe("enviada");
+    expect(estadoDeEntrega({ entregueEm: "2026-08-12T12:00:00Z", lidaEm: null })).toBe(
+      "entregue",
+    );
+    expect(
+      estadoDeEntrega({
+        entregueEm: "2026-08-12T12:00:00Z",
+        lidaEm: "2026-08-12T12:01:00Z",
+      }),
+    ).toBe("lida");
+  });
+
+  test("lida vence entregue mesmo sem entrega registrada", () => {
+    // read_at implica delivered_at no banco, mas a ordem aqui garante.
+    expect(
+      estadoDeEntrega({ entregueEm: null, lidaEm: "2026-08-12T12:01:00Z" }),
+    ).toBe("lida");
+  });
+
+  test("cada estado tem rótulo para leitor de tela", () => {
+    expect(rotuloDoEstadoDeEntrega("enviada")).toBe("Enviada");
+    expect(rotuloDoEstadoDeEntrega("entregue")).toBe("Entregue");
+    expect(rotuloDoEstadoDeEntrega("lida")).toBe("Visualizada");
   });
 });

@@ -9,6 +9,9 @@ import {
   type IndicacaoDeAdvogado,
 } from "@/lib/dominio/conversas";
 import {
+  estadoDeEntrega,
+  rotuloDoEstadoDeEntrega,
+  type EstadoDeEntrega,
   podeApagarSelecaoParaTodos,
   podeSelecionar,
   rotuloDoStatusDaSolicitacao,
@@ -34,6 +37,7 @@ export interface MensagemParaTela {
   anexo: AnexoParaTela | null;
   indicacao?: IndicacaoDeAdvogado | null;
   solicitacao?: SolicitacaoDeCaso | null;
+  entrega?: EstadoDeEntrega;
 }
 
 /**
@@ -84,6 +88,13 @@ export function Chat({
       conversation_id_value: conversaId,
     });
 
+    // E marca como ENTREGUES as que chegaram enquanto eu estava fora. Falha
+    // em silêncio de propósito: é sinal de cortesia, não pode virar erro na
+    // cara de ninguém.
+    void supabase.rpc("mark_messages_delivered", {
+      conversation_ids_value: [conversaId],
+    });
+
     const canal = supabase
       .channel(`web_chat_${conversaId}`)
       .on(
@@ -117,6 +128,11 @@ export function Chat({
             anexo: null,
             indicacao,
             solicitacao,
+            entrega: estadoDeEntrega({
+              entregueEm:
+                linha.delivered_at == null ? null : String(linha.delivered_at),
+              lidaEm: linha.read_at == null ? null : String(linha.read_at),
+            }),
           };
           setMensagens((atuais) =>
             atuais.some((mensagem) => mensagem.id === nova.id)
@@ -206,6 +222,7 @@ export function Chat({
               criadaEmIso: String(data.created_at),
               apagadaParaTodos: false,
               tipo: "texto",
+              entrega: "enviada",
               anexo: null,
             },
           ],
@@ -486,6 +503,9 @@ export function Chat({
                 <CorpoDaMensagem mensagem={mensagem} />
                 <span className="horario">
                   {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
+                  {mensagem.minha && !mensagem.apagadaParaTodos && (
+                    <TiqueDeEntrega estado={mensagem.entrega ?? "enviada"} />
+                  )}
                 </span>
               </div>
             </div>
@@ -602,6 +622,30 @@ export function Chat({
         </button>
       </div>
     </>
+  );
+}
+
+/**
+ * O tique da própria mensagem: um risco (enviada), dois riscos (entregue),
+ * dois riscos DOURADOS (visualizada). Só a leitura é notícia, e por isso só
+ * ela muda de cor.
+ *
+ * O rótulo não é decoração: sem ele um leitor de tela anuncia "imagem" e a
+ * informação inteira se perde para quem não distingue um risco de dois.
+ */
+function TiqueDeEntrega({ estado }: { estado: EstadoDeEntrega }) {
+  return (
+    <span
+      className={`tique ${estado}`}
+      role="img"
+      aria-label={rotuloDoEstadoDeEntrega(estado)}
+      title={rotuloDoEstadoDeEntrega(estado)}
+    >
+      <svg viewBox="0 0 20 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M1.5 6.5 5 10l6.5-8" />
+        {estado !== "enviada" && <path d="M8 10l6.5-8" />}
+      </svg>
+    </span>
   );
 }
 

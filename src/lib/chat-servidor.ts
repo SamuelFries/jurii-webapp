@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { MensagemParaTela } from "@/components/chat";
-import { solicitacaoDaMetadata } from "@/lib/dominio/chat";
+import { estadoDeEntrega, solicitacaoDaMetadata } from "@/lib/dominio/chat";
 import {
   conversaDaLinha,
   indicacaoDaMetadata,
@@ -25,7 +25,9 @@ export async function carregaMensagens(
 ): Promise<MensagemParaTela[]> {
   const { data } = await supabase
     .from("messages")
-    .select("id, sender_id, body, metadata, deleted_for_all_at, created_at")
+    .select(
+      "id, sender_id, body, metadata, deleted_for_all_at, delivered_at, read_at, created_at",
+    )
     .eq("conversation_id", conversaId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -93,6 +95,10 @@ export async function carregaMensagens(
       anexo: anexosPorMensagem.get(String(linha.id)) ?? null,
       indicacao,
       solicitacao: solicitacaoDaMetadata(metadata),
+      entrega: estadoDeEntrega({
+        entregueEm: linha.delivered_at == null ? null : String(linha.delivered_at),
+        lidaEm: linha.read_at == null ? null : String(linha.read_at),
+      }),
     };
   });
 }
