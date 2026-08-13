@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { AlcanceDoProfissional } from "@/components/alcance-do-profissional";
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { casoDoEscritorioDaLinha } from "@/lib/dominio/casos";
 
@@ -63,11 +62,6 @@ export default async function PaginaDoEscritorio() {
   ];
 
   return (
-    <CascaDeTrabalho
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio"
-    >
       <div className="pagina-de-trabalho">
       <h1 style={{ marginTop: 0 }}>{escritorio.nome}</h1>
       <p className="subtitulo">A operação do escritório num olhar.</p>
@@ -131,6 +125,5 @@ export default async function PaginaDoEscritorio() {
         </>
       )}
       </div>
-    </CascaDeTrabalho>
   );
 }

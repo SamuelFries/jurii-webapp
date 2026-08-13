@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
 import { convidarAdvogado, salvarPapeis } from "./acoes";
@@ -36,11 +35,6 @@ export default async function PaginaDaEquipe({
   const pendentes = membros.filter((membro) => membro.convitePendente);
 
   return (
-    <CascaDeTrabalho
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/equipe"
-    >
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
       <p className="subtitulo">
@@ -187,6 +181,5 @@ export default async function PaginaDaEquipe({
         </>
       )}
       </div></div>
-    </CascaDeTrabalho>
   );
 }

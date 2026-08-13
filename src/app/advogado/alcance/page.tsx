@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { PainelDeAlcance } from "@/components/painel-de-alcance";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 
@@ -17,11 +16,6 @@ export default async function AlcanceDoAdvogado({
   const janela = dias === "7" ? 7 : 30;
 
   return (
-    <CascaDeTrabalho
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado/alcance"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
           <h1 style={{ marginTop: 0 }}>Seu alcance</h1>
@@ -37,6 +31,5 @@ export default async function AlcanceDoAdvogado({
           />
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

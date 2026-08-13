@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { PainelDeAlcance } from "@/components/painel-de-alcance";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
@@ -16,11 +15,6 @@ export default async function AlcanceDoEscritorio({
   const janela = dias === "7" ? 7 : 30;
 
   return (
-    <CascaDeTrabalho
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/alcance"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
           <h1 style={{ marginTop: 0 }}>Alcance de {escritorio.nome}</h1>
@@ -36,6 +30,5 @@ export default async function AlcanceDoEscritorio({
           />
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

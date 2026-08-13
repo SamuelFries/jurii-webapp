@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { areasDoDireito } from "@/lib/dominio/areas";
 
@@ -39,11 +38,6 @@ export default async function PerfilDoAdvogado({
       : null;
 
   return (
-    <CascaDeTrabalho
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado/perfil"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
           <h1 style={{ marginTop: 0 }}>Meu perfil profissional</h1>
@@ -117,6 +111,5 @@ export default async function PerfilDoAdvogado({
           </div>
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

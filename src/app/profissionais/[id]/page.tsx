@@ -59,7 +59,6 @@ export default async function CartaoDoAdvogado({
       <CascaDeTrabalho
         fluxo={contexto.fluxos.escritorio !== null ? "escritorio" : "advogado"}
         fluxos={contexto.fluxos}
-        caminhoAtivo=""
       >
         <div className="pagina-de-trabalho">
           <div className="miolo">
@@ -87,7 +86,6 @@ export default async function CartaoDoAdvogado({
     <CascaDeTrabalho
       fluxo={contexto.fluxos.escritorio !== null ? "escritorio" : "advogado"}
       fluxos={contexto.fluxos}
-      caminhoAtivo=""
     >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
