@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { sair } from "@/app/entrar/acoes";
 import { FilaDeRevisao } from "@/components/fila-de-revisao";
 import { contextoLogado } from "@/lib/contexto";
 import { destinoInicial } from "@/lib/fluxos";
@@ -63,35 +62,30 @@ export default async function PainelDeRevisao({
   }).length;
 
   return (
-    <main className="pagina painel-de-revisao">
-      <div className="linha-topo">
-        <h1 style={{ margin: 0 }}>Verificações pendentes</h1>
-        {/* SAIR de verdade, e não "voltar para a minha área": para quem só
-            é da equipe, destinoInicial devolve /revisao, então o botão
-            antigo apontava para a PRÓPRIA página e clicar não fazia nada.
-            Conta de revisão termina o expediente saindo, e não trocando de
-            tela: ela lê documento de identidade de terceiro, e sessão
-            aberta em máquina compartilhada é o risco real aqui. */}
-        <form action={sair}>
-          <button type="submit" className="secundario compacto">
-            Sair
-          </button>
-        </form>
+    <div className="pagina-de-trabalho">
+      <div className="miolo painel-de-revisao">
+        <h1 style={{ marginTop: 0 }}>Verificações pendentes</h1>
+        <p className="subtitulo">
+          {fichas.length === 0
+            ? "Nada esperando decisão agora."
+            : `${fichas.length === 1 ? "1 pessoa esperando" : `${fichas.length} pessoas esperando`}${atrasadas > 0 ? `, ${atrasadas} há mais de dois dias` : ""}. Abra uma para ver os documentos.`}
+        </p>
+
+        {erro !== undefined && <p className="erro">{erro}</p>}
+        {ok === "aprovada" && (
+          <p className="aviso-bom">Verificação aprovada.</p>
+        )}
+        {ok === "recusada" && (
+          <p className="aviso-bom">
+            Verificação recusada, com o motivo enviado.
+          </p>
+        )}
+        {error && (
+          <p className="erro">Não foi possível carregar a fila agora.</p>
+        )}
+
+        <FilaDeRevisao fichas={fichas} agoraIso={agora.toISOString()} />
       </div>
-      <p className="subtitulo">
-        {fichas.length === 0
-          ? "Nada esperando decisão agora."
-          : `${fichas.length === 1 ? "1 pessoa esperando" : `${fichas.length} pessoas esperando`}${atrasadas > 0 ? `, ${atrasadas} há mais de dois dias` : ""}. Abra uma para ver os documentos.`}
-      </p>
-
-      {erro !== undefined && <p className="erro">{erro}</p>}
-      {ok === "aprovada" && <p className="aviso-bom">Verificação aprovada.</p>}
-      {ok === "recusada" && (
-        <p className="aviso-bom">Verificação recusada, com o motivo enviado.</p>
-      )}
-      {error && <p className="erro">Não foi possível carregar a fila agora.</p>}
-
-      <FilaDeRevisao fichas={fichas} agoraIso={agora.toISOString()} />
-    </main>
+    </div>
   );
 }
