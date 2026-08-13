@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { sair } from "@/app/entrar/acoes";
 import { FilaDeRevisao } from "@/components/fila-de-revisao";
 import { contextoLogado } from "@/lib/contexto";
 import { destinoInicial } from "@/lib/fluxos";
@@ -66,12 +66,17 @@ export default async function PainelDeRevisao({
     <main className="pagina painel-de-revisao">
       <div className="linha-topo">
         <h1 style={{ margin: 0 }}>Verificações pendentes</h1>
-        <Link
-          className="botao secundario compacto"
-          href={destinoInicial(contexto.fluxos)}
-        >
-          Sair da revisão
-        </Link>
+        {/* SAIR de verdade, e não "voltar para a minha área": para quem só
+            é da equipe, destinoInicial devolve /revisao, então o botão
+            antigo apontava para a PRÓPRIA página e clicar não fazia nada.
+            Conta de revisão termina o expediente saindo, e não trocando de
+            tela: ela lê documento de identidade de terceiro, e sessão
+            aberta em máquina compartilhada é o risco real aqui. */}
+        <form action={sair}>
+          <button type="submit" className="secundario compacto">
+            Sair
+          </button>
+        </form>
       </div>
       <p className="subtitulo">
         {fichas.length === 0
