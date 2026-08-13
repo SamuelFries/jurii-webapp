@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { ListaDeNotificacoes } from "@/components/lista-de-notificacoes";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
@@ -8,11 +7,6 @@ export default async function PaginaDeNotificacoesDoEscritorio() {
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto);
   return (
-    <CascaDeTrabalho
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/notificacoes"
-    >
       <div className="pagina-de-trabalho"><div className="miolo">
       <ListaDeNotificacoes
         supabase={contexto.supabase}
@@ -22,6 +16,5 @@ export default async function PaginaDeNotificacoesDoEscritorio() {
         voltar="/escritorio/notificacoes"
       />
       </div></div>
-    </CascaDeTrabalho>
   );
 }

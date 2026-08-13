@@ -1,4 +1,4 @@
-import { CascaDeTrabalho, type FluxoDeTrabalho } from "./casca-de-trabalho";
+import type { FluxoDeTrabalho } from "./casca-de-trabalho";
 import { ConversasComBusca } from "./listas/conversas-com-busca";
 import type { FluxosDoUsuario } from "@/lib/fluxos";
 import type { ConversaParaTela } from "@/lib/busca/filtros";
@@ -45,7 +45,6 @@ export function PainelDeMensagens({
   children: React.ReactNode;
 }) {
   return (
-    <CascaDeTrabalho fluxo={fluxo} fluxos={fluxos} caminhoAtivo={caminhoAtivo}>
       <div
         className={
           comDetalhe ? "painel-dividido com-detalhe" : "painel-dividido"
@@ -67,7 +66,6 @@ export function PainelDeMensagens({
         </aside>
         <section className="painel-principal">{children}</section>
       </div>
-    </CascaDeTrabalho>
   );
 }
 
@@ -94,7 +92,6 @@ export function PainelDeCasos({
   children: React.ReactNode;
 }) {
   return (
-    <CascaDeTrabalho fluxo={fluxo} fluxos={fluxos} caminhoAtivo={caminhoAtivo}>
       <div
         className={
           comDetalhe ? "painel-dividido com-detalhe" : "painel-dividido"
@@ -109,6 +106,5 @@ export function PainelDeCasos({
           <div className="rolavel">{children}</div>
         </section>
       </div>
-    </CascaDeTrabalho>
   );
 }

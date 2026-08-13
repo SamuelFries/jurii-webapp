@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { intervaloDaLinha } from "@/lib/dominio/horarios";
 
@@ -63,11 +62,6 @@ export default async function PerfilDoEscritorio({
     }));
 
   return (
-    <CascaDeTrabalho
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/perfil"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
           <h1 style={{ marginTop: 0 }}>Perfil do escritório</h1>
@@ -283,6 +277,5 @@ export default async function PerfilDoEscritorio({
           )}
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

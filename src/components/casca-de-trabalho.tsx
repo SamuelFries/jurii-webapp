@@ -4,14 +4,9 @@ import { sair } from "@/app/entrar/acoes";
 import type { FluxosDoUsuario } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
-export type FluxoDeTrabalho = "advogado" | "escritorio";
+import { NavDaLateral, type ItemDaLateral } from "./nav-da-lateral";
 
-interface ItemDaLateral {
-  rotulo: string;
-  href: string;
-  /** Prefixos de rota que acendem este item (o próprio href sempre conta). */
-  tambem?: string[];
-}
+export type FluxoDeTrabalho = "advogado" | "escritorio";
 
 const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
   advogado: [
@@ -55,12 +50,10 @@ const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
 export async function CascaDeTrabalho({
   fluxo,
   fluxos,
-  caminhoAtivo,
   children,
 }: {
   fluxo: FluxoDeTrabalho;
   fluxos: FluxosDoUsuario;
-  caminhoAtivo: string;
   children: React.ReactNode;
 }) {
   // Contagem do sino no escopo do fluxo, a mesma régua do app.
@@ -78,15 +71,6 @@ export async function CascaDeTrabalho({
   const naoLidas = count ?? 0;
 
   const itens = itensPorFluxo[fluxo];
-  const acende = (item: ItemDaLateral) =>
-    caminhoAtivo === item.href ||
-    (item.tambem ?? []).some(
-      (prefixo) =>
-        caminhoAtivo === prefixo || caminhoAtivo.startsWith(`${prefixo}/`),
-    ) ||
-    (item.href !== "/advogado" &&
-      item.href !== "/escritorio" &&
-      caminhoAtivo.startsWith(`${item.href}/`));
 
   const trocas: { rotulo: string; href: string; ativa: boolean }[] = [];
   if (fluxos.escritorio !== null) {
@@ -114,20 +98,7 @@ export async function CascaDeTrabalho({
           jurii<span className="ouro">.</span>
         </Link>
 
-        <nav aria-label="Seções">
-          {itens.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={acende(item) ? "ativa" : ""}
-            >
-              {item.rotulo}
-              {item.rotulo === "Notificações" && naoLidas > 0 && (
-                <span className="pilula-nao-lidas">{naoLidas}</span>
-              )}
-            </Link>
-          ))}
-        </nav>
+        <NavDaLateral itens={itens} naoLidas={naoLidas} />
 
         <div className="rodape-da-lateral">
           {trocas.length > 1 && (

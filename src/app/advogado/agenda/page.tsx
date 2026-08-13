@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import {
   agrupaPorDiaDeAgenda,
@@ -61,11 +60,6 @@ export default async function AgendaDoAdvogado({
   const grupos = agrupaPorDiaDeAgenda(compromissos, agora);
 
   return (
-    <CascaDeTrabalho
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado/agenda"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>
           <h1 style={{ marginTop: 0 }}>Agenda</h1>
@@ -373,6 +367,5 @@ export default async function AgendaDoAdvogado({
           )}
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

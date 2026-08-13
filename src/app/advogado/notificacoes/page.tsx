@@ -1,4 +1,3 @@
-import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { ListaDeNotificacoes } from "@/components/lista-de-notificacoes";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 
@@ -13,11 +12,6 @@ export default async function NotificacoesDoAdvogado({
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
   return (
-    <CascaDeTrabalho
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado/notificacoes"
-    >
       <div className="pagina-de-trabalho">
         <div className="miolo">
           {erro !== undefined && <p className="erro">{erro}</p>}
@@ -38,6 +32,5 @@ export default async function NotificacoesDoAdvogado({
           />
         </div>
       </div>
-    </CascaDeTrabalho>
   );
 }

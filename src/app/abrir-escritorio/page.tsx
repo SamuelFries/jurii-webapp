@@ -93,7 +93,6 @@ export default async function AbrirEscritorio({
       <CascaDeTrabalho
         fluxo="advogado"
         fluxos={contexto.fluxos}
-        caminhoAtivo=""
       >
         <div className="pagina-de-trabalho">{corpo}</div>
       </CascaDeTrabalho>

@@ -61,7 +61,6 @@ export default async function CartaoDoEscritorio({
       <CascaDeTrabalho
         fluxo={fluxoDaCasca}
         fluxos={contexto.fluxos}
-        caminhoAtivo=""
       >
         <div className="pagina-de-trabalho">
           <div className="miolo">
@@ -93,7 +92,6 @@ export default async function CartaoDoEscritorio({
     <CascaDeTrabalho
       fluxo={fluxoDaCasca}
       fluxos={contexto.fluxos}
-      caminhoAtivo=""
     >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>

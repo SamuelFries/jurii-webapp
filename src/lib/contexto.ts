@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { redirect } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
@@ -18,16 +20,33 @@ export interface ContextoLogado {
  * O contexto de toda página logada: sessão validada + fluxos disponíveis.
  * O middleware já barra sem sessão; aqui é a segunda tranca (e a primeira
  * para quem chegar por um caminho que o matcher não cobre).
+ *
+ * DUAS DECISÕES DE VELOCIDADE, e as duas valem em TODA navegação:
+ *
+ * 1. getUser e fluxos vão JUNTOS. Eram sequenciais, mas fluxosDoUsuario
+ *    não usa o id: as consultas dele filtram pela RLS (auth.uid() dentro
+ *    do banco). Esperar a validação do token para só então perguntar os
+ *    fluxos custava uma ida à rede inteira, de graça. Sem sessão, as
+ *    consultas voltam vazias e o redirect acontece igual.
+ *
+ * 2. cache() do React: dentro da MESMA requisição, layout e página
+ *    compartilham a chamada. Sem isto, mover a casca para um layout
+ *    dobraria o custo de autenticação em vez de reduzir.
  */
-export async function contextoLogado(): Promise<ContextoLogado> {
+export const contextoLogado = cache(async function contextoLogado(): Promise<
+  ContextoLogado
+> {
   const supabase = await clienteDoServidor();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    fluxos,
+  ] = await Promise.all([supabase.auth.getUser(), fluxosDoUsuario(supabase)]);
   if (user === null) redirect("/entrar");
 
-  return { supabase, usuario: user, fluxos: await fluxosDoUsuario(supabase) };
-}
+  return { supabase, usuario: user, fluxos };
+});
 
 /** Fluxo do advogado só para verificação APROVADA, a regra do app. */
 export function exigeAdvogado(contexto: ContextoLogado): void {
