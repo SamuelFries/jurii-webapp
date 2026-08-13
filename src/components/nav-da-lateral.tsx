@@ -3,14 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { SinoVivo } from "./sino-vivo";
+import { itemAceso, type ItemDaLateral } from "@/lib/dominio/lateral";
 
-export interface ItemDaLateral {
-  rotulo: string;
-  href: string;
-  /** Prefixos de rota que acendem este item (o próprio href sempre conta). */
-  tambem?: string[];
-}
+import { SinoVivo } from "./sino-vivo";
 
 /**
  * A navegação da barra lateral.
@@ -38,23 +33,14 @@ export function NavDaLateral({
 }) {
   const caminho = usePathname() ?? "";
 
-  const acende = (item: ItemDaLateral) =>
-    caminho === item.href ||
-    (item.tambem ?? []).some(
-      (prefixo) => caminho === prefixo || caminho.startsWith(`${prefixo}/`),
-    ) ||
-    (item.href !== "/advogado" &&
-      item.href !== "/escritorio" &&
-      caminho.startsWith(`${item.href}/`));
-
   return (
     <nav aria-label="Seções">
       {itens.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={acende(item) ? "ativa" : ""}
-          aria-current={acende(item) ? "page" : undefined}
+          className={itemAceso(item, caminho) ? "ativa" : ""}
+          aria-current={itemAceso(item, caminho) ? "page" : undefined}
         >
           {item.rotulo}
           {item.rotulo === "Notificações" && (

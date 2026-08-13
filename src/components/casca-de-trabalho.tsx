@@ -1,45 +1,13 @@
 import Link from "next/link";
 
 import { sair } from "@/app/entrar/acoes";
+import { lateralDoFluxo, type FluxoDeTrabalho } from "@/lib/dominio/lateral";
 import type { FluxosDoUsuario } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
-import { NavDaLateral, type ItemDaLateral } from "./nav-da-lateral";
+import { NavDaLateral } from "./nav-da-lateral";
 
-export type FluxoDeTrabalho = "advogado" | "escritorio";
-
-const itensPorFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
-  advogado: [
-    {
-      rotulo: "Mensagens",
-      href: "/advogado",
-      tambem: ["/advogado/conversas"],
-    },
-    { rotulo: "Casos", href: "/advogado/casos" },
-    { rotulo: "Agenda", href: "/advogado/agenda" },
-    { rotulo: "Alcance", href: "/advogado/alcance" },
-    { rotulo: "Meu perfil", href: "/advogado/perfil" },
-    { rotulo: "Notificações", href: "/advogado/notificacoes" },
-  ],
-  escritorio: [
-    { rotulo: "Visão geral", href: "/escritorio" },
-    {
-      rotulo: "Mensagens",
-      href: "/escritorio/mensagens",
-      tambem: ["/escritorio/conversas"],
-    },
-    { rotulo: "Casos", href: "/escritorio/casos" },
-    { rotulo: "Equipe", href: "/escritorio/equipe" },
-    { rotulo: "Alcance", href: "/escritorio/alcance" },
-    { rotulo: "Perfil", href: "/escritorio/perfil" },
-    { rotulo: "Notificações", href: "/escritorio/notificacoes" },
-    {
-      rotulo: "Assinatura",
-      href: "/escritorio/assinatura",
-      tambem: ["/escritorio/planos"],
-    },
-  ],
-};
+export type { FluxoDeTrabalho };
 
 /**
  * A casca dos fluxos PROFISSIONAIS: barra lateral fixa e conteúdo na tela
@@ -70,7 +38,7 @@ export async function CascaDeTrabalho({
   const { count } = await contagem;
   const naoLidas = count ?? 0;
 
-  const itens = itensPorFluxo[fluxo];
+  const itens = lateralDoFluxo[fluxo];
 
   const trocas: { rotulo: string; href: string; ativa: boolean }[] = [];
   if (fluxos.escritorio !== null) {

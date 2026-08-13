@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { sair } from "@/app/entrar/acoes";
+import { NavDaLateral } from "@/components/nav-da-lateral";
+import { lateralDaRevisao } from "@/lib/dominio/lateral";
 import { contextoLogado } from "@/lib/contexto";
 
 /**
@@ -43,11 +45,15 @@ export default async function LayoutDaRevisao({
           jurii<span className="ouro">.</span>
         </Link>
 
-        <nav aria-label="Seções">
-          <Link href="/revisao" className="ativa" aria-current="page">
-            Verificações
-          </Link>
-        </nav>
+        {/* A mesma navegação dos outros fluxos: cliente, para acender o
+            item na hora do clique. O sino não existe aqui, então a
+            contagem vai zerada e a pílula nunca aparece. */}
+        <NavDaLateral
+          itens={lateralDaRevisao}
+          naoLidas={0}
+          escopo="lawyer"
+          lawFirmId={null}
+        />
 
         <div className="rodape-da-lateral">
           {trocas.length > 0 && (

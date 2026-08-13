@@ -5,6 +5,9 @@ import {
   documentosQueFaltam,
   esperaDesde,
   type FichaParaRevisar,
+  dataDaDecisao,
+  quemDecidiu,
+  rotuloDaDecisao,
 } from "./revisao";
 
 const agora = new Date("2026-08-13T18:00:00Z");
@@ -68,5 +71,25 @@ describe("o que falta para decidir", () => {
     expect(
       documentosQueFaltam(ficha("law_firm", ["profile_photo", "identity"])),
     ).toEqual([]);
+  });
+});
+
+describe("histórico", () => {
+  test("quem decidiu é dito, inclusive quando não há revisor", () => {
+    // As decisões anteriores ao painel não têm reviewer_id, e deixar em
+    // branco pareceria que ninguém decidiu.
+    expect(quemDecidiu("Ana Revisora")).toBe("Ana Revisora");
+    expect(quemDecidiu(null)).toBe("antes do painel existir");
+  });
+
+  test("rótulo da decisão", () => {
+    expect(rotuloDaDecisao("approved")).toBe("Aprovada");
+    expect(rotuloDaDecisao("rejected")).toBe("Recusada");
+  });
+
+  test("data cheia, e sem data não inventa", () => {
+    expect(dataDaDecisao(null)).toBe("sem data");
+    expect(dataDaDecisao("não é data")).toBe("sem data");
+    expect(dataDaDecisao("2026-08-13T18:30:00Z")).toMatch(/13\/08\/2026/);
   });
 });
