@@ -2282,7 +2282,10 @@ button.compacto {
 /* ---- Painel de revisão da equipe ---- */
 
 .painel-de-revisao {
+  /* Dentro do miolo da mesa: a fila é densa e merece mais largura que os
+     formulários de 720. */
   max-width: 940px;
+  width: 100%;
 }
 
 .fila-de-revisao {
