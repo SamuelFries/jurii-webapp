@@ -248,3 +248,32 @@ export function validaEscritorio(entrada: {
 
   return problemas;
 }
+
+/**
+ * A LINHA de verification_documents, num lugar só e testável.
+ *
+ * Existe por causa de um defeito que foi para produção: o formulário
+ * inseria `size_bytes`, a coluna real é `file_size_bytes`, o PostgREST
+ * recusa o INSERT inteiro quando uma coluna não existe, e o código
+ * engolia o erro. Resultado: os arquivos subiam e a fila de revisão dizia
+ * "chegou sem documento". O teste deste payload trava os nomes.
+ */
+export function linhaDeDocumento(entrada: {
+  verificacaoId: string;
+  usuarioId: string;
+  tipo: string;
+  titulo: string;
+  caminho: string;
+  mime: string;
+  tamanho: number;
+}): Record<string, unknown> {
+  return {
+    verification_id: entrada.verificacaoId,
+    user_id: entrada.usuarioId,
+    document_type: entrada.tipo,
+    title: entrada.titulo,
+    storage_path: entrada.caminho,
+    mime_type: entrada.mime,
+    file_size_bytes: entrada.tamanho,
+  };
+}
