@@ -17,12 +17,19 @@ export async function AlcanceDoProfissional({
   tipo,
   id,
   href,
+  estreito = false,
 }: {
   supabase: SupabaseClient;
   tipo: "lawyer" | "law_firm";
   id: string;
   /** O painel completo, com gráfico e funil. */
   href: string;
+  /**
+   * Empilhado, para caber numa coluna lateral. Sem isto os três números
+   * ficavam espremidos em três colunas de 80px e o rótulo quebrava em
+   * quatro linhas.
+   */
+  estreito?: boolean;
 }) {
   const { data, error } = await supabase.rpc("fetch_professional_reach", {
     target_type_value: tipo,
@@ -47,6 +54,57 @@ export async function AlcanceDoProfissional({
             100,
         );
 
+  const selo = (valor: number | null, titulo?: string) =>
+    valor === null ? null : (
+      <span className="selo" style={{ marginLeft: 6 }} title={titulo}>
+        {valor >= 0 && titulo !== undefined ? `+${valor}%` : `${valor}%`}
+      </span>
+    );
+
+  // NA LATERAL, um cartão só com três linhas. Como três cartões empilhados,
+  // o funil gastava 300px de altura para dizer três zeros, que é o estado
+  // normal de escritório novo.
+  if (estreito) {
+    const linhas = [
+      {
+        rotulo: "viram você na busca",
+        valor: resumo.alcance,
+        selo: selo(variacao, "Comparação com os 7 dias anteriores"),
+      },
+      {
+        rotulo: "abriram seu perfil",
+        valor: resumo.visitas,
+        selo: selo(resumo.taxaDeVisita),
+      },
+      {
+        rotulo: "iniciaram conversa",
+        valor: resumo.conversas,
+        selo: selo(resumo.taxaDeConversa),
+      },
+    ];
+    return (
+      <div className="cartao">
+        <div className="linha-topo">
+          <strong>Alcance em 7 dias</strong>
+          <Link className="discreto" href={href}>
+            Gráficos
+          </Link>
+        </div>
+        <div className="funil-estreito">
+          {linhas.map((linha) => (
+            <div key={linha.rotulo}>
+              <span className="numero">{linha.valor}</span>
+              <span className="rotulo">
+                {linha.rotulo}
+                {linha.selo}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="linha-topo" style={{ marginTop: 18 }}>
@@ -57,7 +115,10 @@ export async function AlcanceDoProfissional({
           Ver gráficos
         </Link>
       </div>
-      <div className="metricas" style={{ gridTemplateColumns: "repeat(3, 1fr)", maxWidth: 720 }}>
+      <div
+        className="metricas"
+        style={{ gridTemplateColumns: "repeat(3, 1fr)", maxWidth: 720 }}
+      >
         <div className="metrica">
           <div className="numero">{resumo.alcance}</div>
           <div className="rotulo">

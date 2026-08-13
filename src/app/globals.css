@@ -516,6 +516,16 @@ a.cartao-de-lista:hover {
   white-space: nowrap;
 }
 
+/* Uma linha só é o certo para PRÉVIA (última mensagem, cliente do caso): o
+   texto continua ao abrir. Não serve para explicação, onde a frase cortada
+   é justamente o motivo de a pessoa clicar. */
+.cartao-de-lista.explicativo .linha-2 {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
 .acoes-em-linha {
   display: flex;
   gap: 10px;
@@ -563,6 +573,70 @@ a.cartao-de-lista:hover {
 .metrica .rotulo {
   color: var(--text-2);
   font-size: 13px;
+}
+
+/* ---- Visão geral do escritório ----
+ *
+ * Duas colunas em tela larga porque o conteúdo é de dois tipos: à esquerda o
+ * que pede AÇÃO (caso sem responsável, cliente esperando), à direita o que é
+ * CONSULTA (alcance, assinatura, equipe). Empilhado, a consulta empurrava a
+ * ação para fora da tela; lado a lado, a metade de baixo do monitor deixa de
+ * ser vazio. */
+.visao-em-duas-colunas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 22px;
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .visao-em-duas-colunas {
+    /* A coluna da ação leva quase o dobro: ela cresce com a operação, a
+       lateral tem tamanho fixo. */
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+    gap: 24px;
+  }
+}
+
+.coluna-lateral {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+/* O funil na lateral: três linhas dentro de um cartão, e não três cartões.
+   Empilhado como cartão, ele gastava 300px de altura para dizer três zeros,
+   que é o estado normal de escritório novo. */
+.funil-estreito {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.funil-estreito > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.funil-estreito .numero {
+  font-size: 20px;
+  font-weight: 800;
+  min-width: 30px;
+}
+
+.funil-estreito .rotulo {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.sinais-do-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 /* ---- Chat ---- */
