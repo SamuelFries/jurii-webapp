@@ -5,6 +5,7 @@ import { HistoricoDeRevisao } from "@/components/historico-de-revisao";
 import { contextoLogado } from "@/lib/contexto";
 import { destinoInicial } from "@/lib/fluxos";
 import {
+  detalheDaFicha,
   type DocumentoParaRevisar,
   type FichaDecidida,
 } from "@/lib/dominio/revisao";
@@ -47,7 +48,10 @@ export default async function HistoricoDaRevisao({
     id: String(linha.id),
     tipo: linha.kind === "law_firm" ? "law_firm" : "lawyer",
     titulo: String(linha.title ?? ""),
-    detalhe: String(linha.detail ?? ""),
+    detalhe: detalheDaFicha(
+      linha.kind === "law_firm" ? "law_firm" : "lawyer",
+      String(linha.detail ?? ""),
+    ),
     pessoa: String(linha.person_name ?? "Sem nome"),
     email: linha.person_email == null ? null : String(linha.person_email),
     enviadaEmIso:

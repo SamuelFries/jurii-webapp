@@ -56,6 +56,30 @@ export const documentosExigidos: Record<"lawyer" | "law_firm", string[]> = {
 };
 
 /**
+ * O detalhe da ficha, legível.
+ *
+ * A RPC devolve o CNPJ como veio do cadastro, só dígitos ("CNPJ
+ * 11222333000181"), porque no banco ele é armazenado assim. Quem revisa
+ * confere esse número contra a Receita, e ler catorze dígitos corridos é
+ * onde o erro de leitura acontece.
+ *
+ * A máscara é aplicada AQUI, e não no SQL, porque é decisão de
+ * apresentação: o banco continua guardando e devolvendo o dado cru.
+ */
+export function detalheDaFicha(
+  tipo: "lawyer" | "law_firm",
+  detalhe: string,
+): string {
+  if (tipo !== "law_firm") return detalhe;
+  return detalhe.replace(/\b(\d{14})\b/, (digitos) =>
+    digitos.replace(
+      /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+      "$1.$2.$3/$4-$5",
+    ),
+  );
+}
+
+/**
  * Há quanto tempo espera. É o dado mais importante da linha fechada:
  * alguém parado há uma semana é problema, e sem isto a fila parece toda
  * igual.

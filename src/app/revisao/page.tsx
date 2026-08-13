@@ -4,6 +4,7 @@ import { FilaDeRevisao } from "@/components/fila-de-revisao";
 import { contextoLogado } from "@/lib/contexto";
 import { destinoInicial } from "@/lib/fluxos";
 import {
+  detalheDaFicha,
   diasDeEspera,
   type DocumentoParaRevisar,
   type FichaParaRevisar,
@@ -46,7 +47,10 @@ export default async function PainelDeRevisao({
     id: String(linha.id),
     tipo: linha.kind === "law_firm" ? "law_firm" : "lawyer",
     titulo: String(linha.title ?? ""),
-    detalhe: String(linha.detail ?? ""),
+    detalhe: detalheDaFicha(
+      linha.kind === "law_firm" ? "law_firm" : "lawyer",
+      String(linha.detail ?? ""),
+    ),
     pessoa: String(linha.person_name ?? "Sem nome"),
     email: linha.person_email == null ? null : String(linha.person_email),
     enviadaEmIso:
