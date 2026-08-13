@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -10,8 +11,9 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
  */
 
 function caminhoSeguro(bruto: FormDataEntryValue | null, padrao: string): string {
-  const caminho = String(bruto ?? padrao);
-  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : padrao;
+  // Quem decide é o parser de URL, não comparação de prefixo: barra
+  // invertida e tabulação furavam a checagem antiga (ver caminho-seguro.ts).
+  return caminhoInterno(bruto, padrao);
 }
 
 /** Abrir é ler: marca e segue para o destino (conversa ou caso). */
