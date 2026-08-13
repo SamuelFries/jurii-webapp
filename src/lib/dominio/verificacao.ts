@@ -142,3 +142,109 @@ export function rotuloDoStatusDaVerificacao(status: string): string {
       return "Verificação enviada";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Abertura de escritório
+// ---------------------------------------------------------------------------
+
+/** O único documento que o escritório envia, o mesmo id do app. */
+export const documentoDoEscritorio = {
+  tipo: "profile_photo",
+  titulo: "Foto de perfil do escritório",
+  detalhe: "Logotipo ou fachada, o que o cliente vê na busca",
+  aceita: "image/jpeg,image/png,image/webp",
+} as const;
+
+export function digitosDoCnpj(bruto: string): string {
+  return bruto.replace(/\D/g, "").slice(0, 14);
+}
+
+export function mascaraDeCnpj(bruto: string): string {
+  const d = digitosDoCnpj(bruto);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12)
+    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+/**
+ * CNPJ com dígito verificador, a mesma checagem que o CPF já tinha no
+ * cadastro: a Receita não é consultada aqui, mas número inventado não passa.
+ */
+export function cnpjValido(bruto: string): boolean {
+  const d = digitosDoCnpj(bruto);
+  if (d.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(d)) return false;
+
+  const digito = (ate: number): number => {
+    let peso = ate - 7;
+    let soma = 0;
+    for (let i = 0; i < ate; i += 1) {
+      soma += Number(d[i]) * peso;
+      peso -= 1;
+      if (peso < 2) peso = 9;
+    }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  return digito(12) === Number(d[12]) && digito(13) === Number(d[13]);
+}
+
+/**
+ * A validação do cadastro do escritório. Espelha o que o BANCO exige
+ * (cep de 8 dígitos quando existe; coordenadas aos pares, garantido pelo
+ * chamador) e o que o formulário do app pede.
+ */
+export function validaEscritorio(entrada: {
+  nome: string;
+  cnpj: string;
+  telefone: string;
+  email: string;
+  cep: string;
+  areas: string[];
+  foto: { tamanho: number; mime: string } | null;
+}): ProblemaDaVerificacao[] {
+  const problemas: ProblemaDaVerificacao[] = [];
+
+  if (entrada.nome.trim().length < 2) {
+    problemas.push({ campo: "nome", mensagem: "Informe o nome do escritório." });
+  }
+  if (!cnpjValido(entrada.cnpj)) {
+    problemas.push({ campo: "cnpj", mensagem: "CNPJ inválido." });
+  }
+  if (entrada.telefone.replace(/\D/g, "").length < 10) {
+    problemas.push({ campo: "telefone", mensagem: "Informe um telefone com DDD." });
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(entrada.email.trim())) {
+    problemas.push({ campo: "email", mensagem: "Informe um e-mail válido." });
+  }
+  // O banco só aceita CEP de 8 dígitos ou nulo; meio CEP é recusado lá.
+  const cep = entrada.cep.replace(/\D/g, "");
+  if (cep !== "" && cep.length !== 8) {
+    problemas.push({ campo: "cep", mensagem: "O CEP precisa ter 8 dígitos." });
+  }
+  if (entrada.areas.length === 0) {
+    problemas.push({
+      campo: "areas",
+      mensagem: "Escolha ao menos uma área atendida.",
+    });
+  }
+  if (entrada.foto === null) {
+    problemas.push({ campo: "foto", mensagem: "Envie a foto do escritório." });
+  } else {
+    if (entrada.foto.tamanho > TAMANHO_MAXIMO_DO_DOCUMENTO) {
+      problemas.push({ campo: "foto", mensagem: "A foto passa de 10 MB." });
+    }
+    if (!documentoDoEscritorio.aceita.split(",").includes(entrada.foto.mime)) {
+      problemas.push({
+        campo: "foto",
+        mensagem: "A foto precisa ser imagem (JPG, PNG ou WEBP).",
+      });
+    }
+  }
+
+  return problemas;
+}
