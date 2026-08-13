@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -15,10 +16,13 @@ export async function AlcanceDoProfissional({
   supabase,
   tipo,
   id,
+  href,
 }: {
   supabase: SupabaseClient;
   tipo: "lawyer" | "law_firm";
   id: string;
+  /** O painel completo, com gráfico e funil. */
+  href: string;
 }) {
   const { data, error } = await supabase.rpc("fetch_professional_reach", {
     target_type_value: tipo,
@@ -45,7 +49,14 @@ export async function AlcanceDoProfissional({
 
   return (
     <>
-      <h2 className="secao">Alcance dos últimos 7 dias</h2>
+      <div className="linha-topo" style={{ marginTop: 18 }}>
+        <h2 className="secao" style={{ margin: 0 }}>
+          Alcance dos últimos 7 dias
+        </h2>
+        <Link className="link-do-nome" href={href}>
+          Ver gráficos
+        </Link>
+      </div>
       <div className="metricas" style={{ gridTemplateColumns: "repeat(3, 1fr)", maxWidth: 720 }}>
         <div className="metrica">
           <div className="numero">{resumo.alcance}</div>

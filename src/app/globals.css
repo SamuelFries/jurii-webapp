@@ -1968,3 +1968,163 @@ button.compacto {
   gap: 6px;
   min-width: 220px;
 }
+
+/* ---- Painel de alcance: o gráfico e o funil do app ---- */
+
+.rotulo-do-painel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.numero-do-alcance {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.numero-do-alcance strong {
+  font-size: 34px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-de-variacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chip-de-variacao svg {
+  width: 13px;
+  height: 13px;
+}
+
+.chip-de-variacao.subiu {
+  background: color-mix(in srgb, var(--sucesso) 16%, transparent);
+  color: var(--sucesso);
+}
+
+.chip-de-variacao.desceu {
+  background: var(--erro-fundo);
+  color: var(--danger);
+}
+
+/* A curva usa o navy do app no claro e o azul-aço legível no escuro, os
+   MESMOS pares da tela do app (primary #0a1c3b / #9db4e8). */
+.grafico-de-alcance {
+  width: 100%;
+  height: 140px;
+  display: block;
+  color: #0a1c3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  .grafico-de-alcance {
+    color: #9db4e8;
+  }
+}
+
+.grafico-de-alcance .grade {
+  stroke: var(--border);
+  stroke-width: 1;
+  /* O SVG estica sem manter proporção; sem isto a grade engrossava junto. */
+  vector-effect: non-scaling-stroke;
+}
+
+.grafico-de-alcance .curva {
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.pontas-do-grafico {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.nota-de-patrocinio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ponto-dourado {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gold);
+  flex: 0 0 auto;
+}
+
+.funil-do-alcance {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.funil-do-alcance .cabeca {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13.5px;
+  margin-bottom: 6px;
+}
+
+.funil-do-alcance .cabeca .taxa {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.funil-do-alcance .trilho {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.funil-do-alcance .barra {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 2px;
+}
+
+/* As cores dos degraus são as do app: navy, o roxo dos escritórios e o
+   verde de sucesso, cada uma no par claro/escuro do tema de lá. */
+.funil-do-alcance .barra.cor-1 {
+  background: #0a1c3b;
+}
+
+.funil-do-alcance .barra.cor-2 {
+  background: #3b2a6d;
+}
+
+.funil-do-alcance .barra.cor-3 {
+  background: var(--sucesso);
+}
+
+@media (prefers-color-scheme: dark) {
+  .funil-do-alcance .barra.cor-1 {
+    background: #9db4e8;
+  }
+
+  .funil-do-alcance .barra.cor-2 {
+    background: #a795e0;
+  }
+}

@@ -120,6 +120,7 @@ export default async function MesaDoAdvogado() {
           supabase={contexto.supabase}
           tipo="lawyer"
           id={contexto.usuario.id}
+          href="/advogado/alcance"
         />
 
         {naoLidas.length === 0 && comNovaMensagem.length === 0 && (

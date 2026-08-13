@@ -90,6 +90,7 @@ export default async function PaginaDoEscritorio() {
         supabase={contexto.supabase}
         tipo="law_firm"
         id={escritorio.id}
+        href="/escritorio/alcance"
       />
 
       {(semResponsavel > 0 || aguardando > 0) && (
