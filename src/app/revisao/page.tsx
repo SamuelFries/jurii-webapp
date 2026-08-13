@@ -66,9 +66,14 @@ export default async function PainelDeRevisao({
       <div className="miolo painel-de-revisao">
         <h1 style={{ marginTop: 0 }}>Verificações pendentes</h1>
         <p className="subtitulo">
-          {fichas.length === 0
-            ? "Nada esperando decisão agora."
-            : `${fichas.length === 1 ? "1 pessoa esperando" : `${fichas.length} pessoas esperando`}${atrasadas > 0 ? `, ${atrasadas} há mais de dois dias` : ""}. Abra uma para ver os documentos.`}
+          {/* Sob erro a tela NÃO afirma que a fila está vazia: "nada
+              esperando decisão" quando a consulta falhou faria a equipe ir
+              embora com gente esperando. */}
+          {error
+            ? "Quem enviou verificação de OAB ou pedido de escritório aparece aqui."
+            : fichas.length === 0
+              ? "Nada esperando decisão agora."
+              : `${fichas.length === 1 ? "1 pessoa esperando" : `${fichas.length} pessoas esperando`}${atrasadas > 0 ? `, ${atrasadas} há mais de dois dias` : ""}. Abra uma para ver os documentos.`}
         </p>
 
         {erro !== undefined && <p className="erro">{erro}</p>}
@@ -80,11 +85,14 @@ export default async function PainelDeRevisao({
             Verificação recusada, com o motivo enviado.
           </p>
         )}
-        {error && (
-          <p className="erro">Não foi possível carregar a fila agora.</p>
+        {error ? (
+          <p className="erro">
+            Não foi possível carregar a fila agora. Recarregue a página em
+            alguns instantes.
+          </p>
+        ) : (
+          <FilaDeRevisao fichas={fichas} agoraIso={agora.toISOString()} />
         )}
-
-        <FilaDeRevisao fichas={fichas} agoraIso={agora.toISOString()} />
       </div>
     </div>
   );
