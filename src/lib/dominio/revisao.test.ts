@@ -52,8 +52,15 @@ describe("quanto tempo esperando", () => {
   });
 });
 
+const quatroDoEscritorio = [
+  "cnpj_registration",
+  "articles_of_association",
+  "address_proof",
+  "owner_identity",
+];
+
 describe("o que falta para decidir", () => {
-  test("advogado precisa dos três; escritório, da foto", () => {
+  test("advogado precisa dos três", () => {
     expect(
       documentosQueFaltam(
         ficha("lawyer", ["identity", "oab_card", "professional_photo"]),
@@ -63,13 +70,35 @@ describe("o que falta para decidir", () => {
       "oab_card",
       "professional_photo",
     ]);
-    expect(documentosQueFaltam(ficha("law_firm", ["profile_photo"]))).toEqual([]);
-    expect(documentosQueFaltam(ficha("law_firm", []))).toEqual(["profile_photo"]);
+  });
+
+  test("escritório precisa dos quatro", () => {
+    expect(documentosQueFaltam(ficha("law_firm", quatroDoEscritorio))).toEqual(
+      [],
+    );
+    expect(
+      documentosQueFaltam(ficha("law_firm", ["cnpj_registration"])),
+    ).toEqual(["articles_of_association", "address_proof", "owner_identity"]);
+  });
+
+  test("a foto do escritório NÃO conta como documento", () => {
+    // Ela vai para law-firm-avatars e vira avatar_storage_path, nunca uma
+    // linha de documento. Enquanto era exigida aqui, toda ficha de
+    // escritório dizia "falta 1 documento", inclusive as completas.
+    expect(documentosQueFaltam(ficha("law_firm", quatroDoEscritorio))).toEqual(
+      [],
+    );
+    // E sozinha ela não completa nada.
+    expect(documentosQueFaltam(ficha("law_firm", ["profile_photo"]))).toEqual(
+      quatroDoEscritorio,
+    );
   });
 
   test("documento a mais não vira falta", () => {
     expect(
-      documentosQueFaltam(ficha("law_firm", ["profile_photo", "identity"])),
+      documentosQueFaltam(
+        ficha("law_firm", [...quatroDoEscritorio, "profile_photo"]),
+      ),
     ).toEqual([]);
   });
 });

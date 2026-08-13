@@ -147,13 +147,58 @@ export function rotuloDoStatusDaVerificacao(status: string): string {
 // Abertura de escritório
 // ---------------------------------------------------------------------------
 
-/** O único documento que o escritório envia, o mesmo id do app. */
+/**
+ * A foto do escritório: logotipo ou fachada. NÃO é documento de análise, é
+ * o que o cliente vê na busca, e por isso vai para o balde público
+ * `law-firm-avatars` e não para `verification-documents`.
+ */
 export const documentoDoEscritorio = {
   tipo: "profile_photo",
   titulo: "Foto de perfil do escritório",
   detalhe: "Logotipo ou fachada, o que o cliente vê na busca",
   aceita: "image/jpeg,image/png,image/webp",
 } as const;
+
+/**
+ * Os QUATRO documentos que a abertura de escritório exige, com os mesmos
+ * identificadores do enum `law_firm_document_type` e do catálogo do app
+ * (mock_law_firm_verification.dart).
+ *
+ * ISTO FALTAVA. O formulário do webapp mandava só a foto, nenhuma linha ia
+ * para `law_firm_verification_documents`, e todo escritório aberto pela web
+ * chegava no painel da equipe com zero documento. A tela de revisão então
+ * dizia, com estas palavras, "esta submissão chegou sem documento, recuse
+ * pedindo o reenvio": o formulário só sabia produzir recusa.
+ */
+export const documentosDoEscritorio = [
+  {
+    tipo: "cnpj_registration",
+    titulo: "Cartão CNPJ",
+    detalhe: "Comprovante de inscrição da pessoa jurídica",
+    aceita: "image/jpeg,image/png,image/webp,application/pdf",
+  },
+  {
+    tipo: "articles_of_association",
+    titulo: "Contrato social",
+    detalhe: "Documento de constituição ou alteração vigente",
+    aceita: "image/jpeg,image/png,image/webp,application/pdf",
+  },
+  {
+    tipo: "address_proof",
+    titulo: "Comprovante de endereço",
+    detalhe: "Documento recente do endereço do escritório",
+    aceita: "image/jpeg,image/png,image/webp,application/pdf",
+  },
+  {
+    tipo: "owner_identity",
+    titulo: "Documento do responsável",
+    detalhe: "RG, CNH ou documento oficial do titular",
+    aceita: "image/jpeg,image/png,image/webp,application/pdf",
+  },
+] as const;
+
+export type TipoDeDocumentoDoEscritorio =
+  (typeof documentosDoEscritorio)[number]["tipo"];
 
 export function digitosDoCnpj(bruto: string): string {
   return bruto.replace(/\D/g, "").slice(0, 14);
@@ -206,6 +251,7 @@ export function validaEscritorio(entrada: {
   cep: string;
   areas: string[];
   foto: { tamanho: number; mime: string } | null;
+  documentos: { tipo: string; tamanho: number; mime: string }[];
 }): ProblemaDaVerificacao[] {
   const problemas: ProblemaDaVerificacao[] = [];
 
@@ -246,6 +292,32 @@ export function validaEscritorio(entrada: {
     }
   }
 
+  // Os quatro são OBRIGATÓRIOS, como no app: verificação sem documento não
+  // tem como ser analisada, e deixar passar só empurra a recusa para dias
+  // depois, quando a pessoa já acha que está esperando análise.
+  for (const exigido of documentosDoEscritorio) {
+    const enviado = entrada.documentos.find((doc) => doc.tipo === exigido.tipo);
+    if (enviado === undefined) {
+      problemas.push({
+        campo: exigido.tipo,
+        mensagem: `Envie: ${exigido.titulo}.`,
+      });
+      continue;
+    }
+    if (enviado.tamanho > TAMANHO_MAXIMO_DO_DOCUMENTO) {
+      problemas.push({
+        campo: exigido.tipo,
+        mensagem: `${exigido.titulo}: o arquivo passa de 10 MB.`,
+      });
+    }
+    if (!exigido.aceita.split(",").includes(enviado.mime)) {
+      problemas.push({
+        campo: exigido.tipo,
+        mensagem: `${exigido.titulo}: envie imagem ou PDF.`,
+      });
+    }
+  }
+
   return problemas;
 }
 
@@ -275,5 +347,33 @@ export function linhaDeDocumento(entrada: {
     storage_path: entrada.caminho,
     mime_type: entrada.mime,
     file_size_bytes: entrada.tamanho,
+  };
+}
+
+/**
+ * A LINHA de law_firm_verification_documents, que NÃO é a mesma acima.
+ *
+ * As duas tabelas guardam a mesma ideia com colunas diferentes, e é aí que
+ * mora a armadilha: aqui a coluna do dono é `owner_profile_id` (e não
+ * `user_id`) e NÃO EXISTE coluna de tamanho. Mandar `user_id` ou
+ * `file_size_bytes` faz o PostgREST recusar o INSERT inteiro, exatamente
+ * como aconteceu com `size_bytes` no lado do advogado. O teste desta função
+ * trava os nomes contra a tabela real.
+ */
+export function linhaDeDocumentoDeEscritorio(entrada: {
+  verificacaoId: string;
+  donoId: string;
+  tipo: string;
+  titulo: string;
+  caminho: string;
+  mime: string;
+}): Record<string, unknown> {
+  return {
+    verification_id: entrada.verificacaoId,
+    owner_profile_id: entrada.donoId,
+    document_type: entrada.tipo,
+    title: entrada.titulo,
+    storage_path: entrada.caminho,
+    mime_type: entrada.mime,
   };
 }

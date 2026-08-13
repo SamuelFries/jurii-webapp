@@ -35,6 +35,24 @@ export const rotuloDoDocumento: Record<string, string> = {
   oab_card: "Carteira da OAB",
   professional_photo: "Foto profissional",
   profile_photo: "Foto do escritório",
+  cnpj_registration: "Cartão CNPJ",
+  articles_of_association: "Contrato social",
+  address_proof: "Comprovante de endereço",
+  owner_identity: "Documento do responsável",
+};
+
+/** Os documentos que cada tipo de verificação precisa ter para ser lida. */
+export const documentosExigidos: Record<"lawyer" | "law_firm", string[]> = {
+  lawyer: ["identity", "oab_card", "professional_photo"],
+  // O escritório NÃO exige `profile_photo` aqui, embora o formulário peça a
+  // foto: ela vai para o balde público `law-firm-avatars` e vira
+  // `avatar_storage_path`, nunca uma linha de documento.
+  law_firm: [
+    "cnpj_registration",
+    "articles_of_association",
+    "address_proof",
+    "owner_identity",
+  ],
 };
 
 /**
@@ -68,17 +86,18 @@ export function diasDeEspera(
 }
 
 /**
- * A ficha está pronta para decidir? Advogado precisa dos três documentos;
- * escritório, da foto. Faltando algo, a recusa pedindo reenvio é o
- * caminho, e a linha fechada já avisa isso.
+ * A ficha está pronta para decidir? Faltando algo, a recusa pedindo reenvio
+ * é o caminho, e a linha fechada já avisa isso.
+ *
+ * O lado do escritório estava errado nos DOIS sentidos: exigia
+ * `profile_photo`, que nunca chega como documento, então TODA ficha de
+ * escritório dizia "falta 1 documento", inclusive as perfeitas vindas do
+ * app; e não cobrava nenhum dos quatro documentos que a análise precisa
+ * ler, então uma ficha sem contrato social passava por completa.
  */
 export function documentosQueFaltam(ficha: FichaParaRevisar): string[] {
-  const exigidos =
-    ficha.tipo === "law_firm"
-      ? ["profile_photo"]
-      : ["identity", "oab_card", "professional_photo"];
   const enviados = new Set(ficha.documentos.map((doc) => doc.tipo));
-  return exigidos.filter((tipo) => !enviados.has(tipo));
+  return documentosExigidos[ficha.tipo].filter((tipo) => !enviados.has(tipo));
 }
 
 // ---------------------------------------------------------------------------

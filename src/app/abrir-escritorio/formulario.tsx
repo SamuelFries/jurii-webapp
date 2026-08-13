@@ -5,7 +5,10 @@ import { useState } from "react";
 
 import { areasDoDireito } from "@/lib/dominio/areas";
 import {
+  caminhoDoDocumento,
   documentoDoEscritorio,
+  documentosDoEscritorio,
+  linhaDeDocumentoDeEscritorio,
   mascaraDeCnpj,
   nomeSeguroDeArquivo,
   validaEscritorio,
@@ -32,6 +35,7 @@ export function FormularioDeEscritorio({ usuarioId }: { usuarioId: string }) {
   const [complemento, setComplemento] = useState("");
   const [areas, setAreas] = useState<string[]>([]);
   const [foto, setFoto] = useState<File | null>(null);
+  const [arquivos, setArquivos] = useState<Record<string, File>>({});
   const [coordenada, setCoordenada] = useState<{
     latitude: number;
     longitude: number;
@@ -72,6 +76,11 @@ export function FormularioDeEscritorio({ usuarioId }: { usuarioId: string }) {
       cep,
       areas,
       foto: foto === null ? null : { tamanho: foto.size, mime: foto.type },
+      documentos: Object.entries(arquivos).map(([tipo, arquivo]) => ({
+        tipo,
+        tamanho: arquivo.size,
+        mime: arquivo.type,
+      })),
     });
     setProblemas(encontrados);
     if (encontrados.length > 0) return;
@@ -115,6 +124,62 @@ export function FormularioDeEscritorio({ usuarioId }: { usuarioId: string }) {
     }
 
     const verificacaoId = String(data.id);
+
+    // OS DOCUMENTOS, antes da foto: são eles que permitem a análise. A foto
+    // é vitrine, e o pedido sem ela ainda pode ser decidido.
+    //
+    // NADA falha em silêncio aqui, pela mesma razão do formulário do
+    // advogado: quando o insert engolia erro, os arquivos subiam, a linha
+    // não gravava, e a pessoa ficava esperando uma análise que a equipe
+    // recebia vazia.
+    for (const exigido of documentosDoEscritorio) {
+      const arquivo = arquivos[exigido.tipo];
+      if (arquivo === undefined) continue;
+      const caminho = caminhoDoDocumento(
+        usuarioId,
+        exigido.tipo,
+        arquivo.name,
+        Date.now() * 1000,
+      );
+      const envio = await supabase.storage
+        .from("verification-documents")
+        .upload(caminho, arquivo, {
+          contentType: arquivo.type,
+          upsert: false,
+        });
+      if (envio.error) {
+        setEnviando(false);
+        setErro(
+          `Não foi possível enviar "${exigido.titulo}". O pedido foi criado, mas chegaria sem esse documento: reenvie para a análise poder acontecer.`,
+        );
+        return;
+      }
+
+      const registro = await supabase
+        .from("law_firm_verification_documents")
+        .insert(
+          linhaDeDocumentoDeEscritorio({
+            verificacaoId,
+            donoId: usuarioId,
+            tipo: exigido.tipo,
+            titulo: exigido.titulo,
+            caminho,
+            mime: arquivo.type,
+          }),
+        );
+      if (registro.error) {
+        // O arquivo subiu e o cadastro não: sem esta limpeza ele viraria
+        // lixo invisível no balde privado (rollback como no app).
+        await supabase.storage
+          .from("verification-documents")
+          .remove([caminho]);
+        setEnviando(false);
+        setErro(
+          `Não foi possível registrar "${exigido.titulo}". O pedido foi criado, mas chegaria sem esse documento: reenvie.`,
+        );
+        return;
+      }
+    }
 
     if (foto !== null) {
       const micros = Date.now() * 1000;
@@ -313,6 +378,54 @@ export function FormularioDeEscritorio({ usuarioId }: { usuarioId: string }) {
           <p className="erro">{problemaDe("foto")}</p>
         )}
       </div>
+
+      <h2 className="secao">Documentos</h2>
+      <p className="detalhe">
+        Ficam em área privada e servem só para a análise da equipe da Jurii.
+        Sem eles o pedido não tem como ser analisado.
+      </p>
+      {documentosDoEscritorio.map((documento) => (
+        <div key={documento.tipo} className="cartao" style={{ marginTop: 10 }}>
+          <strong>{documento.titulo}</strong>
+          <p className="detalhe" style={{ marginTop: 2 }}>
+            {documento.detalhe}
+          </p>
+          {/* Input nativo escondido, alcançável pelo rótulo e pelo teclado:
+              o botão dele vem escrito "Choose File" e o navegador não deixa
+              traduzir. */}
+          <input
+            id={`arquivo-${documento.tipo}`}
+            className="arquivo-escondido"
+            type="file"
+            accept={documento.aceita}
+            onChange={(evento) => {
+              const arquivo = evento.target.files?.[0];
+              setArquivos((atuais) => {
+                const proximos = { ...atuais };
+                if (arquivo) proximos[documento.tipo] = arquivo;
+                else delete proximos[documento.tipo];
+                return proximos;
+              });
+            }}
+          />
+          <div className="escolha-de-arquivo">
+            <label
+              className="botao secundario compacto"
+              htmlFor={`arquivo-${documento.tipo}`}
+            >
+              {arquivos[documento.tipo] === undefined
+                ? "Escolher arquivo"
+                : "Trocar arquivo"}
+            </label>
+            <span className="detalhe">
+              {arquivos[documento.tipo]?.name ?? "Nenhum arquivo escolhido"}
+            </span>
+          </div>
+          {problemaDe(documento.tipo) !== undefined && (
+            <p className="erro">{problemaDe(documento.tipo)}</p>
+          )}
+        </div>
+      ))}
 
       {erro !== null && (
         <p className="erro" role="alert">
