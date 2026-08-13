@@ -8,6 +8,9 @@ import {
   numeroDaOab,
   rotuloDoStatusDaVerificacao,
   validaVerificacao,
+  cnpjValido,
+  mascaraDeCnpj,
+  validaEscritorio,
 } from "./verificacao";
 
 const tresDocumentos = [
@@ -103,5 +106,46 @@ describe("utilidades", () => {
   test("rótulos de status", () => {
     expect(rotuloDoStatusDaVerificacao("pending")).toBe("Verificação em análise");
     expect(rotuloDoStatusDaVerificacao("rejected")).toBe("Verificação recusada");
+  });
+});
+
+describe("abertura de escritório", () => {
+  const completo = {
+    nome: "Fries Advogados",
+    cnpj: "11.222.333/0001-81",
+    telefone: "(51) 3333-0000",
+    email: "contato@fries.adv.br",
+    cep: "90540140",
+    areas: ["Direito Trabalhista"],
+    foto: { tamanho: 800_000, mime: "image/png" },
+  };
+
+  test("completo passa", () => {
+    expect(validaEscritorio(completo)).toEqual([]);
+  });
+
+  test("CNPJ confere o dígito verificador", () => {
+    expect(cnpjValido("11.222.333/0001-81")).toBe(true);
+    expect(cnpjValido("11.222.333/0001-82")).toBe(false);
+    // Todos iguais passam na conta mas não existem.
+    expect(cnpjValido("11111111111111")).toBe(false);
+    expect(cnpjValido("123")).toBe(false);
+  });
+
+  test("meio CEP é recusado aqui porque o banco recusa lá", () => {
+    // O check do banco é `cep is null or cep ~ '^[0-9]{8}$'`.
+    expect(validaEscritorio({ ...completo, cep: "90540" })[0].campo).toBe("cep");
+    // Vazio é permitido: o escritório só fica sem distância na busca.
+    expect(validaEscritorio({ ...completo, cep: "" })).toEqual([]);
+  });
+
+  test("sem área e sem foto, cada falta é apontada", () => {
+    const problemas = validaEscritorio({ ...completo, areas: [], foto: null });
+    expect(problemas.map((p) => p.campo).sort()).toEqual(["areas", "foto"]);
+  });
+
+  test("a máscara acompanha o que já foi digitado", () => {
+    expect(mascaraDeCnpj("11222333000181")).toBe("11.222.333/0001-81");
+    expect(mascaraDeCnpj("11222")).toBe("11.222");
   });
 });

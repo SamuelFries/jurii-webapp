@@ -145,6 +145,10 @@ export async function CascaDeTrabalho({
             </>
           )}
           <nav aria-label="Conta">
+            {/* Só para quem NÃO tem escritório: quem já tem, tem o painel. */}
+            {fluxos.escritorio === null && (
+              <Link href="/abrir-escritorio">Abrir escritório</Link>
+            )}
             <Link href="/conta">Conta</Link>
           </nav>
           <form action={sair}>
