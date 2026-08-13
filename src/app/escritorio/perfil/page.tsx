@@ -2,6 +2,7 @@ import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { intervaloDaLinha } from "@/lib/dominio/horarios";
 
 import { areasDoDireito } from "@/lib/dominio/areas";
+import { mascaraDeCnpj } from "@/lib/dominio/verificacao";
 
 import { salvarApresentacao, salvarCadastro } from "./acoes";
 import { EditorDeHorarios } from "./editor-de-horarios";
@@ -26,7 +27,7 @@ export default async function PerfilDoEscritorio({
     ["owner", "admin"].includes(papel),
   );
 
-  const [firmaRes, horariosRes] = await Promise.all([
+  const [firmaRes, horariosRes, cnpjRes] = await Promise.all([
     contexto.supabase
       .from("law_firms")
       // `specialty`, e NAO `primary_area`: essa coluna nao existe em
@@ -45,10 +46,18 @@ export default async function PerfilDoEscritorio({
       .eq("law_firm_id", escritorio.id)
       .order("weekday")
       .order("opens_at"),
+    // O CNPJ não mora em law_firms: fica na verificação aprovada, e a RPC
+    // é quem sabe qual delas vale quando houve recusa e reenvio. Ela mesma
+    // cobra is_active_law_firm_manager, então secretária e estagiário
+    // recebem nulo em vez de o dado da empresa.
+    contexto.supabase.rpc("fetch_law_firm_cnpj", {
+      law_firm_id_value: escritorio.id,
+    }),
   ]);
 
   const firma = (firmaRes.data ?? {}) as Record<string, unknown>;
   const descricao = String(firma.description ?? "");
+  const cnpj = cnpjRes.data == null ? null : String(cnpjRes.data);
   // O formulário abre PREENCHIDO: o defeito equivalente no app era gravar
   // por cima com o que a tela não tinha lido.
   const valor = (campo: string) =>
@@ -131,6 +140,24 @@ export default async function PerfilDoEscritorio({
                     required
                     defaultValue={valor("name") || escritorio.nome}
                   />
+
+                  {/* TRAVADO, e visível de propósito, como no app: o CNPJ é o
+                      dado verificado do escritório, e trocá-lo não é corrigir
+                      cadastro, é ser outra empresa. Não ter o campo pareceria
+                      esquecimento; mostrar travado explica a regra. */}
+                  <label htmlFor="cnpj">CNPJ</label>
+                  <input
+                    id="cnpj"
+                    type="text"
+                    readOnly
+                    disabled
+                    value={cnpj === null ? "" : mascaraDeCnpj(cnpj)}
+                    placeholder={cnpj === null ? "Não disponível" : undefined}
+                  />
+                  <p className="detalhe">
+                    Verificado. Para corrigi-lo é preciso uma nova verificação
+                    do escritório.
+                  </p>
 
                   <div className="acoes-em-linha">
                     <div style={{ flex: 1 }}>

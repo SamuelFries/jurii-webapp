@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   diasDeEspera,
+  detalheDaFicha,
   documentosQueFaltam,
   esperaDesde,
   type FichaParaRevisar,
@@ -100,6 +101,27 @@ describe("o que falta para decidir", () => {
         ficha("law_firm", [...quatroDoEscritorio, "profile_photo"]),
       ),
     ).toEqual([]);
+  });
+});
+
+describe("o detalhe da ficha", () => {
+  test("CNPJ de escritório sai mascarado", () => {
+    // Quem revisa confere esse número contra a Receita, e catorze dígitos
+    // corridos é onde a leitura erra.
+    expect(detalheDaFicha("law_firm", "CNPJ 11222333000181")).toBe(
+      "CNPJ 11.222.333/0001-81",
+    );
+  });
+
+  test("detalhe de advogado passa intocado", () => {
+    expect(detalheDaFicha("lawyer", "Direito Trabalhista")).toBe(
+      "Direito Trabalhista",
+    );
+  });
+
+  test("cadastro antigo sem CNPJ não vira lixo", () => {
+    // A RPC devolve 'CNPJ ?' quando a coluna está nula.
+    expect(detalheDaFicha("law_firm", "CNPJ ?")).toBe("CNPJ ?");
   });
 });
 
