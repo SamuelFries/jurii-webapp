@@ -122,11 +122,29 @@ export function FormularioDeEscritorio({ usuarioId }: { usuarioId: string }) {
       const envio = await supabase.storage
         .from("law-firm-avatars")
         .upload(caminho, foto, { contentType: foto.type, upsert: false });
-      if (!envio.error) {
-        await supabase.rpc("set_current_law_firm_verification_avatar", {
+      if (envio.error) {
+        // O pedido JÁ FOI criado; a foto é a única parte que falhou. Falhar
+        // em silêncio aqui mandava o pedido sem imagem e ninguém sabia.
+        setEnviando(false);
+        setErro(
+          "O pedido foi enviado, mas a foto não subiu. Reenvie o pedido com a foto para a análise ver o escritório.",
+        );
+        return;
+      }
+      const vinculo = await supabase.rpc(
+        "set_current_law_firm_verification_avatar",
+        {
           verification_id_value: verificacaoId,
           storage_path_value: caminho,
-        });
+        },
+      );
+      if (vinculo.error) {
+        await supabase.storage.from("law-firm-avatars").remove([caminho]);
+        setEnviando(false);
+        setErro(
+          "O pedido foi enviado, mas a foto não ficou vinculada. Reenvie com a foto.",
+        );
+        return;
       }
     }
 

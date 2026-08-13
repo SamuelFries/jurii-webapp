@@ -8,6 +8,7 @@ import {
   caminhoDoDocumento,
   documentosDaVerificacao,
   estadosDaOab,
+  linhaDeDocumento,
   numeroDaOab,
   validaVerificacao,
   type ProblemaDaVerificacao,
@@ -95,17 +96,43 @@ export function FormularioDeVerificacao({ usuarioId }: { usuarioId: string }) {
             contentType: arquivo.type,
             upsert: false,
           });
-        if (envio.error) continue;
+        // NADA aqui falha em silêncio. A versão anterior engolia erro de
+        // upload E de registro, e o resultado foi real: os arquivos
+        // subiam, a linha não gravava (a coluna se chama file_size_bytes e
+        // o insert mandava size_bytes, e o PostgREST recusa o INSERT
+        // inteiro), e a fila de revisão dizia "chegou sem documento"
+        // enquanto a pessoa achava que tinha enviado tudo.
+        if (envio.error) {
+          setEnviando(false);
+          setErro(
+            `Não foi possível enviar "${exigido.titulo}". A verificação ainda não foi concluída: tente de novo.`,
+          );
+          return;
+        }
 
-        await supabase.from("verification_documents").insert({
-          verification_id: verificacaoId,
-          user_id: usuarioId,
-          document_type: exigido.tipo,
-          title: exigido.titulo,
-          storage_path: caminho,
-          mime_type: arquivo.type,
-          size_bytes: arquivo.size,
-        });
+        const registro = await supabase.from("verification_documents").insert(
+          linhaDeDocumento({
+            verificacaoId,
+            usuarioId,
+            tipo: exigido.tipo,
+            titulo: exigido.titulo,
+            caminho,
+            mime: arquivo.type,
+            tamanho: arquivo.size,
+          }),
+        );
+        if (registro.error) {
+          // O arquivo subiu mas o cadastro não gravou: sem esta limpeza
+          // ele viraria lixo invisível no bucket (rollback como no app).
+          await supabase.storage
+            .from("verification-documents")
+            .remove([caminho]);
+          setEnviando(false);
+          setErro(
+            `Não foi possível registrar "${exigido.titulo}". A verificação ainda não foi concluída: tente de novo.`,
+          );
+          return;
+        }
 
         // A foto profissional TAMBÉM vira o avatar público do perfil, como
         // no app: quem aprova já vê o rosto que o cliente vai ver.

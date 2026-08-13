@@ -11,6 +11,7 @@ import {
   cnpjValido,
   mascaraDeCnpj,
   validaEscritorio,
+  linhaDeDocumento,
 } from "./verificacao";
 
 const tresDocumentos = [
@@ -147,5 +148,32 @@ describe("abertura de escritório", () => {
   test("a máscara acompanha o que já foi digitado", () => {
     expect(mascaraDeCnpj("11222333000181")).toBe("11.222.333/0001-81");
     expect(mascaraDeCnpj("11222")).toBe("11.222");
+  });
+});
+
+describe("a linha do documento no banco", () => {
+  test("as chaves são as COLUNAS reais, com file_size_bytes", () => {
+    // `size_bytes` foi para produção e o PostgREST recusou o INSERT
+    // inteiro em silêncio: os arquivos subiam e a fila dizia "sem
+    // documento". Este teste trava os nomes contra a tabela real.
+    const linha = linhaDeDocumento({
+      verificacaoId: "v1",
+      usuarioId: "u1",
+      tipo: "oab_card",
+      titulo: "Carteira da OAB",
+      caminho: "u1/oab_card-1-doc.png",
+      mime: "image/png",
+      tamanho: 12345,
+    });
+    expect(Object.keys(linha).sort()).toEqual([
+      "document_type",
+      "file_size_bytes",
+      "mime_type",
+      "storage_path",
+      "title",
+      "user_id",
+      "verification_id",
+    ]);
+    expect(linha.file_size_bytes).toBe(12345);
   });
 });
