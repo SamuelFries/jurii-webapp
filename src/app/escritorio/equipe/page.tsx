@@ -38,8 +38,7 @@ export default async function PaginaDaEquipe({
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
       <p className="subtitulo">
-        Quem trabalha em {escritorio.nome}. Permissões por pessoa são
-        editadas no aplicativo.
+        Quem trabalha em {escritorio.nome}, e o que cada pessoa pode fazer.
       </p>
 
       {erro !== undefined && <p className="erro">{erro}</p>}

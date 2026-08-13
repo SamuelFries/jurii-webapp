@@ -34,19 +34,31 @@ describe("destino inicial", () => {
     // O webapp existe para o profissional trabalhar no computador: quem
     // tem escritório cai no escritório, mesmo sendo também advogado.
     const escritorio = { id: "f1", nome: "Firma", papeis: ["owner" as const] };
-    expect(destinoInicial({ advogadoAprovado: true, escritorio })).toBe(
+    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: true, escritorio })).toBe(
       "/escritorio",
     );
-    expect(destinoInicial({ advogadoAprovado: true, escritorio: null })).toBe(
+    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: true, escritorio: null })).toBe(
       "/advogado",
     );
+  });
+
+  test("funcionário da Jurii sem papel profissional vai para a REVISÃO", () => {
+    // A área dele é revisar verificações, e não a porta que manda baixar o
+    // aplicativo. Equipe Jurii não tem relação com papel de escritório.
+    expect(
+      destinoInicial({
+        equipeJurii: true,
+        advogadoAprovado: false,
+        escritorio: null,
+      }),
+    ).toBe("/revisao");
   });
 
   test("sem papel profissional, a porta que explica o aplicativo", () => {
     // O webapp virou ferramenta de trabalho: cliente não tem mesa aqui, e
     // mandá-lo para uma tela vazia seria pior do que dizer onde é a área
     // dele. /cliente é essa porta.
-    expect(destinoInicial({ advogadoAprovado: false, escritorio: null })).toBe(
+    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: false, escritorio: null })).toBe(
       "/cliente",
     );
   });

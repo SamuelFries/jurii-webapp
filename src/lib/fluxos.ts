@@ -54,6 +54,13 @@ export function papelPrincipal(
 
 export interface FluxosDoUsuario {
   advogadoAprovado: boolean;
+  /**
+   * Funcionário da JURII, que revisa as verificações de advogados e
+   * escritórios. NÃO tem relação com papel dentro de escritório: aquilo
+   * vive em law_firm_members (sócio, admin, advogado, secretária,
+   * estagiário) e é de outra empresa. Aqui é gente da casa.
+   */
+  equipeJurii: boolean;
   escritorio: {
     id: string;
     nome: string;
@@ -64,7 +71,7 @@ export interface FluxosDoUsuario {
 export async function fluxosDoUsuario(
   supabase: SupabaseClient,
 ): Promise<FluxosDoUsuario> {
-  const [verificacao, vinculo] = await Promise.all([
+  const [verificacao, vinculo, equipe] = await Promise.all([
     supabase
       .from("lawyer_verifications")
       .select("status")
@@ -78,8 +85,11 @@ export async function fluxosDoUsuario(
       .order("joined_at", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    // No MESMO lote: não custa uma ida à rede nova. E degrada para false
+    // se a função ainda não existir no ambiente (migration não aplicada),
+    // porque um erro aqui não pode derrubar o login de ninguém.
+    supabase.rpc("is_jurii_staff"),
   ]);
-
   const linhaDeVinculo = vinculo.data;
   const firma = linhaDeVinculo?.law_firms as
     | { id: string; name: string }
@@ -89,6 +99,7 @@ export async function fluxosDoUsuario(
   const firmaUnica = Array.isArray(firma) ? firma[0] : firma;
 
   return {
+    equipeJurii: equipe.data === true,
     advogadoAprovado: verificacao.data?.status === "approved",
     escritorio:
       linhaDeVinculo && firmaUnica
@@ -138,6 +149,9 @@ export function papeisDaLinha(
 export function destinoInicial(fluxos: FluxosDoUsuario): string {
   if (fluxos.escritorio !== null) return "/escritorio";
   if (fluxos.advogadoAprovado) return "/advogado";
+  // Funcionário da Jurii sem papel profissional cai na REVISÃO, e não na
+  // porta que manda baixar o aplicativo: a área dele é esta.
+  if (fluxos.equipeJurii) return "/revisao";
   return "/cliente";
 }
 

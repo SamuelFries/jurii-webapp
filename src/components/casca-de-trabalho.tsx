@@ -123,6 +123,13 @@ export async function CascaDeTrabalho({
             </>
           )}
           <nav aria-label="Conta">
+            {/* Funcionário da JURII que também é advogado ou tem escritório
+                precisa de um caminho para a revisão; sem isto, só digitando
+                a URL. Não confundir com papel de escritório: isto é gente da
+                casa, e some para todo mundo que não for. */}
+            {fluxos.equipeJurii && (
+              <Link href="/revisao">Revisar verificações</Link>
+            )}
             {/* Só para quem NÃO tem escritório: quem já tem, tem o painel. */}
             {fluxos.escritorio === null && (
               <Link href="/abrir-escritorio">Abrir escritório</Link>

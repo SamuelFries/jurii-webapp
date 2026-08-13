@@ -49,8 +49,9 @@ export default async function PainelDeRevisao({
   const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
 
-  const { data: daEquipe } = await contexto.supabase.rpc("is_jurii_staff");
-  if (daEquipe !== true) redirect(destinoInicial(contexto.fluxos));
+  // O fluxo já traz isto (fluxosDoUsuario pergunta no mesmo lote), então a
+  // guarda não custa uma ida à rede a mais.
+  if (!contexto.fluxos.equipeJurii) redirect(destinoInicial(contexto.fluxos));
 
   const { data, error } = await contexto.supabase.rpc(
     "fetch_pending_verifications",

@@ -29,8 +29,13 @@ export default async function PerfilDoEscritorio({
   const [firmaRes, horariosRes] = await Promise.all([
     contexto.supabase
       .from("law_firms")
+      // `specialty`, e NAO `primary_area`: essa coluna nao existe em
+      // law_firms, e o PostgREST recusa o SELECT INTEIRO quando uma coluna
+      // nao existe. O formulario abria VAZIO por causa de uma palavra, que
+      // e o mesmo defeito que o app ja teve. A RPC de gravacao continua
+      // recebendo primary_area_value, que e o nome do ARGUMENTO dela.
       .select(
-        "description, name, phone, email, website_url, address, address_number, address_complement, cep, latitude, longitude, primary_area, practice_areas",
+        "description, name, phone, email, website_url, address, address_number, address_complement, cep, latitude, longitude, specialty, practice_areas",
       )
       .eq("id", escritorio.id)
       .maybeSingle(),
@@ -211,7 +216,7 @@ export default async function PerfilDoEscritorio({
                   <select
                     id="area_principal"
                     name="area_principal"
-                    defaultValue={valor("primary_area")}
+                    defaultValue={valor("specialty")}
                   >
                     <option value="">Sem área principal</option>
                     {areasDoDireito.map((area) => (
