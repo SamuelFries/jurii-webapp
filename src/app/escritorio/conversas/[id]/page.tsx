@@ -109,12 +109,30 @@ export default async function ChatDoEscritorio({
         {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
         )}
-        <ModeracaoDaConversa
-          conversaId={id}
-          voltar={`/escritorio/conversas/${id}${sufixo}`}
-          bloqueada={bloqueio.bloqueada}
-          bloqueadaPorMim={bloqueio.porMim}
-        />
+        {/* As acoes de caso vivem no CABECALHO, como no app (la sao
+            icones da barra superior). Empilhadas acima das mensagens elas
+            empurravam a conversa para baixo e competiam com ela. */}
+        <span className="acoes-do-chat">
+          {!segmentoEquipe && (
+            <>
+              <ProporCaso
+                conversaId={id}
+                voltar={`/escritorio/conversas/${id}${sufixo}`}
+              />
+              <IndicarAdvogado
+                conversaId={id}
+                voltar={`/escritorio/conversas/${id}${sufixo}`}
+                advogados={advogadosDaEquipe}
+              />
+            </>
+          )}
+          <ModeracaoDaConversa
+            conversaId={id}
+            voltar={`/escritorio/conversas/${id}${sufixo}`}
+            bloqueada={bloqueio.bloqueada}
+            bloqueadaPorMim={bloqueio.porMim}
+          />
+        </span>
       </div>
       {erro !== undefined && <p className="erro">{erro}</p>}
       {ok === "indicado" && (
@@ -125,19 +143,6 @@ export default async function ChatDoEscritorio({
           Solicitação enviada. O cliente decide em Meus casos; quando
           aceitar, o caso entra na carteira do escritório.
         </p>
-      )}
-      {!segmentoEquipe && (
-        <>
-          <ProporCaso
-            conversaId={id}
-            voltar={`/escritorio/conversas/${id}${sufixo}`}
-          />
-          <IndicarAdvogado
-            conversaId={id}
-            voltar={`/escritorio/conversas/${id}${sufixo}`}
-            advogados={advogadosDaEquipe}
-          />
-        </>
       )}
       <Chat
         conversaId={id}

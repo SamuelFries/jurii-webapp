@@ -563,6 +563,45 @@ a.cartao-de-lista:hover {
   border-bottom: 1px solid var(--border);
 }
 
+/* As acoes da conversa (propor caso, indicar advogado, moderacao) ficam no
+   canto direito do cabecalho, como os icones da barra superior do app.
+   `margin-left: auto` empurra o grupo inteiro, entao o nome fica colado no
+   voltar e as acoes na outra ponta. */
+.cabecalho-do-chat .acoes-do-chat {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* Dentro do cabecalho, os `details` de acao viram pilulas compactas em vez
+   de blocos de largura inteira. */
+.cabecalho-do-chat .acoes-do-chat .propor-caso {
+  margin: 0;
+}
+
+.cabecalho-do-chat .acoes-do-chat .propor-caso > summary {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* O painel aberto flutua sobre a conversa, ancorado a direita: no fluxo
+   normal ele empurraria as mensagens de novo. */
+.cabecalho-do-chat .acoes-do-chat .propor-caso[open] {
+  position: relative;
+}
+
+.cabecalho-do-chat .acoes-do-chat .propor-caso[open] > *:not(summary) {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  width: min(420px, 80vw);
+  box-shadow: 0 16px 40px rgba(10, 28, 59, 0.28);
+}
+
 .cabecalho-do-chat a {
   color: var(--text-2);
   text-decoration: none;

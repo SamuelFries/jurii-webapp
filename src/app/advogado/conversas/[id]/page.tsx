@@ -62,12 +62,18 @@ export default async function ChatDoAdvogado({
         {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
         )}
-        <ModeracaoDaConversa
-          conversaId={id}
-          voltar={`/advogado/conversas/${id}`}
-          bloqueada={bloqueio.bloqueada}
-          bloqueadaPorMim={bloqueio.porMim}
-        />
+        {/* Acoes no CABECALHO, como no app (la sao icones da barra
+            superior). Empilhadas acima das mensagens, elas empurravam a
+            conversa para baixo e competiam com ela. */}
+        <span className="acoes-do-chat">
+          <ProporCaso conversaId={id} voltar={`/advogado/conversas/${id}`} />
+          <ModeracaoDaConversa
+            conversaId={id}
+            voltar={`/advogado/conversas/${id}`}
+            bloqueada={bloqueio.bloqueada}
+            bloqueadaPorMim={bloqueio.porMim}
+          />
+        </span>
       </div>
       {erro !== undefined && <p className="erro">{erro}</p>}
       {ok === "proposta" && (
@@ -76,7 +82,6 @@ export default async function ChatDoAdvogado({
           aceitar, o caso aparece na sua carteira.
         </p>
       )}
-      <ProporCaso conversaId={id} voltar={`/advogado/conversas/${id}`} />
       <Chat
         conversaId={id}
         meuId={contexto.usuario.id}
