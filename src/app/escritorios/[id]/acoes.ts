@@ -2,11 +2,11 @@
 
 import { redirect } from "next/navigation";
 
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 function volta(caminho: string, erro?: string): never {
-  const destino =
-    caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/";
+  const destino = caminhoInterno(caminho, "/");
   redirect(erro ? `${destino}?erro=${encodeURIComponent(erro)}` : destino);
 }
 

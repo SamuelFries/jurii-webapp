@@ -2,11 +2,11 @@
 
 import { redirect } from "next/navigation";
 
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 function volta(caminho: string, sufixo: string): never {
-  const destino =
-    caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/advogado";
+  const destino = caminhoInterno(caminho, "/advogado");
   const separador = destino.includes("?") ? "&" : "?";
   redirect(`${destino}${separador}${sufixo}`);
 }

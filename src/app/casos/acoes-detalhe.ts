@@ -8,6 +8,7 @@
 
 import { redirect } from "next/navigation";
 
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -24,9 +25,9 @@ function volta(caminho: string, erro?: string): never {
 }
 
 function caminhoSeguro(dados: FormData): string {
-  const voltar = String(dados.get("voltar") ?? "/");
-  // Só caminho interno: redirect aberto é porta de phishing.
-  return voltar.startsWith("/") && !voltar.startsWith("//") ? voltar : "/";
+  // Só caminho interno: redirect aberto é porta de phishing. Quem decide é
+  // o parser de URL, e não comparação de prefixo (ver caminho-seguro.ts).
+  return caminhoInterno(dados.get("voltar"), "/");
 }
 
 export async function adicionarAtualizacao(dados: FormData): Promise<void> {

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -11,11 +12,10 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
  * bloqueio é o banco. Conversa bloqueada recusa com a palavra do app.
  */
 export async function indicarAdvogado(dados: FormData): Promise<void> {
-  const voltarBruto = String(dados.get("voltar") ?? "/escritorio/mensagens");
-  const voltar =
-    voltarBruto.startsWith("/") && !voltarBruto.startsWith("//")
-      ? voltarBruto
-      : "/escritorio/mensagens";
+  const voltar = caminhoInterno(
+    dados.get("voltar"),
+    "/escritorio/mensagens",
+  );
   const nota = String(dados.get("nota") ?? "").trim();
 
   const supabase = await clienteDoServidor();
