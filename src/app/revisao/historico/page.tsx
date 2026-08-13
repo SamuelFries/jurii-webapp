@@ -65,39 +65,48 @@ export default async function HistoricoDaRevisao({
       <div className="miolo painel-de-revisao">
         <h1 style={{ marginTop: 0 }}>Histórico</h1>
         <p className="subtitulo">
-          {decididas === 0
-            ? "Nada decidido ainda."
-            : `${decididas === 1 ? "1 verificação decidida" : `${decididas} verificações decididas`}. A mais recente primeiro.`}
+          {/* Sob erro a tela NÃO afirma número nenhum: dizer "nada decidido"
+              quando a consulta falhou é inventar um fato. */}
+          {error
+            ? "Verificações já aprovadas ou recusadas."
+            : decididas === 0
+              ? "Nada decidido ainda."
+              : `${decididas === 1 ? "1 verificação decidida" : `${decididas} verificações decididas`}. A mais recente primeiro.`}
         </p>
 
-        {error && (
-          <p className="erro">Não foi possível carregar o histórico agora.</p>
-        )}
+        {error ? (
+          <p className="erro">
+            Não foi possível carregar o histórico agora. Recarregue a página
+            em alguns instantes.
+          </p>
+        ) : (
+          <>
+            <HistoricoDeRevisao fichas={fichas} />
 
-        <HistoricoDeRevisao fichas={fichas} />
-
-        {paginas > 1 && (
-          <nav className="paginas-do-historico" aria-label="Páginas">
-            {pagina > 1 && (
-              <Link
-                className="botao secundario compacto"
-                href={pagina === 2 ? "/revisao/historico" : `/revisao/historico?p=${pagina - 1}`}
-              >
-                Anteriores
-              </Link>
+            {paginas > 1 && (
+              <nav className="paginas-do-historico" aria-label="Páginas">
+                {pagina > 1 && (
+                  <Link
+                    className="botao secundario compacto"
+                    href={pagina === 2 ? "/revisao/historico" : `/revisao/historico?p=${pagina - 1}`}
+                  >
+                    Anteriores
+                  </Link>
+                )}
+                <span className="detalhe">
+                  página {pagina} de {paginas}
+                </span>
+                {pagina < paginas && (
+                  <Link
+                    className="botao secundario compacto"
+                    href={`/revisao/historico?p=${pagina + 1}`}
+                  >
+                    Próximas
+                  </Link>
+                )}
+              </nav>
             )}
-            <span className="detalhe">
-              página {pagina} de {paginas}
-            </span>
-            {pagina < paginas && (
-              <Link
-                className="botao secundario compacto"
-                href={`/revisao/historico?p=${pagina + 1}`}
-              >
-                Próximas
-              </Link>
-            )}
-          </nav>
+          </>
         )}
       </div>
     </div>
