@@ -2370,6 +2370,42 @@ button.compacto {
   font-size: 11px;
 }
 
+/* O selo da decisão no histórico: verde e vermelho, os mesmos do resto. */
+.selo.decisao.aprovada {
+  background: color-mix(in srgb, var(--sucesso) 16%, transparent);
+  color: var(--sucesso);
+}
+
+.selo.decisao.recusada {
+  background: var(--erro-fundo);
+  color: var(--danger);
+}
+
+/* O motivo da recusa aparece na linha FECHADA: é o que se procura ao
+   voltar ao histórico. Duas linhas no máximo, para não desalinhar a fila. */
+.motivo-no-historico {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.linha-da-fila .detalhe.alinhado-a-direita {
+  text-align: right;
+  white-space: nowrap;
+  line-height: 1.45;
+}
+
+.paginas-do-historico {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
 .selo.faltando {
   background: var(--erro-fundo);
   color: var(--danger);

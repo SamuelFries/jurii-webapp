@@ -80,3 +80,41 @@ export function documentosQueFaltam(ficha: FichaParaRevisar): string[] {
   const enviados = new Set(ficha.documentos.map((doc) => doc.tipo));
   return exigidos.filter((tipo) => !enviados.has(tipo));
 }
+
+// ---------------------------------------------------------------------------
+// Histórico
+// ---------------------------------------------------------------------------
+
+export interface FichaDecidida extends FichaParaRevisar {
+  decisao: "approved" | "rejected";
+  decididaEmIso: string | null;
+  revisor: string | null;
+  motivo: string | null;
+}
+
+export function rotuloDaDecisao(decisao: "approved" | "rejected"): string {
+  return decisao === "approved" ? "Aprovada" : "Recusada";
+}
+
+/**
+ * Quem decidiu, em uma frase. Decisão anterior ao painel não tem revisor
+ * gravado, e o honesto é dizer isso, e não deixar em branco como se
+ * ninguém tivesse decidido.
+ */
+export function quemDecidiu(revisor: string | null): string {
+  return revisor ?? "antes do painel existir";
+}
+
+/** dd/MM/aaaa às HH:MM, no fuso de quem lê. */
+export function dataDaDecisao(iso: string | null): string {
+  if (iso === null) return "sem data";
+  const data = new Date(iso);
+  if (!Number.isFinite(data.getTime())) return "sem data";
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
