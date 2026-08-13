@@ -2239,3 +2239,103 @@ button.compacto {
     animation: none;
   }
 }
+
+/* ---- Painel de revisão da equipe ---- */
+
+.painel-de-revisao {
+  max-width: 900px;
+}
+
+.ficha-de-revisao {
+  margin-top: 16px;
+}
+
+.ficha-de-revisao h2 {
+  margin: 8px 0 4px;
+  font-size: 20px;
+}
+
+.ficha-de-revisao header .detalhe {
+  margin: 2px 0;
+}
+
+/* Os documentos LADO A LADO com o dado declarado: revisar é comparar um
+   com o outro, e rolar entre eles é onde o erro nasce. */
+.documentos-da-revisao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.documentos-da-revisao figure {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.documentos-da-revisao figcaption {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.documentos-da-revisao img {
+  width: 100%;
+  /* Altura fixa com cover: as fichas ficam alinhadas mesmo com fotos de
+     proporções diferentes, e o clique abre em tamanho real. */
+  height: 190px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  cursor: zoom-in;
+  background: var(--surface);
+}
+
+.decisao-da-revisao {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.decisao-da-revisao > form {
+  flex: 0 0 auto;
+}
+
+.decisao-da-revisao > form button {
+  margin: 0;
+  width: auto;
+  padding: 12px 28px;
+}
+
+.decisao-da-revisao details {
+  flex: 1 1 260px;
+  min-width: 240px;
+}
+
+.decisao-da-revisao details summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+
+.decisao-da-revisao details button {
+  margin-top: 8px;
+}
+
+.selo.roxo {
+  background: color-mix(in srgb, #3b2a6d 18%, transparent);
+  color: #3b2a6d;
+}
+
+@media (prefers-color-scheme: dark) {
+  .selo.roxo {
+    background: color-mix(in srgb, #a795e0 18%, transparent);
+    color: #a795e0;
+  }
+}
