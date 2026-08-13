@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SinoVivo } from "./sino-vivo";
+
 export interface ItemDaLateral {
   rotulo: string;
   href: string;
@@ -26,9 +28,13 @@ export interface ItemDaLateral {
 export function NavDaLateral({
   itens,
   naoLidas,
+  escopo,
+  lawFirmId,
 }: {
   itens: ItemDaLateral[];
   naoLidas: number;
+  escopo: "lawyer" | "firm";
+  lawFirmId: string | null;
 }) {
   const caminho = usePathname() ?? "";
 
@@ -51,8 +57,12 @@ export function NavDaLateral({
           aria-current={acende(item) ? "page" : undefined}
         >
           {item.rotulo}
-          {item.rotulo === "Notificações" && naoLidas > 0 && (
-            <span className="pilula-nao-lidas">{naoLidas}</span>
+          {item.rotulo === "Notificações" && (
+            <SinoVivo
+              escopo={escopo}
+              lawFirmId={lawFirmId}
+              inicial={naoLidas}
+            />
           )}
         </Link>
       ))}

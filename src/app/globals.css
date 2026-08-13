@@ -2157,6 +2157,28 @@ button.compacto {
   }
 }
 
+/* O convite para ligar o aviso do sistema: discreto, e some assim que a
+   pessoa decide (concedendo ou negando). */
+.pedir-aviso {
+  display: block;
+  width: 100%;
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pedir-aviso:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* ---- Esqueleto de carregamento ---- */
 
 /* O brilho que atravessa diz "está vindo", em vez de um bloco parado que

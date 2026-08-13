@@ -98,7 +98,12 @@ export async function CascaDeTrabalho({
           jurii<span className="ouro">.</span>
         </Link>
 
-        <NavDaLateral itens={itens} naoLidas={naoLidas} />
+        <NavDaLateral
+          itens={itens}
+          naoLidas={naoLidas}
+          escopo={escopoDoSino}
+          lawFirmId={fluxos.escritorio?.id ?? null}
+        />
 
         <div className="rodape-da-lateral">
           {trocas.length > 1 && (
