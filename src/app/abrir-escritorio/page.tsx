@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado } from "@/lib/contexto";
+import { destinoInicial } from "@/lib/fluxos";
 import { rotuloDoStatusDaVerificacao } from "@/lib/dominio/verificacao";
 
 import { FormularioDeEscritorio } from "./formulario";
@@ -28,12 +29,28 @@ export default async function AbrirEscritorio({
   const contexto = await contextoLogado();
   if (contexto.fluxos.escritorio !== null) redirect("/escritorio");
 
-  const { data } = await contexto.supabase
-    .from("law_firm_verifications")
-    .select("status, firm_name, rejection_reason, created_at")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // A LICENÇA vem junto porque a policy de INSERT de law_firm_verifications
+  // exige has_law_firm_license(auth.uid()). Sem ela o formulário inteiro é
+  // um beco: a pessoa preenchia CNPJ, endereço e cinco arquivos e recebia
+  // "confira os dados e tente de novo", que culpa os dados dela por uma
+  // falta de plano. O app já faz a mesma bifurcação (FirmBenefitsScreen
+  // manda para o plano antes do formulário).
+  const [{ data }, { data: licenca }] = await Promise.all([
+    contexto.supabase
+      .from("law_firm_verifications")
+      .select("status, firm_name, rejection_reason, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    contexto.supabase
+      .from("law_firm_license_subscriptions")
+      .select("status")
+      .eq("owner_profile_id", contexto.usuario.id)
+      .in("status", ["trialing", "active"])
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const temLicenca = licenca != null;
 
   const status = data?.status == null ? null : String(data.status);
   const motivo =
@@ -44,7 +61,12 @@ export default async function AbrirEscritorio({
     <div className="miolo" style={{ maxWidth: 680 }}>
       <div className="linha-topo">
         <h1 style={{ margin: 0 }}>Abrir escritório</h1>
-        <Link className="botao secundario compacto" href="/advogado">
+        {/* Volta para a casa DE QUEM ESTÁ AQUI. Fixo em /advogado, mandava
+            cliente e estagiário para uma tela que os devolve. */}
+        <Link
+          className="botao secundario compacto"
+          href={destinoInicial(contexto.fluxos)}
+        >
           Voltar
         </Link>
       </div>
@@ -80,9 +102,26 @@ export default async function AbrirEscritorio({
         </div>
       )}
 
-      {!emAnalise && (
-        <FormularioDeEscritorio usuarioId={contexto.usuario.id} />
-      )}
+      {!emAnalise &&
+        (temLicenca ? (
+          <FormularioDeEscritorio usuarioId={contexto.usuario.id} />
+        ) : (
+          <div className="cartao" style={{ marginTop: 16 }}>
+            <strong>Comece pelo plano</strong>
+            <p className="detalhe" style={{ marginTop: 4 }}>
+              O escritório abre com uma licença, e a primeira é um teste
+              grátis de 30 dias. Escolha o plano e a papelada continua aqui,
+              com os dados que você já tiver à mão.
+            </p>
+            <Link
+              className="botao compacto"
+              href="/escritorio/planos"
+              style={{ marginTop: 10 }}
+            >
+              Ver os planos
+            </Link>
+          </div>
+        ))}
     </div>
   );
 

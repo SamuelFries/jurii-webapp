@@ -10,6 +10,8 @@ import {
   validaVerificacao,
   cnpjValido,
   mascaraDeCnpj,
+  documentosDoEscritorio,
+  linhaDeDocumentoDeEscritorio,
   validaEscritorio,
   linhaDeDocumento,
 } from "./verificacao";
@@ -119,6 +121,11 @@ describe("abertura de escritório", () => {
     cep: "90540140",
     areas: ["Direito Trabalhista"],
     foto: { tamanho: 800_000, mime: "image/png" },
+    documentos: documentosDoEscritorio.map((documento) => ({
+      tipo: documento.tipo,
+      tamanho: 900_000,
+      mime: "application/pdf",
+    })),
   };
 
   test("completo passa", () => {
@@ -148,6 +155,68 @@ describe("abertura de escritório", () => {
   test("a máscara acompanha o que já foi digitado", () => {
     expect(mascaraDeCnpj("11222333000181")).toBe("11.222.333/0001-81");
     expect(mascaraDeCnpj("11222")).toBe("11.222");
+  });
+
+  test("os QUATRO documentos são obrigatórios", () => {
+    // O formulário mandava só a foto, e todo escritório aberto pela web
+    // chegava na equipe com zero documento, para ser recusado.
+    const problemas = validaEscritorio({ ...completo, documentos: [] });
+    expect(problemas.map((p) => p.campo).sort()).toEqual([
+      "address_proof",
+      "articles_of_association",
+      "cnpj_registration",
+      "owner_identity",
+    ]);
+  });
+
+  test("os identificadores são os do enum law_firm_document_type", () => {
+    // Estas quatro strings viram o valor da coluna document_type, que é do
+    // tipo enum: qualquer outra derruba o INSERT no banco.
+    expect(documentosDoEscritorio.map((d) => d.tipo)).toEqual([
+      "cnpj_registration",
+      "articles_of_association",
+      "address_proof",
+      "owner_identity",
+    ]);
+  });
+
+  test("documento grande e de tipo errado são apontados por documento", () => {
+    const problemas = validaEscritorio({
+      ...completo,
+      documentos: [
+        { tipo: "cnpj_registration", tamanho: 11 * 1024 * 1024, mime: "application/pdf" },
+        { tipo: "articles_of_association", tamanho: 900_000, mime: "text/plain" },
+        { tipo: "address_proof", tamanho: 900_000, mime: "application/pdf" },
+        { tipo: "owner_identity", tamanho: 900_000, mime: "image/jpeg" },
+      ],
+    });
+    expect(problemas.map((p) => p.campo)).toEqual([
+      "cnpj_registration",
+      "articles_of_association",
+    ]);
+  });
+
+  test("a linha do documento usa as COLUNAS de law_firm_verification_documents", () => {
+    // A tabela do escritório NÃO é a do advogado: a coluna do dono é
+    // owner_profile_id e não existe coluna de tamanho. Mandar user_id ou
+    // file_size_bytes faria o PostgREST recusar o INSERT inteiro, que é
+    // exatamente o defeito que já foi para produção do outro lado.
+    const linha = linhaDeDocumentoDeEscritorio({
+      verificacaoId: "v1",
+      donoId: "u1",
+      tipo: "cnpj_registration",
+      titulo: "Cartão CNPJ",
+      caminho: "u1/cnpj_registration-1-cartao.pdf",
+      mime: "application/pdf",
+    });
+    expect(Object.keys(linha).sort()).toEqual([
+      "document_type",
+      "mime_type",
+      "owner_profile_id",
+      "storage_path",
+      "title",
+      "verification_id",
+    ]);
   });
 });
 
