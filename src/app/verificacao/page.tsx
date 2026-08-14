@@ -27,7 +27,13 @@ export default async function VerificacaoDaOab({
 }) {
   const { ok } = await searchParams;
   const contexto = await contextoLogado();
-  if (contexto.fluxos.advogadoAprovado || contexto.fluxos.escritorio !== null) {
+  // QUALQUER vínculo já dá mesa de trabalho, então a pergunta é sobre a
+  // lista: escritório deixou de ser um só, e "tem escritório" virou "tem
+  // pelo menos um".
+  if (
+    contexto.fluxos.advogadoAprovado ||
+    contexto.fluxos.escritorios.length > 0
+  ) {
     redirect(destinoInicial(contexto.fluxos));
   }
 

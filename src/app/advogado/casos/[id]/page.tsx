@@ -26,9 +26,6 @@ export default async function CasoDoAdvogado({
 
   return (
     <PainelDeCasos
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado/casos"
       titulo="Casos"
       subtitulo="O caso nasce na conversa: proponha pelo chat."
       lista={<CasosDoAdvogadoComBusca casos={casos} ativoId={id} />}

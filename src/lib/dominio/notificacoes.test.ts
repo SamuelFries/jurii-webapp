@@ -20,7 +20,7 @@ const informativa = notificacaoDaLinha({ id: "n3", title: "Aviso" });
 
 describe("destino da notificação", () => {
   test("conversa abre no fluxo em que a pessoa está", () => {
-    expect(destinoDaNotificacao(comConversa, "advogado")).toBe(
+    expect(destinoDaNotificacao(comConversa, "advogado", null)).toBe(
       "/advogado/conversas/c1",
     );
   });
@@ -28,14 +28,27 @@ describe("destino da notificação", () => {
   test("escritório NUNCA abre conversa pela notificação, a regra do app", () => {
     // O chat do painel do escritório tem limites próprios; abrir pela
     // notificação os reintroduziria. Sobra o caso, que é neutro.
-    expect(destinoDaNotificacao(comConversa, "escritorio")).toBeNull();
-    expect(destinoDaNotificacao(comCaso, "escritorio")).toBe(
-      "/escritorio/casos/k1",
+    expect(destinoDaNotificacao(comConversa, "escritorio", "f1")).toBeNull();
+    expect(destinoDaNotificacao(comCaso, "escritorio", "f1")).toBe(
+      "/escritorio/f1/casos/k1",
     );
   });
 
+  test("o destino do escritório carrega o id da banca aberta", () => {
+    // A rota do fluxo é /escritorio/{id}/..., então a MESMA notificação
+    // aponta para lugares diferentes conforme a banca. Sem o id o "Abrir"
+    // caía numa rota sem escritório e a guarda devolvia a pessoa.
+    expect(destinoDaNotificacao(comCaso, "escritorio", "f2")).toBe(
+      "/escritorio/f2/casos/k1",
+    );
+  });
+
+  test("sem saber a banca não há destino, e não link para lugar nenhum", () => {
+    expect(destinoDaNotificacao(comCaso, "escritorio", null)).toBeNull();
+  });
+
   test("sem destino não vira link morto: é nulo e a tela não oferece Abrir", () => {
-    expect(destinoDaNotificacao(informativa, "advogado")).toBeNull();
+    expect(destinoDaNotificacao(informativa, "advogado", null)).toBeNull();
   });
 
   test("conversa vence caso quando a notificação tem os dois", () => {
@@ -44,12 +57,12 @@ describe("destino da notificação", () => {
       title: "x",
       metadata: { conversation_id: "c9", case_id: "k9" },
     });
-    expect(destinoDaNotificacao(dupla, "advogado")).toBe(
+    expect(destinoDaNotificacao(dupla, "advogado", null)).toBe(
       "/advogado/conversas/c9",
     );
     // No escritório, sem conversa, o caso assume.
-    expect(destinoDaNotificacao(dupla, "escritorio")).toBe(
-      "/escritorio/casos/k9",
+    expect(destinoDaNotificacao(dupla, "escritorio", "f1")).toBe(
+      "/escritorio/f1/casos/k9",
     );
   });
 });

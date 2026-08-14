@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 
+import { contextoLogado, vinculoDaAcao } from "@/lib/contexto";
 import {
+  destinoInicial,
   normalizaPapeis,
   papeisEmOrdem,
   type PapelNoEscritorio,
@@ -15,18 +17,31 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
  * vagas do plano, OAB válida e limite de tentativas.
  */
 export async function convidarAdvogado(dados: FormData): Promise<void> {
+  // O id do escritório vem do formulário, isto é, do cliente, e por isso só
+  // vira argumento da RPC depois de achado entre os vínculos que o banco
+  // devolveu para esta sessão. A conferência vem ANTES da OAB porque até a
+  // volta com erro precisa saber para qual escritório retornar.
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
   const uf = String(dados.get("uf") ?? "").trim().toUpperCase();
   const numero = String(dados.get("oab") ?? "").replace(/[^0-9A-Za-z]/g, "");
 
   if (uf.length !== 2 || numero === "") {
     redirect(
-      `/escritorio/equipe?erro=${encodeURIComponent("Informe a UF e o número da OAB.")}`,
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent("Informe a UF e o número da OAB.")}`,
     );
   }
 
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("invite_verified_lawyer_to_law_firm", {
-    law_firm_id_value: String(dados.get("escritorio") ?? ""),
+    law_firm_id_value: vinculo.id,
     oab_state_value: uf,
     oab_number_value: numero,
   });
@@ -41,10 +56,12 @@ export async function convidarAdvogado(dados: FormData): Promise<void> {
           : error.message.includes("Too many invite attempts")
             ? "Muitas tentativas de convite. Aguarde um pouco e tente de novo."
             : "Não foi possível convidar. Tente de novo.";
-    redirect(`/escritorio/equipe?erro=${encodeURIComponent(mensagem)}`);
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
+    );
   }
 
-  redirect("/escritorio/equipe?ok=convite");
+  redirect(`/escritorio/${vinculo.id}/equipe?ok=convite`);
 }
 
 /**
@@ -61,7 +78,17 @@ export async function convidarAdvogado(dados: FormData): Promise<void> {
  * advogado antes de sair daqui.
  */
 export async function salvarPapeis(dados: FormData): Promise<void> {
-  const escritorioId = String(dados.get("escritorio") ?? "");
+  // Mesma conferência do convite: o id do formulário só vale se for um
+  // vínculo desta sessão.
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
   const membroId = String(dados.get("membro") ?? "");
   const escolhidos = dados
     .getAll("papeis")
@@ -72,7 +99,7 @@ export async function salvarPapeis(dados: FormData): Promise<void> {
 
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("update_law_firm_member_roles", {
-    law_firm_id_value: escritorioId,
+    law_firm_id_value: vinculo.id,
     member_profile_id_value: membroId,
     roles_value: normalizaPapeis(escolhidos),
   });
@@ -87,7 +114,9 @@ export async function salvarPapeis(dados: FormData): Promise<void> {
           : error.message.includes("Firm member not found")
             ? "Esta pessoa não está mais na equipe."
             : "Não foi possível salvar os papéis. Tente de novo.";
-    redirect(`/escritorio/equipe?erro=${encodeURIComponent(mensagem)}`);
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
+    );
   }
-  redirect("/escritorio/equipe?ok=papeis");
+  redirect(`/escritorio/${vinculo.id}/equipe?ok=papeis`);
 }

@@ -631,6 +631,58 @@ a.cartao-de-lista:hover {
   font-size: 13px;
 }
 
+/* ---- Seletor de escritório ----
+ *
+ * Mora no rodapé da lateral, na mesma gramática de "Trocar de área": o nome
+ * em cima, o cargo embaixo, o ativo marcado. Não é um menu suspenso porque a
+ * lista tem duas ou três linhas e um dropdown esconderia justamente o dado
+ * que importa (em qual cargo a pessoa está atuando agora). */
+.seletor-de-escritorio {
+  margin-bottom: 14px;
+}
+
+.seletor-de-escritorio form {
+  display: grid;
+  gap: 2px;
+}
+
+.seletor-de-escritorio .opcao-de-escritorio {
+  /* O `button` global é dourado e alto; aqui ele precisa parecer item de
+     navegação, como os vizinhos. */
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+
+.seletor-de-escritorio .opcao-de-escritorio:hover {
+  background: var(--surface-2);
+}
+
+.seletor-de-escritorio .opcao-de-escritorio.ativa {
+  background: var(--surface-2);
+  border-left-color: var(--gold);
+  cursor: default;
+}
+
+.seletor-de-escritorio .nome {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.seletor-de-escritorio .cargo {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
 .sinais-do-cartao {
   display: flex;
   flex-direction: column;

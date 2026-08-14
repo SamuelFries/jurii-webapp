@@ -75,7 +75,10 @@ export async function ListaDeNotificacoes({
       ) : (
         <div className="lista-empilhada">
           {notificacoes.map((notificacao) => {
-            const destino = destinoDaNotificacao(notificacao, fluxo);
+            // O id do escritório vai junto porque a rota do fluxo o carrega:
+            // é o MESMO que filtra a consulta acima, então o "Abrir" leva
+            // para o caso na banca de onde a notificação veio.
+            const destino = destinoDaNotificacao(notificacao, fluxo, lawFirmId);
             const convite =
               fluxo === "advogado" && conviteDeEquipePendente(notificacao);
             return (

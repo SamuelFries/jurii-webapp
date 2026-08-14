@@ -12,7 +12,7 @@ import {
   type Plano,
 } from "@/lib/licenca";
 
-import { escolherPlano } from "./acoes";
+import { escolherPlano } from "@/app/planos/acoes";
 
 /**
  * A grade de planos, com as MESMAS regras da tela do app
@@ -28,10 +28,18 @@ export function GradeDePlanos({
   planos,
   planoAtual,
   cicloAtual,
+  escritorioId,
 }: {
   planos: Plano[];
   planoAtual: string | null;
   cicloAtual: CicloDeCobranca | null;
+  /**
+   * DE QUAL escritório é a troca de plano, ou nulo na primeira licença (o
+   * contratante escolhe o plano antes de a banca existir). A ação confere
+   * este id contra os vínculos da sessão, então sem o campo toda escolha
+   * cairia no destino inicial sem escolher plano nenhum.
+   */
+  escritorioId: string | null;
 }) {
   const [ciclo, setCiclo] = useState<CicloDeCobranca>("annual");
 
@@ -95,6 +103,9 @@ export function GradeDePlanos({
             <form action={escolherPlano}>
               <input type="hidden" name="plano" value={plano.code} />
               <input type="hidden" name="ciclo" value={ciclo} />
+              {escritorioId !== null && (
+                <input type="hidden" name="escritorio" value={escritorioId} />
+              )}
               <button type="submit" disabled={esteEhOAtual}>
                 {esteEhOAtual
                   ? "Plano atual"

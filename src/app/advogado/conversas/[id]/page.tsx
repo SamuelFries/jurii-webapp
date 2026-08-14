@@ -44,9 +44,6 @@ export default async function ChatDoAdvogado({
 
   return (
     <PainelDeMensagens
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado"
       titulo="Mensagens"
       subtitulo="Converse com clientes e acompanhe contatos."
       conversas={conversas}

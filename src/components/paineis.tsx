@@ -1,6 +1,4 @@
-import type { FluxoDeTrabalho } from "./casca-de-trabalho";
 import { ConversasComBusca } from "./listas/conversas-com-busca";
-import type { FluxosDoUsuario } from "@/lib/fluxos";
 import type { ConversaParaTela } from "@/lib/busca/filtros";
 
 /**
@@ -8,11 +6,14 @@ import type { ConversaParaTela } from "@/lib/busca/filtros";
  * vista ao lado do chat aberto, porque trocar de conversa é o gesto mais
  * repetido do dia. O painel direito é de quem chama (chat, painel Hoje,
  * aviso de "escolha uma conversa").
+ *
+ * SÓ O MIOLO: `fluxo`, `fluxos` e `caminhoAtivo` saíram quando a casca virou
+ * layout de segmento. Eram três props que todo chamador preenchia e o corpo
+ * nunca lia, e `caminhoAtivo` guardado sem uso é pior que ausente: na
+ * migração da rota do escritório ele ficou apontando para caminhos velhos
+ * sem que nada quebrasse, porque quem acende a lateral é o layout.
  */
 export function PainelDeMensagens({
-  fluxo,
-  fluxos,
-  caminhoAtivo,
   titulo,
   subtitulo,
   conversas,
@@ -26,9 +27,6 @@ export function PainelDeMensagens({
   comDetalhe = false,
   children,
 }: {
-  fluxo: FluxoDeTrabalho;
-  fluxos: FluxosDoUsuario;
-  caminhoAtivo: string;
   titulo: string;
   subtitulo: string;
   conversas: ConversaParaTela[];
@@ -70,20 +68,14 @@ export function PainelDeMensagens({
 }
 
 /** O mesmo mestre-detalhe, para casos: lista buscável à esquerda, detalhe
- * à direita. */
+ * à direita. Também só o miolo, pelo motivo acima. */
 export function PainelDeCasos({
-  fluxo,
-  fluxos,
-  caminhoAtivo,
   titulo,
   subtitulo,
   lista,
   comDetalhe = false,
   children,
 }: {
-  fluxo: FluxoDeTrabalho;
-  fluxos: FluxosDoUsuario;
-  caminhoAtivo: string;
   titulo: string;
   subtitulo: string;
   /** A lista buscável já montada (CasosDo*ComBusca com ativoId). */

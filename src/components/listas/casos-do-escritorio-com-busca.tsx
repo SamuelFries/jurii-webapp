@@ -12,9 +12,17 @@ import { CampoDeBusca, FileiraDeChips, NadaEncontrado } from "./controles";
 
 export function CasosDoEscritorioComBusca({
   casos,
+  baseHref,
   ativoId,
 }: {
   casos: CasoDoEscritorioParaTela[];
+  /**
+   * A lista de casos DESTE escritório, ex.: "/escritorio/{id}/casos". Vem de
+   * quem chama porque o componente é de cliente e não tem como saber qual
+   * banca está aberta; com o caminho escrito aqui dentro, todo clique caía
+   * numa rota sem escritório.
+   */
+  baseHref: string;
   ativoId?: string;
 }) {
   const [termo, setTermo] = useState("");
@@ -87,7 +95,7 @@ export function CasosDoEscritorioComBusca({
           {visiveis.map((caso) => (
             <Link
               key={caso.id}
-              href={`/escritorio/casos/${caso.id}`}
+              href={`${baseHref}/${caso.id}`}
               className={
                 caso.id === ativoId ? "cartao-de-lista ativa" : "cartao-de-lista"
               }

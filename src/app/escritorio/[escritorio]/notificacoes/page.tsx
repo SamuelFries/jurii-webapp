@@ -3,9 +3,14 @@ import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaDeNotificacoesDoEscritorio() {
+export default async function PaginaDeNotificacoesDoEscritorio({
+  params,
+}: {
+  params: Promise<{ escritorio: string }>;
+}) {
+  const { escritorio: escritorioId } = await params;
   const contexto = await contextoLogado();
-  const escritorio = exigeEscritorio(contexto);
+  const escritorio = exigeEscritorio(contexto, escritorioId);
   return (
       <div className="pagina-de-trabalho"><div className="miolo">
       <ListaDeNotificacoes
@@ -13,7 +18,7 @@ export default async function PaginaDeNotificacoesDoEscritorio() {
         escopo="firm"
         lawFirmId={escritorio.id}
         fluxo="escritorio"
-        voltar="/escritorio/notificacoes"
+        voltar={`/escritorio/${escritorioId}/notificacoes`}
       />
       </div></div>
   );

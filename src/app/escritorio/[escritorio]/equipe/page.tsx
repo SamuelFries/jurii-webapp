@@ -2,21 +2,22 @@ import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
 import { convidarAdvogado, salvarPapeis } from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
-import { papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
+import { ehGestor, papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaDaEquipe({
+  params,
   searchParams,
 }: {
+  params: Promise<{ escritorio: string }>;
   searchParams: Promise<{ ok?: string; erro?: string }>;
 }) {
+  const { escritorio: escritorioId } = await params;
   const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
-  const escritorio = exigeEscritorio(contexto);
-  const podeConvidar = escritorio.papeis.some((papel) =>
-    ["owner", "admin"].includes(papel),
-  );
+  const escritorio = exigeEscritorio(contexto, escritorioId);
+  const podeConvidar = ehGestor(escritorio);
 
   // O MESMO select do app (_fetchTeamMemberRows): membros não desativados
   // com o perfil junto. Convites e edição de papéis continuam no app.

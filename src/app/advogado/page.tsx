@@ -41,9 +41,6 @@ export default async function MesaDoAdvogado() {
 
   return (
     <PainelDeMensagens
-      fluxo="advogado"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/advogado"
       titulo="Mensagens"
       subtitulo="Converse com clientes e acompanhe contatos."
       conversas={conversas}

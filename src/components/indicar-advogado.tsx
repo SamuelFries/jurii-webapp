@@ -1,4 +1,4 @@
-import { indicarAdvogado } from "@/app/escritorio/conversas/acoes";
+import { indicarAdvogado } from "@/app/escritorio/[escritorio]/conversas/acoes";
 
 /**
  * O formulário de indicação na conversa do escritório com o cliente,
@@ -9,10 +9,17 @@ import { indicarAdvogado } from "@/app/escritorio/conversas/acoes";
  */
 export function IndicarAdvogado({
   conversaId,
+  escritorioId,
   voltar,
   advogados,
 }: {
   conversaId: string;
+  /**
+   * DE QUAL escritório parte a indicação. A ação confere este id contra os
+   * vínculos da sessão antes de chamar a RPC, então sem o campo o
+   * formulário inteiro cairia no destino inicial sem indicar ninguém.
+   */
+  escritorioId: string;
   voltar: string;
   advogados: { id: string; nome: string }[];
 }) {
@@ -23,6 +30,7 @@ export function IndicarAdvogado({
       <summary>Indicar advogado ao cliente</summary>
       <form action={indicarAdvogado} className="cartao" style={{ marginTop: 10 }}>
         <input type="hidden" name="conversa" value={conversaId} />
+        <input type="hidden" name="escritorio" value={escritorioId} />
         <input type="hidden" name="voltar" value={voltar} />
         <label htmlFor="advogado-indicado">Quem atende esse assunto</label>
         <select id="advogado-indicado" name="advogado" required>

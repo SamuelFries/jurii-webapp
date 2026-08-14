@@ -3,8 +3,8 @@
 /* Esta pasta NAO e mais rota: com o recorte profissional, /casos do
  * cliente saiu do webapp. O arquivo fica aqui porque e o vizinho natural
  * das duas telas que o usam (/advogado/casos/[id] e
- * /escritorio/casos/[id]), como acontece com notificacoes/acoes.ts. Pasta
- * sem page.tsx nao vira rota no App Router. */
+ * /escritorio/[escritorio]/casos/[id]), como acontece com
+ * notificacoes/acoes.ts. Pasta sem page.tsx nao vira rota no App Router. */
 
 import { redirect } from "next/navigation";
 
@@ -14,7 +14,8 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
 /**
  * As ações do detalhe de caso, MESMAS RPCs do app. Cada formulário manda
  * `voltar` (a rota do detalhe no fluxo em que a pessoa está), porque o
- * mesmo detalhe existe em /casos, /advogado/casos e /escritorio/casos.
+ * mesmo detalhe existe em /advogado/casos e em /escritorio/{id}/casos, e no
+ * do escritório a rota ainda carrega QUAL banca está aberta.
  *
  * Quem decide permissão é o SERVIDOR dentro de cada RPC; aqui só se traduz
  * a recusa para a língua de quem lê.

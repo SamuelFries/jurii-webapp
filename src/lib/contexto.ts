@@ -3,10 +3,13 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { escritorioPreferido } from "./escritorio-ativo";
 import {
   destinoInicial,
   fluxosDoUsuario,
+  vinculoCom,
   type FluxosDoUsuario,
+  type VinculoDeEscritorio,
 } from "./fluxos";
 import { clienteDoServidor } from "./supabase/servidor";
 
@@ -53,14 +56,40 @@ export function exigeAdvogado(contexto: ContextoLogado): void {
   if (!contexto.fluxos.advogadoAprovado) redirect(destinoInicial(contexto.fluxos));
 }
 
-/** Fluxo do escritório só para vínculo ativo. */
+/**
+ * O vínculo com o escritório DA ROTA, ou redirect.
+ *
+ * É AQUI que mora a segurança do contexto ativo. O id chega da URL, isto é,
+ * do cliente, e nunca é aceito por vir escrito: ele é procurado na lista de
+ * vínculos que o BANCO devolveu para esta sessão. Trocar o id na barra de
+ * endereço leva de volta para a casa da pessoa, não para o escritório dos
+ * outros.
+ *
+ * Quem tem vínculo mas pediu o escritório errado vai para o dele; quem não
+ * tem vínculo nenhum vai para o destino do fluxo que tiver.
+ */
 export function exigeEscritorio(
   contexto: ContextoLogado,
-): NonNullable<FluxosDoUsuario["escritorio"]> {
-  const escritorio = contexto.fluxos.escritorio;
-  if (escritorio === null) redirect(destinoInicial(contexto.fluxos));
-  return escritorio;
+  escritorioId: string | null | undefined,
+): VinculoDeEscritorio {
+  const vinculo = vinculoCom(contexto.fluxos, escritorioId);
+  if (vinculo === null) redirect(destinoInicial(contexto.fluxos));
+  return vinculo;
 }
+
+/**
+ * O mesmo, para SERVER ACTION: em vez de redirect, devolve null, porque
+ * ação não tem para onde mandar antes de decidir a mensagem de erro.
+ */
+export function vinculoDaAcao(
+  contexto: ContextoLogado,
+  escritorioId: string | null | undefined,
+): VinculoDeEscritorio | null {
+  return vinculoCom(contexto.fluxos, escritorioId);
+}
+
+/** A preferência guardada, para resolver `/escritorio` sem id e o pós-login. */
+export { escritorioPreferido };
 
 /**
  * O cartão público mora no webapp, que é a mesa do profissional: quem não
@@ -69,7 +98,7 @@ export function exigeEscritorio(
  */
 export function exigeProfissional(contexto: ContextoLogado): void {
   if (
-    contexto.fluxos.escritorio === null &&
+    contexto.fluxos.escritorios.length === 0 &&
     !contexto.fluxos.advogadoAprovado
   ) {
     redirect("/cliente");

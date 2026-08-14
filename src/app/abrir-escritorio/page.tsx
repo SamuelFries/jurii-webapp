@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado } from "@/lib/contexto";
-import { destinoInicial } from "@/lib/fluxos";
+import { destinoInicial, ehSocioEmAlguma } from "@/lib/fluxos";
 import { rotuloDoStatusDaVerificacao } from "@/lib/dominio/verificacao";
 
 import { FormularioDeEscritorio } from "./formulario";
@@ -18,7 +18,12 @@ export const dynamic = "force-dynamic";
  * o que só existia no celular. Aqui ainda reaproveita a cascata de CEP, que
  * preenche endereço e coordenada sozinha.
  *
- * Quem JÁ tem escritório ativo não vê esta tela: vai para o painel dele.
+ * QUEM É BARRADO AQUI é quem já é SÓCIO de alguma banca, e não quem tem
+ * vínculo. A diferença apareceu quando o vínculo virou lista: estagiário,
+ * secretária e advogado de um escritório podem fundar o deles, e a versão
+ * anterior os expulsava desta tela pelo motivo errado. O que continua
+ * fechado é a SEGUNDA banca do mesmo sócio, porque a licença é por pessoa
+ * (owner_profile_id), e é isso que `ehSocioEmAlguma` pergunta.
  */
 export default async function AbrirEscritorio({
   searchParams,
@@ -27,7 +32,12 @@ export default async function AbrirEscritorio({
 }) {
   const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
-  if (contexto.fluxos.escritorio !== null) redirect("/escritorio");
+  // Volta para a casa DE QUEM ESTÁ AQUI, e não para "/escritorio" fixo: com
+  // vários vínculos o destino depende da preferência, e quem sabe disso é
+  // `destinoInicial`.
+  if (ehSocioEmAlguma(contexto.fluxos)) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
 
   // A LICENÇA vem junto porque a policy de INSERT de law_firm_verifications
   // exige has_law_firm_license(auth.uid()). Sem ela o formulário inteiro é
@@ -113,9 +123,13 @@ export default async function AbrirEscritorio({
               grátis de 30 dias. Escolha o plano e a papelada continua aqui,
               com os dados que você já tiver à mão.
             </p>
+            {/* "/planos", e não uma rota de escritório: quem está aqui
+                ainda não tem escritório, logo não tem id para pôr em
+                `/escritorio/{id}/planos`. O funil de compra mora fora do
+                segmento por isso. */}
             <Link
               className="botao compacto"
-              href="/escritorio/planos"
+              href="/planos"
               style={{ marginTop: 10 }}
             >
               Ver os planos

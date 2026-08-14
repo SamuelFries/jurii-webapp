@@ -39,43 +39,61 @@ export function itemAceso(item: ItemDaLateral, caminho: string): boolean {
 export type FluxoDeTrabalho = "advogado" | "escritorio";
 
 /**
- * As laterais de cada fluxo. Ficam aqui, longe do componente, para que o
- * teste possa exercitar as listas DE VERDADE: a regra de destaque só erra
- * quando encontra uma lista concreta, e uma lista inventada no teste não
- * pegaria uma raiz de seção que esqueceu o `exata`.
+ * A lateral do advogado. Fica aqui, longe do componente, para que o teste
+ * possa exercitar a lista DE VERDADE: a regra de destaque só erra quando
+ * encontra uma lista concreta, e uma lista inventada no teste não pegaria
+ * uma raiz de seção que esqueceu o `exata`.
  */
-export const lateralDoFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
-  advogado: [
+export const lateralDoAdvogado: ItemDaLateral[] = [
+  {
+    rotulo: "Mensagens",
+    href: "/advogado",
+    exata: true,
+    tambem: ["/advogado/conversas"],
+  },
+  { rotulo: "Casos", href: "/advogado/casos" },
+  { rotulo: "Agenda", href: "/advogado/agenda" },
+  { rotulo: "Alcance", href: "/advogado/alcance" },
+  { rotulo: "Meu perfil", href: "/advogado/perfil" },
+  { rotulo: "Notificações", href: "/advogado/notificacoes" },
+];
+
+/**
+ * A lateral do escritório é uma FUNÇÃO do escritório aberto, porque a rota
+ * carrega o id: `/escritorio/{id}/casos`. Sem isso, dois vínculos teriam a
+ * mesma URL e nada na barra de endereço diria qual banca está na tela.
+ */
+export function lateralDoEscritorio(escritorioId: string): ItemDaLateral[] {
+  const raiz = `/escritorio/${escritorioId}`;
+  return [
+    { rotulo: "Visão geral", href: raiz, exata: true },
     {
       rotulo: "Mensagens",
-      href: "/advogado",
-      exata: true,
-      tambem: ["/advogado/conversas"],
+      href: `${raiz}/mensagens`,
+      tambem: [`${raiz}/conversas`],
     },
-    { rotulo: "Casos", href: "/advogado/casos" },
-    { rotulo: "Agenda", href: "/advogado/agenda" },
-    { rotulo: "Alcance", href: "/advogado/alcance" },
-    { rotulo: "Meu perfil", href: "/advogado/perfil" },
-    { rotulo: "Notificações", href: "/advogado/notificacoes" },
-  ],
-  escritorio: [
-    { rotulo: "Visão geral", href: "/escritorio", exata: true },
-    {
-      rotulo: "Mensagens",
-      href: "/escritorio/mensagens",
-      tambem: ["/escritorio/conversas"],
-    },
-    { rotulo: "Casos", href: "/escritorio/casos" },
-    { rotulo: "Equipe", href: "/escritorio/equipe" },
-    { rotulo: "Alcance", href: "/escritorio/alcance" },
-    { rotulo: "Perfil", href: "/escritorio/perfil" },
-    { rotulo: "Notificações", href: "/escritorio/notificacoes" },
+    { rotulo: "Casos", href: `${raiz}/casos` },
+    { rotulo: "Equipe", href: `${raiz}/equipe` },
+    { rotulo: "Alcance", href: `${raiz}/alcance` },
+    { rotulo: "Perfil", href: `${raiz}/perfil` },
+    { rotulo: "Notificações", href: `${raiz}/notificacoes` },
     {
       rotulo: "Assinatura",
-      href: "/escritorio/assinatura",
-      tambem: ["/escritorio/planos"],
+      href: `${raiz}/assinatura`,
+      tambem: [`${raiz}/planos`],
     },
-  ],
+  ];
+}
+
+/**
+ * As duas laterais, para o teste do destaque percorrer as listas reais. O
+ * escritório entra com um id fixo de exemplo: a regra de destaque não depende
+ * do valor, e sem uma lista concreta o teste não pega raiz de seção sem
+ * `exata`.
+ */
+export const lateralDoFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
+  advogado: lateralDoAdvogado,
+  escritorio: lateralDoEscritorio("11111111-1111-4111-8111-111111111111"),
 };
 
 /** A lateral da equipe da Jurii. */

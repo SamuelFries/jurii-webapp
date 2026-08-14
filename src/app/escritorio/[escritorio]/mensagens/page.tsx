@@ -8,13 +8,16 @@ import { conversaDaLinha } from "@/lib/dominio/conversas";
 export const dynamic = "force-dynamic";
 
 export default async function MensagensDoEscritorio({
+  params,
   searchParams,
 }: {
+  params: Promise<{ escritorio: string }>;
   searchParams: Promise<{ aba?: string }>;
 }) {
+  const { escritorio: escritorioId } = await params;
   const { aba } = await searchParams;
   const contexto = await contextoLogado();
-  const escritorio = exigeEscritorio(contexto);
+  const escritorio = exigeEscritorio(contexto, escritorioId);
   const segmentoEquipe = aba === "equipe";
 
   const { data } = await contexto.supabase.rpc(
@@ -32,13 +35,10 @@ export default async function MensagensDoEscritorio({
 
   return (
     <PainelDeMensagens
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/mensagens"
       titulo="Mensagens"
       subtitulo={`Conversas de ${escritorio.nome}.`}
       conversas={conversas}
-      baseHref="/escritorio/conversas"
+      baseHref={`/escritorio/${escritorioId}/conversas`}
       vazio={
         segmentoEquipe
           ? "Nenhuma conversa interna ainda."
@@ -58,13 +58,13 @@ export default async function MensagensDoEscritorio({
           style={{ marginBottom: 12 }}
         >
           <Link
-            href="/escritorio/mensagens"
+            href={`/escritorio/${escritorioId}/mensagens`}
             className={segmentoEquipe ? "" : "ativa"}
           >
             Clientes
           </Link>
           <Link
-            href="/escritorio/mensagens?aba=equipe"
+            href={`/escritorio/${escritorioId}/mensagens?aba=equipe`}
             className={segmentoEquipe ? "ativa" : ""}
           >
             Equipe
