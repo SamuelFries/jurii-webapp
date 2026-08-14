@@ -3,7 +3,6 @@ import { describe, expect, test } from "vitest";
 import {
   destinoInicial,
   ehGestor,
-  ehSocioEmAlguma,
   escritorioDoSocio,
   normalizaPapeis,
   papeisDaLinha,
@@ -132,16 +131,6 @@ describe("vínculo pelo id da rota", () => {
     expect(ehGestor(vinculoCom(fluxos, "f2")!)).toBe(false);
   });
 
-  test("ter vínculo não é ser sócia, e é a diferença que a cobrança usa", () => {
-    // Quem só é estagiária numa banca alheia NÃO tem licença: pode abrir a
-    // dela e pode contratar a primeira assinatura. Barrar por "tem vínculo"
-    // tirava dessa pessoa as duas coisas, pelo motivo errado.
-    const soEstagiaria = { ...fluxos, escritorios: [fluxos.escritorios[1]] };
-    expect(ehSocioEmAlguma(fluxos)).toBe(true);
-    expect(ehSocioEmAlguma(soEstagiaria)).toBe(false);
-    expect(escritorioDoSocio(fluxos)?.id).toBe("f1");
-    expect(escritorioDoSocio(soEstagiaria)).toBeNull();
-  });
 });
 
 describe("papéis do escritório", () => {

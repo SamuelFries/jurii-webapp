@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { contextoLogado, vinculoDaAcao } from "@/lib/contexto";
-import { destinoInicial, ehSocioEmAlguma } from "@/lib/fluxos";
+import { destinoInicial } from "@/lib/fluxos";
 import { traduzErroDeEscolhaDePlano } from "@/lib/licenca";
 
 /**
@@ -23,16 +23,19 @@ export async function escolherPlano(dados: FormData): Promise<void> {
   // ANTES da RPC porque até a volta com erro precisa saber para onde
   // retornar.
   //
-  // CAMPO VAZIO É UM CASO LEGÍTIMO, e não formulário quebrado: é a primeira
-  // licença, contratada antes de a banca existir. Vale para quem ainda não é
-  // SÓCIO de nenhuma (inclusive a estagiária que vai fundar a dela), porque
-  // a licença é por pessoa. Já sendo sócio e sem o campo, o formulário
-  // esqueceu de dizer de qual banca é a troca, e adivinhar seria mexer no
-  // plano do escritório errado.
+  // CAMPO VAZIO É UM CASO LEGÍTIMO, e não formulário quebrado: é contratar
+  // uma licença antes de a banca existir. Vale para qualquer pessoa, sócia
+  // ou não, desde que a cobrança virou por escritório: quem já tem uma banca
+  // e quer a segunda compra a segunda licença pelo mesmo caminho.
+  //
+  // Quem impede o abuso é o BANCO, e não esta linha: o índice
+  // law_firm_license_one_unspent_per_owner deixa no máximo UMA licença não
+  // gasta por pessoa, e a RPC reaproveita a existente em vez de criar outra.
+  // Aqui a régua de cargo saiu porque ela dizia a mesma coisa que a licença
+  // já diz, e pior, dizia errado.
   const pedido = String(dados.get("escritorio") ?? "");
   const vinculo = pedido === "" ? null : vinculoDaAcao(contexto, pedido);
-  const primeiraLicenca = pedido === "" && !ehSocioEmAlguma(contexto.fluxos);
-  if (vinculo === null && !primeiraLicenca) {
+  if (pedido !== "" && vinculo === null) {
     redirect(destinoInicial(contexto.fluxos));
   }
 
@@ -48,12 +51,15 @@ export async function escolherPlano(dados: FormData): Promise<void> {
   // O cliente do contexto, e não um segundo montado do zero: `contextoLogado`
   // é cache() por requisição e já leu os cookies uma vez.
   //
-  // A RPC ainda não recebe escritório: ela escolhe sozinha o do gestor. Com
-  // dois escritórios geridos isso não basta, e a correção é do lado do banco
-  // (assunto de cobrança), então aqui a chamada segue igual.
+  // O ESCRITÓRIO VAI NO ARGUMENTO, e é o que diz à RPC qual das duas coisas
+  // está acontecendo: com id, trocar o plano DAQUELA banca (e o servidor
+  // exige ser gestor dela); sem id, contratar uma licença nova para abrir
+  // uma. Antes a RPC escolhia sozinha, e com dois escritórios geridos ela
+  // trocava o plano do errado.
   const { error } = await contexto.supabase.rpc("choose_law_firm_plan", {
     plan_code_value: planCode,
     billing_cycle_value: ciclo,
+    law_firm_id_value: vinculo?.id ?? null,
   });
 
   if (error) {

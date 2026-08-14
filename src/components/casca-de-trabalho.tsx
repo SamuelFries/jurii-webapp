@@ -6,7 +6,7 @@ import {
   lateralDoEscritorio,
   type FluxoDeTrabalho,
 } from "@/lib/dominio/lateral";
-import { ehSocioEmAlguma, type FluxosDoUsuario } from "@/lib/fluxos";
+import type { FluxosDoUsuario } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 import { NavDaLateral } from "./nav-da-lateral";
@@ -129,14 +129,13 @@ export async function CascaDeTrabalho({
             {fluxos.equipeJurii && (
               <Link href="/revisao">Revisar verificações</Link>
             )}
-            {/* Some para quem JÁ É SÓCIO de alguma banca, e não para quem
-                tem qualquer vínculo: estagiário de um escritório pode fundar
-                o dele, e a versão anterior barrava por ter vínculo, que é o
-                motivo errado. O segundo escritório do mesmo sócio segue
-                fechado enquanto a licença for por pessoa. */}
-            {!ehSocioEmAlguma(fluxos) && (
-              <Link href="/abrir-escritorio">Abrir escritório</Link>
-            )}
+            {/* SEMPRE visível. Escondia de quem já era sócio, porque a
+                licença era por pessoa e a segunda banca era impossível. Com
+                a cobrança por escritório ela deixou de ser: abrir a segunda
+                é comprar a segunda licença, e a própria tela explica isso a
+                quem chega sem licença sobrando. Esconder o caminho seria
+                decidir pela pessoa uma coisa que ela pode fazer. */}
+            <Link href="/abrir-escritorio">Abrir escritório</Link>
             <Link href="/conta">Conta</Link>
             {/* A ajuda vive ao lado da conta, e não num item de topo: ela é
                 consulta pontual, não parte do trabalho. Fica em todos os

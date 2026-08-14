@@ -21,12 +21,27 @@ export const dynamic = "force-dynamic";
  */
 export default async function AssinaturaDaPrimeiraLicenca() {
   const contexto = await contextoLogado();
-  // Quem é SÓCIO já tem a assinatura de uma banca, e essa tem rota própria,
-  // com a casca do fluxo em volta. A pergunta é sobre ser sócio, e não sobre
-  // ter vínculo: a licença é por pessoa, então quem trabalha na banca dos
-  // outros não tem assinatura para ver aqui.
+  // Esta rota é a da licença que AINDA NÃO virou banca. Quem já é sócio tem a
+  // assinatura da banca em rota própria, com a casca do fluxo em volta, e é
+  // para lá que vai.
+  //
+  // MAS SÓ SE NÃO HOUVER LICENÇA NOVA para mostrar. Desde que a cobrança
+  // virou por escritório, um sócio pode ter comprado a segunda licença para
+  // abrir a segunda banca, e ela mora aqui: redirecionar sem olhar deixaria
+  // essa pessoa sem tela nenhuma para a compra que acabou de fazer.
+  const { data: licencaNova } = await contexto.supabase
+    .from("law_firm_license_subscriptions")
+    .select("id")
+    .eq("owner_profile_id", contexto.usuario.id)
+    .is("law_firm_id", null)
+    .neq("status", "canceled")
+    .limit(1)
+    .maybeSingle();
+
   const minhaBanca = escritorioDoSocio(contexto.fluxos);
-  if (minhaBanca !== null) redirect(`/escritorio/${minhaBanca.id}/assinatura`);
+  if (licencaNova == null && minhaBanca !== null) {
+    redirect(`/escritorio/${minhaBanca.id}/assinatura`);
+  }
 
   return (
     <main className="pagina">

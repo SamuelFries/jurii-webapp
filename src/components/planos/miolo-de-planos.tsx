@@ -39,13 +39,16 @@ export async function MioloDePlanos({
         )
         .eq("is_active", true)
         .order("sort_order"),
-      // O filtro por escritório é OBRIGATÓRIO quando há um: quem gerencia
-      // mais de uma banca recebe da policy uma linha por escritório, e o
-      // maybeSingle estouraria em vez de trazer a assinatura desta tela.
-      // Sem escritório não há por onde filtrar, e aí a única linha é a do
-      // próprio contratante (owner_profile_id).
+      // O filtro é OBRIGATÓRIO nos dois casos: quem gerencia mais de uma
+      // banca recebe da policy uma linha por escritório, e o maybeSingle
+      // estouraria em vez de trazer a assinatura desta tela.
+      //
+      // Sem escritório, a linha certa é a LICENÇA NÃO GASTA (law_firm_id
+      // nulo). Não filtrar era seguro enquanto a licença era por pessoa e só
+      // havia uma; com a cobrança por escritório, quem já tem banca e
+      // comprou a segunda licença tem duas linhas visíveis.
       (escritorioId === null
-        ? assinaturaEm
+        ? assinaturaEm.is("law_firm_id", null)
         : assinaturaEm.eq("law_firm_id", escritorioId)
       ).maybeSingle(),
     ]);

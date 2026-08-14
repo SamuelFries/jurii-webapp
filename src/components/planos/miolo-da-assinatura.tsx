@@ -28,10 +28,17 @@ export async function MioloDaAssinatura({
     .select("*, law_firm_license_plans(*)")
     .neq("status", "canceled");
   // Uma linha POR ESCRITÓRIO gerido é o que a policy entrega, então quem
-  // cuida de dois via o maybeSingle estourar. Antes de o escritório existir
-  // não há por onde filtrar, e aí a única linha é a do próprio contratante.
+  // cuida de dois via o maybeSingle estourar.
+  //
+  // SEM escritório, a linha certa é a LICENÇA NÃO GASTA (law_firm_id nulo).
+  // Não filtrar aqui era seguro enquanto a licença era por pessoa e só havia
+  // uma; desde que a cobrança virou por escritório, quem já tem banca e
+  // comprou a segunda licença tem duas linhas visíveis, e o maybeSingle
+  // estouraria justo na tela que deveria mostrar a compra nova.
   if (escritorioId !== null) {
     consulta = consulta.eq("law_firm_id", escritorioId);
+  } else {
+    consulta = consulta.is("law_firm_id", null);
   }
   const { data: linha } = await consulta.maybeSingle();
 

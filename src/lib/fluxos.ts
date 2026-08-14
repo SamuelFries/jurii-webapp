@@ -218,12 +218,16 @@ export function ehGestor(vinculo: VinculoDeEscritorio): boolean {
 }
 
 /**
- * A banca DA PRÓPRIA PESSOA, aquela em que ela é sócia, ou null.
+ * A primeira banca em que a pessoa é SÓCIA, ou null.
  *
- * É a pergunta da COBRANÇA, e por isso não é "tem vínculo": a licença é por
- * pessoa (law_firm_license_subscriptions.owner_profile_id), e quem tem plano
- * para trocar é o sócio. Estagiária de uma banca não gerencia assinatura
- * nenhuma, e segue podendo contratar a primeira para fundar a dela.
+ * Serve para as telas de fora do segmento saberem para onde mandar quem já
+ * tem banca. Não é mais a régua da cobrança: desde que a licença passou a ser
+ * por escritório, quem decide o que se pode contratar é a licença não gasta,
+ * e não o cargo.
+ *
+ * Devolve a PRIMEIRA quando há mais de uma, o que basta para o uso atual
+ * (encaminhar para uma rota que existe). Se um dia a tela precisar escolher
+ * entre duas bancas, o certo é perguntar, não adivinhar aqui.
  */
 export function escritorioDoSocio(
   fluxos: FluxosDoUsuario,
@@ -232,9 +236,4 @@ export function escritorioDoSocio(
     fluxos.escritorios.find((vinculo) => vinculo.papeis.includes("owner")) ??
     null
   );
-}
-
-/** Já é sócio em alguma banca? É o que barra abrir a segunda. */
-export function ehSocioEmAlguma(fluxos: FluxosDoUsuario): boolean {
-  return escritorioDoSocio(fluxos) !== null;
 }
