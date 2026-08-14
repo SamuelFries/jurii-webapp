@@ -54,8 +54,8 @@ export async function MioloDaAssinatura({
           <span className="selo">Sem plano</span>
           <p className="detalhe" style={{ marginTop: 10 }}>
             Você ainda não escolheu um plano. A escolha libera o cadastro e a
-            verificação do escritório no aplicativo, com 30 dias de teste
-            grátis.
+            verificação do escritório, aqui mesmo ou no aplicativo, com 30
+            dias de teste grátis.
           </p>
           <Link className="botao" href={paginaDePlanos}>
             Escolher um plano
