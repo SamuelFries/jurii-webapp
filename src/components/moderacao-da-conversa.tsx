@@ -84,6 +84,15 @@ export function ModeracaoDaConversa({
             placeholder="Detalhes (opcional)"
             style={{ marginTop: 8 }}
           />
+          {/* DITO ANTES DE CLICAR, e não depois. A denúncia encaminha as 15
+              últimas mensagens desta conversa para a equipe da Jurii; quem
+              denuncia precisa saber disso para decidir se quer. Sem este
+              aviso, a Jurii coletaria conteúdo que ninguém soube que estava
+              compartilhando. */}
+          <p className="detalhe" style={{ marginTop: 6 }}>
+            Ao denunciar, as 15 últimas mensagens desta conversa vão junto
+            para a equipe da Jurii analisar.
+          </p>
           <button type="submit" className="secundario">
             Enviar denúncia
           </button>

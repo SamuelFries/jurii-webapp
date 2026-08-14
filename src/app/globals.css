@@ -683,6 +683,63 @@ a.cartao-de-lista:hover {
   color: var(--text-2);
 }
 
+/* ---- A conversa denunciada, no painel ----
+ *
+ * NÃO reusa a bolha do chat de propósito. Lá a pessoa CONVERSA, e a bolha
+ * some no fundo para o texto respirar; aqui a pessoa LÊ PROVA, e precisa
+ * distinguir os dois lados sem ambiguidade e enxergar o que foi apagado.
+ * Bolha de chat num painel de decisão convidaria a responder, e não há a
+ * quem responder. */
+.conversa-denunciada {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.mensagem-denunciada {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  border-left: 3px solid var(--border);
+}
+
+/* Quem denunciou de um lado, quem foi denunciado do outro: a cor não é
+   enfeite, é o que evita ler a acusação como se fosse a defesa. */
+.mensagem-denunciada.denunciado {
+  border-left-color: var(--danger);
+}
+
+.mensagem-denunciada.denunciante {
+  border-left-color: var(--gold-soft);
+}
+
+/* A mensagem que a pessoa apontou ao denunciar, quando apontou uma. */
+.mensagem-denunciada.apontada {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.mensagem-denunciada .quem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-2);
+}
+
+.mensagem-denunciada p {
+  margin: 4px 0 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .sinais-do-cartao {
   display: flex;
   flex-direction: column;

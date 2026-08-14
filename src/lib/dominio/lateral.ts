@@ -100,4 +100,5 @@ export const lateralDoFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
 export const lateralDaRevisao: ItemDaLateral[] = [
   { rotulo: "Verificações", href: "/revisao", exata: true },
   { rotulo: "Histórico", href: "/revisao/historico" },
+  { rotulo: "Denúncias", href: "/revisao/denuncias" },
 ];
