@@ -83,6 +83,11 @@ export default async function LayoutDaRevisao({
           )}
           <nav aria-label="Conta">
             <Link href="/conta">Conta</Link>
+            {/* Também aqui: quem revisa é gente da casa, mas a conta é a
+                mesma e as perguntas de conta e de escritório valem igual.
+                Sem o item nesta mesa, a ajuda sumiria para quem entra
+                direto na fila. */}
+            <Link href="/ajuda">Ajuda</Link>
           </nav>
           <form action={sair}>
             <button type="submit" className="discreto">

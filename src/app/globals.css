@@ -2640,3 +2640,70 @@ button.compacto {
     justify-content: space-between;
   }
 }
+
+/* ---- Central de ajuda ---- */
+
+/* O `details` da casa é o de AÇÃO (.propor-caso): uma pílula dourada de
+   uma palavra, no topo de um chat ou de uma lista. Aqui o resumo é uma
+   pergunta inteira, empilhada com outras dez, e a pílula quebrava em duas
+   linhas com borda no meio da frase. Então o mesmo mecanismo (marcador
+   escondido, resumo clicável) com a forma de LISTA: linha cheia, separador
+   entre as perguntas e nada de moldura. */
+.pergunta-de-ajuda {
+  border-bottom: 1px solid var(--border);
+}
+
+.pergunta-de-ajuda summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 30px 14px 0;
+  position: relative;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.pergunta-de-ajuda summary::-webkit-details-marker {
+  display: none;
+}
+
+/* O sinal fica à direita e gira ao abrir, porque a pergunta ocupa a linha
+   toda e um marcador à esquerda empurraria o texto para dentro. */
+.pergunta-de-ajuda summary::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-2);
+  transition: transform 0.15s ease;
+}
+
+.pergunta-de-ajuda[open] summary {
+  color: var(--accent-ink);
+}
+
+.pergunta-de-ajuda[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.pergunta-de-ajuda summary:hover {
+  color: var(--accent-ink);
+}
+
+.resposta-de-ajuda {
+  padding: 0 4px 16px 0;
+}
+
+.resposta-de-ajuda p {
+  color: var(--text-2);
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+/* Quatro atalhos numa página de 560px não cabem numa linha só, e o
+   .acoes-em-linha global não quebra. */
+.resposta-de-ajuda .acoes-em-linha {
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
