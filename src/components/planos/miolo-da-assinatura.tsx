@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { irParaPagamento } from "@/app/pagamento/acoes";
+import { provedorConfigurado } from "@/lib/pagamentos/provedor";
 import {
   assinaturaDaLinha,
   formataPreco,
@@ -43,6 +45,12 @@ export async function MioloDaAssinatura({
   const { data: linha } = await consulta.maybeSingle();
 
   const assinatura = linha ? assinaturaDaLinha(linha) : null;
+  // Já ativa não precisa pagar de novo, e cancelada não se regulariza por
+  // aqui: reativar é contratar de novo, com a pessoa escolhendo o plano.
+  const podePagar =
+    provedorConfigurado() !== null &&
+    assinatura !== null &&
+    (assinatura.status === "trialing" || assinatura.status === "past_due");
   const agora = new Date();
   // O funil pré-escritório mora fora do segmento, porque quem ainda não tem
   // banca não tem id para pôr na rota.
@@ -94,6 +102,27 @@ export async function MioloDaAssinatura({
                 {rotuloDaEquipe(assinatura.plano)}.
               </p>
             </>
+          )}
+
+          {/* PAGAR É OFERECIDO, e o botão só existe porque agora há
+              provedor: antes, oferecer levaria a lugar nenhum, e botão que
+              não paga é o link morto que a casa não admite.
+              Durante o teste ele NÃO encurta os dias que faltam: a primeira
+              cobrança é marcada para o fim do teste, então assinar cedo é
+              deixar o pagamento pronto. */}
+          {podePagar && (
+            <form action={irParaPagamento} style={{ marginBottom: 10 }}>
+              <input
+                type="hidden"
+                name="escritorio"
+                value={escritorioId ?? ""}
+              />
+              <button type="submit">
+                {assinatura.status === "past_due"
+                  ? "Regularizar pagamento"
+                  : "Ativar cobrança"}
+              </button>
+            </form>
           )}
 
           <Link className="botao secundario" href={paginaDePlanos}>
