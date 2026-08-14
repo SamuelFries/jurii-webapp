@@ -27,6 +27,16 @@ export interface PassoDoEscritorio {
   href: string;
 }
 
+/** Qual TELA resolve o passo. Vira rota só quando se sabe qual escritório. */
+type TelaQueResolve = "perfil" | "equipe";
+
+interface PassoPendente {
+  chave: string;
+  titulo: string;
+  porque: string;
+  tela: TelaQueResolve;
+}
+
 /**
  * O que ainda falta, na ordem em que atrapalha.
  *
@@ -34,11 +44,12 @@ export interface PassoDoEscritorio {
  * escritório (áreas e CEP alimentam busca e distância), depois o que o faz
  * ESCOLHER (apresentação, horário, contato), e por último a equipe, que é a
  * única coisa que ele não vê.
+ *
+ * Guarda a TELA, e não a rota pronta: o domínio não conhece
+ * `/escritorio/{id}/...`, e quem junta as duas coisas é `passosDoEscritorio`.
  */
-export function passosDoEscritorio(
-  estado: EstadoDoEscritorio,
-): PassoDoEscritorio[] {
-  const passos: PassoDoEscritorio[] = [];
+function pendenciasDoEscritorio(estado: EstadoDoEscritorio): PassoPendente[] {
+  const passos: PassoPendente[] = [];
 
   if (estado.areas.length === 0) {
     passos.push({
@@ -46,7 +57,7 @@ export function passosDoEscritorio(
       titulo: "Escolha as áreas que o escritório atende",
       porque:
         "É por elas que o cliente encontra a banca. Sem nenhuma marcada, o escritório não aparece em busca nenhuma.",
-      href: "/escritorio/perfil",
+      tela: "perfil",
     });
   }
 
@@ -56,7 +67,7 @@ export function passosDoEscritorio(
       titulo: "Complete o endereço com o CEP",
       porque:
         "O CEP alimenta a ordenação por distância: sem ele, o escritório não aparece para quem está perto.",
-      href: "/escritorio/perfil",
+      tela: "perfil",
     });
   }
 
@@ -66,7 +77,7 @@ export function passosDoEscritorio(
       titulo: "Escreva a apresentação do escritório",
       porque:
         "É o texto que o cliente lê antes de decidir falar com vocês. Perfil sem apresentação perde para o que tem.",
-      href: "/escritorio/perfil",
+      tela: "perfil",
     });
   }
 
@@ -76,7 +87,7 @@ export function passosDoEscritorio(
       titulo: "Informe o horário de atendimento",
       porque:
         "Sem horário publicado, o cliente não sabe quando esperar resposta e costuma procurar outro.",
-      href: "/escritorio/perfil",
+      tela: "perfil",
     });
   }
 
@@ -86,7 +97,7 @@ export function passosDoEscritorio(
       titulo: "Deixe um telefone ou e-mail de contato",
       porque:
         "É por onde o cliente fala com o escritório fora do aplicativo.",
-      href: "/escritorio/perfil",
+      tela: "perfil",
     });
   }
 
@@ -96,7 +107,7 @@ export function passosDoEscritorio(
       titulo: "Convide os advogados da banca",
       porque:
         "Escritório de uma pessoa só não divide carteira: é a equipe que faz caso ter responsável e conversa ter quem responda.",
-      href: "/escritorio/equipe",
+      tela: "equipe",
     });
   }
 
@@ -104,15 +115,36 @@ export function passosDoEscritorio(
 }
 
 /**
+ * Os passos que faltam, já apontando para a tela DESTE escritório.
+ *
+ * O id entra aqui, e não na página, porque a rota do fluxo carrega o
+ * escritório (`/escritorio/{id}/perfil`): montar o href fora daqui obrigava
+ * quem chama a remendar o caminho com um replace, e um remendo desses só
+ * some quando alguém repara nele.
+ */
+export function passosDoEscritorio(
+  estado: EstadoDoEscritorio,
+  escritorioId: string,
+): PassoDoEscritorio[] {
+  return pendenciasDoEscritorio(estado).map((passo) => ({
+    chave: passo.chave,
+    titulo: passo.titulo,
+    porque: passo.porque,
+    href: `/escritorio/${escritorioId}/${passo.tela}`,
+  }));
+}
+
+/**
  * Quanto do cadastro já está de pé, de 0 a 1.
  *
  * Serve para a tela dizer "faltam 2 de 6" em vez de só listar pendências: a
- * pessoa precisa saber se está no começo ou quase lá.
+ * pessoa precisa saber se está no começo ou quase lá. Não precisa do id: a
+ * CONTA das pendências não depende de para onde elas apontam.
  */
 export function progressoDoEscritorio(estado: EstadoDoEscritorio): {
   feitos: number;
   total: number;
 } {
   const total = 6;
-  return { total, feitos: total - passosDoEscritorio(estado).length };
+  return { total, feitos: total - pendenciasDoEscritorio(estado).length };
 }

@@ -9,25 +9,45 @@ import {
   enderecoEmUmaLinha,
   precisaGeocodificar,
 } from "@/lib/cep";
+import { contextoLogado, vinculoDaAcao } from "@/lib/contexto";
+import { destinoInicial, type VinculoDeEscritorio } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
-function volta(sufixo: string): never {
-  redirect(`/escritorio/perfil?${sufixo}`);
+function volta(escritorioId: string, sufixo: string): never {
+  redirect(`/escritorio/${escritorioId}/perfil?${sufixo}`);
+}
+
+/**
+ * O escritório desta gravação, conferido contra os vínculos da sessão.
+ *
+ * O id continua chegando por campo oculto do formulário, isto é, do cliente,
+ * e por isso nunca é usado cru: quem mandar o id de outro escritório volta
+ * para o destino do próprio fluxo. As RPCs também recusariam (elas cobram
+ * sócio ou admin), mas a mensagem seria de permissão, e o problema não é
+ * esse; e agora que a pessoa pode ter mais de um vínculo, é daqui que sai o
+ * id certo para o redirect de volta.
+ */
+async function escritorioDaAcao(dados: FormData): Promise<VinculoDeEscritorio> {
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(contexto, String(dados.get("escritorio") ?? ""));
+  if (vinculo === null) redirect(destinoInicial(contexto.fluxos));
+  return vinculo;
 }
 
 export async function salvarApresentacao(dados: FormData): Promise<void> {
+  const escritorio = await escritorioDaAcao(dados);
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("update_law_firm_description", {
-    law_firm_id_value: String(dados.get("escritorio") ?? ""),
+    law_firm_id_value: escritorio.id,
     description_value: String(dados.get("descricao") ?? "").trim(),
   });
   if (error) {
     const mensagem = error.message.includes("Not allowed")
       ? "Apenas sócio e admin editam a apresentação."
       : "Não foi possível salvar a apresentação.";
-    volta(`erro=${encodeURIComponent(mensagem)}`);
+    volta(escritorio.id, `erro=${encodeURIComponent(mensagem)}`);
   }
-  volta("ok=apresentacao");
+  volta(escritorio.id, "ok=apresentacao");
 }
 
 /**
@@ -37,25 +57,32 @@ export async function salvarApresentacao(dados: FormData): Promise<void> {
  * campo oculto, montado pelo editor.
  */
 export async function salvarHorarios(dados: FormData): Promise<void> {
+  // O vínculo vem ANTES de qualquer coisa dar errado: até a mensagem de
+  // payload inválido precisa saber para qual escritório voltar.
+  const escritorio = await escritorioDaAcao(dados);
+
   let horarios: unknown;
   try {
     horarios = JSON.parse(String(dados.get("horarios") ?? "[]"));
   } catch {
-    volta(`erro=${encodeURIComponent("Horários inválidos. Recarregue e tente de novo.")}`);
+    volta(
+      escritorio.id,
+      `erro=${encodeURIComponent("Horários inválidos. Recarregue e tente de novo.")}`,
+    );
   }
 
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("set_law_firm_business_hours", {
-    law_firm_id_value: String(dados.get("escritorio") ?? ""),
+    law_firm_id_value: escritorio.id,
     hours_value: horarios,
   });
   if (error) {
     const mensagem = error.message.includes("Not allowed")
       ? "Apenas sócio e admin editam os horários."
       : "O servidor recusou os horários. Confira os intervalos.";
-    volta(`erro=${encodeURIComponent(mensagem)}`);
+    volta(escritorio.id, `erro=${encodeURIComponent(mensagem)}`);
   }
-  volta("ok=horarios");
+  volta(escritorio.id, "ok=horarios");
 }
 
 /**
@@ -70,10 +97,11 @@ export async function salvarHorarios(dados: FormData): Promise<void> {
  * best-effort: falhou, o cadastro grava do mesmo jeito.
  */
 export async function salvarCadastro(dados: FormData): Promise<void> {
+  const escritorio = await escritorioDaAcao(dados);
   const texto = (campo: string) => String(dados.get(campo) ?? "").trim();
   const nome = texto("nome");
   if (nome.length < 2) {
-    volta(`erro=${encodeURIComponent("Informe o nome do escritório.")}`);
+    volta(escritorio.id, `erro=${encodeURIComponent("Informe o nome do escritório.")}`);
   }
 
   const cepNovo = digitosDoCep(texto("cep"));
@@ -123,7 +151,7 @@ export async function salvarCadastro(dados: FormData): Promise<void> {
 
   const supabase = await clienteDoServidor();
   const { error } = await supabase.rpc("update_law_firm_profile", {
-    law_firm_id_value: texto("escritorio"),
+    law_firm_id_value: escritorio.id,
     name_value: nome,
     phone_value: texto("telefone") || null,
     email_value: texto("email") || null,
@@ -147,7 +175,10 @@ export async function salvarCadastro(dados: FormData): Promise<void> {
     const mensagem = error.message.includes("Not allowed")
       ? "Apenas sócio e admin editam o cadastro."
       : "Não foi possível salvar o cadastro. Tente de novo.";
-    volta(`erro=${encodeURIComponent(mensagem)}`);
+    volta(escritorio.id, `erro=${encodeURIComponent(mensagem)}`);
   }
-  volta(coordenada === null && cepNovo !== "" ? "ok=cadastro-sem-mapa" : "ok=cadastro");
+  volta(
+    escritorio.id,
+    coordenada === null && cepNovo !== "" ? "ok=cadastro-sem-mapa" : "ok=cadastro",
+  );
 }

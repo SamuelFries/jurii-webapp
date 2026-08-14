@@ -5,8 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  *
  *  - Cliente: todo mundo logado.
  *  - Advogado: verificação mais recente APROVADA (lawyer_verifications).
- *  - Escritório: vínculo ATIVO em law_firm_members; membro de 2+ escritórios
- *    entra no mais antigo, a mesma ordenação estável do app.
+ *  - Escritório: TODOS os vínculos ativos em law_firm_members, cada um com o
+ *    seu cargo.
  *
  * A autoridade continua sendo a RLS: isto decide o que a navegação MOSTRA,
  * nunca o que o banco entrega. Regra que só existe na tela não é portão.
@@ -52,6 +52,19 @@ export function papelPrincipal(
   return normalizaPapeis(papeis)[0];
 }
 
+/**
+ * UM VÍNCULO: a pessoa neste escritório, com o cargo DELA aqui.
+ *
+ * O cargo é do vínculo e não da pessoa: quem é sócio numa banca pode ser
+ * estagiário em outra, e as duas coisas são verdade ao mesmo tempo.
+ */
+export interface VinculoDeEscritorio {
+  id: string;
+  nome: string;
+  iniciais: string;
+  papeis: PapelNoEscritorio[];
+}
+
 export interface FluxosDoUsuario {
   advogadoAprovado: boolean;
   /**
@@ -61,57 +74,54 @@ export interface FluxosDoUsuario {
    * estagiário) e é de outra empresa. Aqui é gente da casa.
    */
   equipeJurii: boolean;
-  escritorio: {
-    id: string;
-    nome: string;
-    papeis: PapelNoEscritorio[];
-  } | null;
+  /**
+   * TODOS os vínculos ativos, na ordem estável em que a pessoa entrou.
+   *
+   * Era um objeto ou null, resolvido por `order by joined_at limit 1`, e o
+   * comentário de então já dizia o que faltava: "até existir um seletor de
+   * escritório". O segundo escritório simplesmente não existia para o
+   * webapp: sem rota, sem lateral, sem jeito de abrir.
+   */
+  escritorios: VinculoDeEscritorio[];
 }
 
 export async function fluxosDoUsuario(
   supabase: SupabaseClient,
 ): Promise<FluxosDoUsuario> {
-  const [verificacao, vinculo, equipe] = await Promise.all([
+  const [verificacao, vinculos, equipe] = await Promise.all([
     supabase
       .from("lawyer_verifications")
       .select("status")
       .order("submitted_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from("law_firm_members")
-      .select("law_firm_id, roles, member_role, role, status, law_firms(id, name)")
-      .eq("status", "active")
-      .order("joined_at", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
+    // PELA RPC, e não por select direto. A policy law_firm_members_read_related
+    // entrega também as linhas dos COLEGAS (ela existe para montar a lista da
+    // equipe), então o select antigo, sem filtro de profile_id e com
+    // `order by joined_at limit 1`, devolvia a linha do sócio para a
+    // secretária: a tela lhe dava a interface de sócio. Isso acontecia em
+    // produção sem ninguém ter dois escritórios.
+    supabase.rpc("fetch_law_firm_memberships"),
     // No MESMO lote: não custa uma ida à rede nova. E degrada para false
     // se a função ainda não existir no ambiente (migration não aplicada),
     // porque um erro aqui não pode derrubar o login de ninguém.
     supabase.rpc("is_jurii_staff"),
   ]);
-  const linhaDeVinculo = vinculo.data;
-  const firma = linhaDeVinculo?.law_firms as
-    | { id: string; name: string }
-    | { id: string; name: string }[]
-    | null
-    | undefined;
-  const firmaUnica = Array.isArray(firma) ? firma[0] : firma;
+
+  const linhas = ((vinculos.data as unknown[]) ?? []) as Record<
+    string,
+    unknown
+  >[];
 
   return {
     equipeJurii: equipe.data === true,
     advogadoAprovado: verificacao.data?.status === "approved",
-    escritorio:
-      linhaDeVinculo && firmaUnica
-        ? {
-            id: firmaUnica.id,
-            nome: firmaUnica.name,
-            papeis: papeisDaLinha(
-              linhaDeVinculo.roles,
-              linhaDeVinculo.member_role ?? linhaDeVinculo.role,
-            ),
-          }
-        : null,
+    escritorios: linhas.map((linha) => ({
+      id: String(linha.law_firm_id),
+      nome: String(linha.law_firm_name ?? "Escritório"),
+      iniciais: String(linha.law_firm_initials ?? "ES"),
+      papeis: papeisDaLinha(linha.roles, linha.primary_role),
+    })),
   };
 }
 
@@ -136,18 +146,50 @@ export function papeisDaLinha(
 }
 
 /**
+ * O vínculo com um escritório, ou null.
+ *
+ * É a única forma de resolver um id de escritório para papéis, e a razão de
+ * ela existir é a segurança: o id chega da ROTA, isto é, do cliente. Sem
+ * conferir contra a lista de vínculos, trocar o id na URL trocaria de
+ * escritório. O banco recusaria as escritas, mas a tela mostraria a casa de
+ * outra pessoa.
+ */
+export function vinculoCom(
+  fluxos: FluxosDoUsuario,
+  escritorioId: string | null | undefined,
+): VinculoDeEscritorio | null {
+  if (escritorioId == null || escritorioId === "") return null;
+  return (
+    fluxos.escritorios.find((vinculo) => vinculo.id === escritorioId) ?? null
+  );
+}
+
+/**
+ * Qual escritório abrir quando ninguém disse qual.
+ *
+ * A preferência guardada vale se ainda for um vínculo ATIVO; se o vínculo
+ * caiu (saiu da banca, foi desativado), cai no primeiro da lista em vez de
+ * insistir num contexto morto. É a regra 12 do pedido.
+ */
+export function escritorioPadrao(
+  fluxos: FluxosDoUsuario,
+  preferido: string | null | undefined,
+): VinculoDeEscritorio | null {
+  return vinculoCom(fluxos, preferido) ?? fluxos.escritorios[0] ?? null;
+}
+
+/**
  * Onde a pessoa CAI ao entrar. O webapp existe para o profissional
  * trabalhar no computador, então escritório vem primeiro, advogado depois,
  * e o fluxo do cliente é a casa de quem não é profissional. Todos os
- * fluxos continuam alcançáveis pela troca no topo.
+ * fluxos continuam alcançáveis pela troca no rodapé da lateral.
  */
-/**
- * A casa da pessoa: escritório primeiro, advogado depois. Quem não tem
- * papel profissional vai para a porta que explica que a área do cliente
- * é no aplicativo (o webapp virou ferramenta de trabalho).
- */
-export function destinoInicial(fluxos: FluxosDoUsuario): string {
-  if (fluxos.escritorio !== null) return "/escritorio";
+export function destinoInicial(
+  fluxos: FluxosDoUsuario,
+  preferido?: string | null,
+): string {
+  const escritorio = escritorioPadrao(fluxos, preferido);
+  if (escritorio !== null) return `/escritorio/${escritorio.id}`;
   if (fluxos.advogadoAprovado) return "/advogado";
   // Funcionário da Jurii sem papel profissional cai na REVISÃO, e não na
   // porta que manda baixar o aplicativo: a área dele é esta.
@@ -168,4 +210,31 @@ export function rotuloDoPapel(papel: PapelNoEscritorio): string {
     case "intern":
       return "Estagiário";
   }
+}
+
+/** Gestores editam cadastro, perfil e equipe; o resto trabalha. */
+export function ehGestor(vinculo: VinculoDeEscritorio): boolean {
+  return vinculo.papeis.some((papel) => papel === "owner" || papel === "admin");
+}
+
+/**
+ * A banca DA PRÓPRIA PESSOA, aquela em que ela é sócia, ou null.
+ *
+ * É a pergunta da COBRANÇA, e por isso não é "tem vínculo": a licença é por
+ * pessoa (law_firm_license_subscriptions.owner_profile_id), e quem tem plano
+ * para trocar é o sócio. Estagiária de uma banca não gerencia assinatura
+ * nenhuma, e segue podendo contratar a primeira para fundar a dela.
+ */
+export function escritorioDoSocio(
+  fluxos: FluxosDoUsuario,
+): VinculoDeEscritorio | null {
+  return (
+    fluxos.escritorios.find((vinculo) => vinculo.papeis.includes("owner")) ??
+    null
+  );
+}
+
+/** Já é sócio em alguma banca? É o que barra abrir a segunda. */
+export function ehSocioEmAlguma(fluxos: FluxosDoUsuario): boolean {
+  return escritorioDoSocio(fluxos) !== null;
 }

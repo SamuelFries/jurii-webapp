@@ -4,11 +4,11 @@ import { caminhoInterno, comParametro } from "./caminho-seguro";
 
 describe("caminho interno", () => {
   test("caminho de casa passa inteiro, com querystring", () => {
-    expect(caminhoInterno("/escritorio/mensagens", "/")).toBe(
-      "/escritorio/mensagens",
+    expect(caminhoInterno("/escritorio/f1/mensagens", "/")).toBe(
+      "/escritorio/f1/mensagens",
     );
-    expect(caminhoInterno("/escritorio/conversas/1?aba=equipe", "/")).toBe(
-      "/escritorio/conversas/1?aba=equipe",
+    expect(caminhoInterno("/escritorio/f1/conversas/1?aba=equipe", "/")).toBe(
+      "/escritorio/f1/conversas/1?aba=equipe",
     );
   });
 

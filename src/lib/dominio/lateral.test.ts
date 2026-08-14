@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   itemAceso,
   lateralDaRevisao,
+  lateralDoEscritorio,
   lateralDoFluxo,
   type ItemDaLateral,
 } from "./lateral";
@@ -66,4 +67,28 @@ describe("itemAceso", () => {
       expect(ambiguas).toEqual([]);
     },
   );
+});
+
+describe("lateral do escritório", () => {
+  it("todo caminho carrega o id da banca aberta", () => {
+    // A barreira da rota com id: um item que nasça apontando para
+    // "/escritorio/algo" leva a pessoa para a porta de compatibilidade e de
+    // volta, e o único sintoma seria a tela "piscar" para outro escritório.
+    // Vale para os apelidos de `tambem` também, que é por onde Mensagens
+    // acende em /conversas e Assinatura em /planos.
+    for (const item of lateralDoEscritorio("f1")) {
+      for (const caminho of [item.href, ...(item.tambem ?? [])]) {
+        expect(caminho.startsWith("/escritorio/f1")).toBe(true);
+      }
+    }
+  });
+
+  it("a mesma lateral em duas bancas dá caminhos diferentes", () => {
+    // O motivo de a lateral ser função, e não constante: com dois vínculos
+    // uma lista fixa mandaria as duas telas para o mesmo lugar.
+    const [umaBanca] = lateralDoEscritorio("f1");
+    const [outraBanca] = lateralDoEscritorio("f2");
+    expect(umaBanca.href).toBe("/escritorio/f1");
+    expect(outraBanca.href).toBe("/escritorio/f2");
+  });
 });

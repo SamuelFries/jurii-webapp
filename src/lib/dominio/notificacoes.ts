@@ -68,12 +68,22 @@ export function conviteDeEquipePendente(notificacao: Notificacao): boolean {
 export function destinoDaNotificacao(
   notificacao: Notificacao,
   fluxo: "advogado" | "escritorio",
+  /**
+   * DE QUAL escritório, porque a rota do fluxo carrega o id
+   * (`/escritorio/{id}/casos/{caso}`). Nulo no fluxo do advogado, que não
+   * tem escritório na rota. Nulo NO fluxo do escritório significa que não
+   * se sabe de qual banca é a notificação: aí não há destino, porque um
+   * caminho sem id só levaria a pessoa para a guarda e de volta.
+   */
+  escritorioId: string | null,
 ): string | null {
   // O fluxo "cliente" saiu do TIPO, e não só do uso: com o recorte
   // profissional as rotas /conversas e /casos do cliente não existem, então
   // um destino de cliente seria link morto. Tirar do tipo faz o compilador
   // recusar quem tentar reintroduzir.
-  const base = fluxo === "advogado" ? "/advogado" : "/escritorio";
+  if (fluxo === "escritorio" && escritorioId === null) return null;
+  const base =
+    fluxo === "advogado" ? "/advogado" : `/escritorio/${escritorioId}`;
 
   // Escritório nunca abre conversa a partir da notificação (regra do app).
   if (fluxo !== "escritorio" && notificacao.conversaId !== null) {

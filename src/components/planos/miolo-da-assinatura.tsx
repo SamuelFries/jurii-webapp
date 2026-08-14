@@ -1,6 +1,6 @@
 import Link from "next/link";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { contextoLogado } from "@/lib/contexto";
 import {
   assinaturaDaLinha,
   formataPreco,
@@ -8,25 +8,41 @@ import {
   rotuloDaEquipe,
   rotuloDeStatus,
 } from "@/lib/licenca";
-import { sair } from "@/app/entrar/acoes";
 
-/** Sempre no servidor e sempre fresco: estado de assinatura em cache é como
- * a pessoa paga e continua vendo "pendente". */
-export const dynamic = "force-dynamic";
-
-export default async function PaginaDaAssinatura() {
-  const contexto = await contextoLogado();
-
-  const { data: linha } = await contexto.supabase
+/**
+ * A tela de assinatura SEM a casca, pelo mesmo motivo do miolo de planos:
+ * ela vale para o contratante que ainda não tem banca (acabou de escolher o
+ * primeiro plano e espera a verificação) e para o gestor de um escritório
+ * já de pé. O `escritorioId` é a única diferença.
+ */
+export async function MioloDaAssinatura({
+  supabase,
+  escritorioId,
+}: {
+  supabase: SupabaseClient;
+  /** Nulo antes de o escritório existir. */
+  escritorioId: string | null;
+}) {
+  let consulta = supabase
     .from("law_firm_license_subscriptions")
     .select("*, law_firm_license_plans(*)")
-    .neq("status", "canceled")
-    .maybeSingle();
+    .neq("status", "canceled");
+  // Uma linha POR ESCRITÓRIO gerido é o que a policy entrega, então quem
+  // cuida de dois via o maybeSingle estourar. Antes de o escritório existir
+  // não há por onde filtrar, e aí a única linha é a do próprio contratante.
+  if (escritorioId !== null) {
+    consulta = consulta.eq("law_firm_id", escritorioId);
+  }
+  const { data: linha } = await consulta.maybeSingle();
 
   const assinatura = linha ? assinaturaDaLinha(linha) : null;
   const agora = new Date();
+  // O funil pré-escritório mora fora do segmento, porque quem ainda não tem
+  // banca não tem id para pôr na rota.
+  const paginaDePlanos =
+    escritorioId === null ? "/planos" : `/escritorio/${escritorioId}/planos`;
 
-  const conteudo = (
+  return (
     <>
       <h1>Assinatura</h1>
       <p className="subtitulo">
@@ -41,7 +57,7 @@ export default async function PaginaDaAssinatura() {
             verificação do escritório no aplicativo, com 30 dias de teste
             grátis.
           </p>
-          <Link className="botao" href="/escritorio/planos">
+          <Link className="botao" href={paginaDePlanos}>
             Escolher um plano
           </Link>
         </div>
@@ -73,40 +89,11 @@ export default async function PaginaDaAssinatura() {
             </>
           )}
 
-          <Link className="botao secundario" href="/escritorio/planos">
+          <Link className="botao secundario" href={paginaDePlanos}>
             Trocar de plano
           </Link>
         </div>
       )}
     </>
-  );
-
-  // Quem já tem vínculo ativo navega com a casca do fluxo; o contratante
-  // pré-verificação (escolheu plano, escritório ainda em análise no app)
-  // vê a página solta, porque não há fluxo de escritório ainda.
-  if (contexto.fluxos.escritorio !== null) {
-    return (
-        <div className="pagina-de-trabalho">
-          <div className="miolo" style={{ maxWidth: 560 }}>
-            {conteudo}
-          </div>
-        </div>
-    );
-  }
-
-  return (
-    <main className="pagina">
-      <div className="linha-topo">
-        <Link href="/" className="marca marca-pequena">
-          jurii<span className="ouro">.</span>
-        </Link>
-        <form action={sair}>
-          <button type="submit" className="discreto">
-            Sair
-          </button>
-        </form>
-      </div>
-      {conteudo}
-    </main>
   );
 }

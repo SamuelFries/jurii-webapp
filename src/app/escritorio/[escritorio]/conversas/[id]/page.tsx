@@ -17,13 +17,13 @@ export default async function ChatDoEscritorio({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ escritorio: string; id: string }>;
   searchParams: Promise<{ aba?: string; ok?: string; erro?: string }>;
 }) {
-  const { id } = await params;
+  const { escritorio: escritorioId, id } = await params;
   const { aba, ok, erro } = await searchParams;
   const contexto = await contextoLogado();
-  const escritorio = exigeEscritorio(contexto);
+  const escritorio = exigeEscritorio(contexto, escritorioId);
   const segmentoEquipe = aba === "equipe";
 
   const [conversasRes, mensagens, bloqueio, equipeRes] = await Promise.all([
@@ -65,13 +65,10 @@ export default async function ChatDoEscritorio({
 
   return (
     <PainelDeMensagens
-      fluxo="escritorio"
-      fluxos={contexto.fluxos}
-      caminhoAtivo="/escritorio/mensagens"
       titulo="Mensagens"
       subtitulo={`Conversas de ${escritorio.nome}.`}
       conversas={conversas}
-      baseHref="/escritorio/conversas"
+      baseHref={`/escritorio/${escritorioId}/conversas`}
       vazio="Nenhuma conversa neste segmento ainda."
       placeholder={
         segmentoEquipe
@@ -89,13 +86,13 @@ export default async function ChatDoEscritorio({
           style={{ marginBottom: 12 }}
         >
           <Link
-            href="/escritorio/mensagens"
+            href={`/escritorio/${escritorioId}/mensagens`}
             className={segmentoEquipe ? "" : "ativa"}
           >
             Clientes
           </Link>
           <Link
-            href="/escritorio/mensagens?aba=equipe"
+            href={`/escritorio/${escritorioId}/mensagens?aba=equipe`}
             className={segmentoEquipe ? "ativa" : ""}
           >
             Equipe
@@ -104,7 +101,9 @@ export default async function ChatDoEscritorio({
       }
     >
       <div className="cabecalho-do-chat">
-        <Link href={`/escritorio/mensagens${sufixo}`}>← Mensagens</Link>
+        <Link href={`/escritorio/${escritorioId}/mensagens${sufixo}`}>
+          ← Mensagens
+        </Link>
         <span className="nome">{conversa?.titulo ?? "Conversa"}</span>
         {conversa != null && conversa.especialidade !== "" && (
           <span className="area">{conversa.especialidade}</span>
@@ -117,18 +116,19 @@ export default async function ChatDoEscritorio({
             <>
               <ProporCaso
                 conversaId={id}
-                voltar={`/escritorio/conversas/${id}${sufixo}`}
+                voltar={`/escritorio/${escritorioId}/conversas/${id}${sufixo}`}
               />
               <IndicarAdvogado
                 conversaId={id}
-                voltar={`/escritorio/conversas/${id}${sufixo}`}
+                escritorioId={escritorio.id}
+                voltar={`/escritorio/${escritorioId}/conversas/${id}${sufixo}`}
                 advogados={advogadosDaEquipe}
               />
             </>
           )}
           <ModeracaoDaConversa
             conversaId={id}
-            voltar={`/escritorio/conversas/${id}${sufixo}`}
+            voltar={`/escritorio/${escritorioId}/conversas/${id}${sufixo}`}
             bloqueada={bloqueio.bloqueada}
             bloqueadaPorMim={bloqueio.porMim}
           />

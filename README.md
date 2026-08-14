@@ -32,14 +32,28 @@ nenhum dos dois papéis, `destinoInicial` manda para `/cliente`.
 **Advogado**
 - `/advogado`: mensagens. `/advogado/casos`: casos com status.
 
-**Escritório**
-- `/escritorio`: mensagens com segmento Clientes | Equipe.
-- `/escritorio/casos`: a carteira, com urgência e responsável.
-- `/escritorio/equipe`: quem trabalha no escritório e convites pendentes.
-- `/escritorio/assinatura` e `/escritorio/planos`: plano, ciclo, troca pela
-  RPC `choose_law_firm_plan`. Acessíveis também SEM vínculo ativo, porque o
-  contratante escolhe o plano antes de o escritório existir (a paywall do
-  app exige).
+**Escritório**: o id vai NA ROTA, porque o vínculo virou lista. Quem trabalha
+em duas bancas precisa que a barra de endereço diga qual está aberta, e é o
+que permite duas abas em escritórios diferentes ao mesmo tempo. O id chega do
+cliente, então toda página o confere contra os vínculos da sessão com
+`exigeEscritorio`, e toda ação com `vinculoDaAcao`.
+- `/escritorio`: a porta de compatibilidade, sem id. Manda para o último
+  escritório aberto (cookie), conferido contra os vínculos; preferência morta
+  cai no primeiro válido. É também o destino do pós-login.
+- `/escritorio/{id}`: a visão geral, com o que precisa de uma pessoa hoje.
+- `/escritorio/{id}/mensagens`: segmento Clientes | Equipe.
+- `/escritorio/{id}/casos`: a carteira, com urgência e responsável.
+- `/escritorio/{id}/equipe`: quem trabalha no escritório e convites pendentes.
+- `/escritorio/{id}/assinatura` e `/escritorio/{id}/planos`: plano, ciclo,
+  troca pela RPC `choose_law_firm_plan`.
+
+**O funil de compra mora FORA do segmento**, em `/planos` e `/assinatura`: a
+licença vem ANTES da banca (é ela que destrava o cadastro, pela policy de
+`law_firm_verifications`), e quem ainda não tem escritório não tem id para pôr
+na rota. Quem já é SÓCIO é desviado dessas duas para a tela do escritório
+dele. A pergunta em toda essa borda é "é sócio?" (`ehSocioEmAlguma`), e não
+"tem vínculo?": a licença é por pessoa, então estagiária de uma banca segue
+podendo contratar a primeira dela.
 
 **Chat**: histórico das 100 mais recentes (o teto do app), envio por insert
 em `messages` sob RLS, `sender_type` conforme o fluxo, tempo real por

@@ -1,11 +1,16 @@
 import Link from "next/link";
 
 import { sair } from "@/app/entrar/acoes";
-import { lateralDoFluxo, type FluxoDeTrabalho } from "@/lib/dominio/lateral";
-import type { FluxosDoUsuario } from "@/lib/fluxos";
+import {
+  lateralDoAdvogado,
+  lateralDoEscritorio,
+  type FluxoDeTrabalho,
+} from "@/lib/dominio/lateral";
+import { ehSocioEmAlguma, type FluxosDoUsuario } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 import { NavDaLateral } from "./nav-da-lateral";
+import { SeletorDeEscritorio } from "./seletor-de-escritorio";
 
 export type { FluxoDeTrabalho };
 
@@ -18,10 +23,16 @@ export type { FluxoDeTrabalho };
 export async function CascaDeTrabalho({
   fluxo,
   fluxos,
+  escritorioId = null,
   children,
 }: {
   fluxo: FluxoDeTrabalho;
   fluxos: FluxosDoUsuario;
+  /**
+   * QUAL escritório está aberto. Vem da rota, já validado contra os vínculos
+   * por `exigeEscritorio`. Nulo no fluxo do advogado.
+   */
+  escritorioId?: string | null;
   children: React.ReactNode;
 }) {
   // Contagem do sino no escopo do fluxo, a mesma régua do app.
@@ -32,19 +43,35 @@ export async function CascaDeTrabalho({
     .select("id", { count: "exact", head: true })
     .eq("scope", escopoDoSino)
     .filter("read_at", "is", null);
-  if (fluxo === "escritorio" && fluxos.escritorio !== null) {
-    contagem = contagem.eq("law_firm_id", fluxos.escritorio.id);
+  // O sino conta as do escritório ABERTO, e não a soma de todos: quem tem
+  // duas bancas quer saber o que chegou nesta.
+  if (fluxo === "escritorio" && escritorioId !== null) {
+    contagem = contagem.eq("law_firm_id", escritorioId);
   }
   const { count } = await contagem;
   const naoLidas = count ?? 0;
 
-  const itens = lateralDoFluxo[fluxo];
+  const itens =
+    fluxo === "escritorio" && escritorioId !== null
+      ? lateralDoEscritorio(escritorioId)
+      : lateralDoAdvogado;
 
+  // A troca de ÁREA continua sendo entre fluxos. Com dois ou mais
+  // escritórios, um só entra aqui (o aberto, ou o primeiro): a escolha ENTRE
+  // escritórios é do seletor logo acima, e repetir a lista nas duas seções
+  // faria a mesma pergunta duas vezes com respostas diferentes.
+  const escritorioDaTroca =
+    fluxos.escritorios.find((vinculo) => vinculo.id === escritorioId) ??
+    fluxos.escritorios[0] ??
+    null;
   const trocas: { rotulo: string; href: string; ativa: boolean }[] = [];
-  if (fluxos.escritorio !== null) {
+  if (escritorioDaTroca !== null) {
     trocas.push({
-      rotulo: fluxos.escritorio.nome,
-      href: "/escritorio",
+      rotulo:
+        fluxos.escritorios.length > 1
+          ? "Área do escritório"
+          : escritorioDaTroca.nome,
+      href: `/escritorio/${escritorioDaTroca.id}`,
       ativa: fluxo === "escritorio",
     });
   }
@@ -70,10 +97,14 @@ export async function CascaDeTrabalho({
           itens={itens}
           naoLidas={naoLidas}
           escopo={escopoDoSino}
-          lawFirmId={fluxos.escritorio?.id ?? null}
+          lawFirmId={escritorioId}
         />
 
         <div className="rodape-da-lateral">
+          <SeletorDeEscritorio
+            escritorios={fluxos.escritorios}
+            ativo={escritorioId ?? ""}
+          />
           {trocas.length > 1 && (
             <>
               <span className="rotulo-da-secao">Trocar de área</span>
@@ -98,8 +129,12 @@ export async function CascaDeTrabalho({
             {fluxos.equipeJurii && (
               <Link href="/revisao">Revisar verificações</Link>
             )}
-            {/* Só para quem NÃO tem escritório: quem já tem, tem o painel. */}
-            {fluxos.escritorio === null && (
+            {/* Some para quem JÁ É SÓCIO de alguma banca, e não para quem
+                tem qualquer vínculo: estagiário de um escritório pode fundar
+                o dele, e a versão anterior barrava por ter vínculo, que é o
+                motivo errado. O segundo escritório do mesmo sócio segue
+                fechado enquanto a licença for por pessoa. */}
+            {!ehSocioEmAlguma(fluxos) && (
               <Link href="/abrir-escritorio">Abrir escritório</Link>
             )}
             <Link href="/conta">Conta</Link>

@@ -3,6 +3,7 @@ import { intervaloDaLinha } from "@/lib/dominio/horarios";
 
 import { areasDoDireito } from "@/lib/dominio/areas";
 import { mascaraDeCnpj } from "@/lib/dominio/verificacao";
+import { ehGestor } from "@/lib/fluxos";
 
 import { salvarApresentacao, salvarCadastro } from "./acoes";
 import { EditorDeHorarios } from "./editor-de-horarios";
@@ -15,17 +16,18 @@ export const dynamic = "force-dynamic";
  * servidor (sócio e admin); a tela só esconde o que a RPC recusaria.
  */
 export default async function PerfilDoEscritorio({
+  params,
   searchParams,
 }: {
+  params: Promise<{ escritorio: string }>;
   searchParams: Promise<{ ok?: string; erro?: string }>;
 }) {
+  const { escritorio: escritorioId } = await params;
   const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
-  const escritorio = exigeEscritorio(contexto);
+  const escritorio = exigeEscritorio(contexto, escritorioId);
 
-  const podeEditar = escritorio.papeis.some((papel) =>
-    ["owner", "admin"].includes(papel),
-  );
+  const podeEditar = ehGestor(escritorio);
 
   const [firmaRes, horariosRes, cnpjRes] = await Promise.all([
     contexto.supabase

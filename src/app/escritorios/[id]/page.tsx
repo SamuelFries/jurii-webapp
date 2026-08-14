@@ -2,11 +2,15 @@ import Link from "next/link";
 
 import { AvaliacoesDoProfissional } from "@/components/avaliacoes-do-profissional";
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
-import { contextoLogado, exigeProfissional } from "@/lib/contexto";
+import {
+  contextoLogado,
+  escritorioPreferido,
+  exigeProfissional,
+} from "@/lib/contexto";
 import { estrelas } from "@/lib/dominio/avaliacoes";
 import { escritorioDaLinha } from "@/lib/dominio/descoberta";
 import { agrupaPorDia, intervaloDaLinha } from "@/lib/dominio/horarios";
-import { destinoInicial } from "@/lib/fluxos";
+import { destinoInicial, escritorioPadrao } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +38,20 @@ export default async function CartaoDoEscritorio({
   // As ações de avaliação voltam para cá com ?erro=; sem exibir, a recusa
   // do servidor sumiria em silêncio.
   const { erro } = await searchParams;
-  const contexto = await contextoLogado();
+  const [contexto, preferido] = await Promise.all([
+    contextoLogado(),
+    escritorioPreferido(),
+  ]);
   exigeProfissional(contexto);
   const voltar = `/escritorios/${id}`;
-  const casa = destinoInicial(contexto.fluxos);
-  const fluxoDaCasca =
-    contexto.fluxos.escritorio !== null ? "escritorio" : "advogado";
+  const casa = destinoInicial(contexto.fluxos, preferido);
+  // Esta tela é pública para o profissional e não pertence a escritório
+  // nenhum, mas a casca sim: ela precisa saber QUAL banca está aberta para
+  // montar a lateral e contar o sino. Vem do último aberto (o cookie), já
+  // conferido contra os vínculos, e não do id da URL, que aqui é o
+  // escritório VISITADO e pode não ter nada a ver com a pessoa.
+  const escritorioDaCasca = escritorioPadrao(contexto.fluxos, preferido);
+  const fluxoDaCasca = escritorioDaCasca !== null ? "escritorio" : "advogado";
 
   const [firmaRes, horariosRes] = await Promise.all([
     contexto.supabase
@@ -61,6 +73,7 @@ export default async function CartaoDoEscritorio({
       <CascaDeTrabalho
         fluxo={fluxoDaCasca}
         fluxos={contexto.fluxos}
+        escritorioId={escritorioDaCasca?.id ?? null}
       >
         <div className="pagina-de-trabalho">
           <div className="miolo">
@@ -92,6 +105,7 @@ export default async function CartaoDoEscritorio({
     <CascaDeTrabalho
       fluxo={fluxoDaCasca}
       fluxos={contexto.fluxos}
+      escritorioId={escritorioDaCasca?.id ?? null}
     >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>

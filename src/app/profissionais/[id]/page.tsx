@@ -2,10 +2,14 @@ import Link from "next/link";
 
 import { AvaliacoesDoProfissional } from "@/components/avaliacoes-do-profissional";
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
-import { contextoLogado, exigeProfissional } from "@/lib/contexto";
+import {
+  contextoLogado,
+  escritorioPreferido,
+  exigeProfissional,
+} from "@/lib/contexto";
 import { advogadoDaLinha } from "@/lib/dominio/descoberta";
 import { estrelas } from "@/lib/dominio/avaliacoes";
-import { destinoInicial } from "@/lib/fluxos";
+import { destinoInicial, escritorioPadrao } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +42,18 @@ export default async function CartaoDoAdvogado({
   // As ações de avaliação voltam para cá com ?erro=; sem exibir, a recusa
   // do servidor sumiria em silêncio.
   const { erro } = await searchParams;
-  const contexto = await contextoLogado();
+  const [contexto, preferido] = await Promise.all([
+    contextoLogado(),
+    escritorioPreferido(),
+  ]);
   exigeProfissional(contexto);
   const voltar = `/profissionais/${id}`;
-  const casa = destinoInicial(contexto.fluxos);
+  const casa = destinoInicial(contexto.fluxos, preferido);
+  // A casca precisa saber QUAL banca está aberta (lateral e sino são dela).
+  // Esta tela não pertence a escritório nenhum, então o escolhido é o
+  // último aberto, já conferido contra os vínculos.
+  const escritorioDaCasca = escritorioPadrao(contexto.fluxos, preferido);
+  const fluxoDaCasca = escritorioDaCasca !== null ? "escritorio" : "advogado";
 
   // lawyer_profile_id_value, e nao lawyer_id_value: PostgREST resolve RPC
   // por NOME de argumento, e este e o nome que a funcao tem em produção
@@ -57,8 +69,9 @@ export default async function CartaoDoAdvogado({
   if (perfilRes.error || linha === undefined) {
     return (
       <CascaDeTrabalho
-        fluxo={contexto.fluxos.escritorio !== null ? "escritorio" : "advogado"}
+        fluxo={fluxoDaCasca}
         fluxos={contexto.fluxos}
+        escritorioId={escritorioDaCasca?.id ?? null}
       >
         <div className="pagina-de-trabalho">
           <div className="miolo">
@@ -84,8 +97,9 @@ export default async function CartaoDoAdvogado({
 
   return (
     <CascaDeTrabalho
-      fluxo={contexto.fluxos.escritorio !== null ? "escritorio" : "advogado"}
+      fluxo={fluxoDaCasca}
       fluxos={contexto.fluxos}
+      escritorioId={escritorioDaCasca?.id ?? null}
     >
       <div className="pagina-de-trabalho">
         <div className="miolo" style={{ maxWidth: 720 }}>

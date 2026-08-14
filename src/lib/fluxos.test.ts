@@ -2,10 +2,15 @@ import { describe, expect, test } from "vitest";
 
 import {
   destinoInicial,
+  ehGestor,
+  ehSocioEmAlguma,
+  escritorioDoSocio,
   normalizaPapeis,
   papeisDaLinha,
   papelPrincipal,
   rotuloDoPapel,
+  vinculoCom,
+  type VinculoDeEscritorio,
 } from "./fluxos";
 
 describe("papéis do vínculo", () => {
@@ -30,16 +35,49 @@ describe("papéis do vínculo", () => {
 });
 
 describe("destino inicial", () => {
-  test("escritório vence, advogado depois", () => {
+  const firma: VinculoDeEscritorio = {
+    id: "f1",
+    nome: "Firma",
+    iniciais: "FI",
+    papeis: ["owner"],
+  };
+  const outra: VinculoDeEscritorio = {
+    id: "f2",
+    nome: "Outra",
+    iniciais: "OU",
+    papeis: ["intern"],
+  };
+
+  test("escritório vence, advogado depois, e o destino carrega o id", () => {
     // O webapp existe para o profissional trabalhar no computador: quem
-    // tem escritório cai no escritório, mesmo sendo também advogado.
-    const escritorio = { id: "f1", nome: "Firma", papeis: ["owner" as const] };
-    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: true, escritorio })).toBe(
-      "/escritorio",
-    );
-    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: true, escritorio: null })).toBe(
-      "/advogado",
-    );
+    // tem escritório cai no escritório, mesmo sendo também advogado. O id
+    // vai na rota porque quem tem duas bancas precisa saber qual abriu.
+    expect(
+      destinoInicial({
+        equipeJurii: false,
+        advogadoAprovado: true,
+        escritorios: [firma],
+      }),
+    ).toBe("/escritorio/f1");
+    expect(
+      destinoInicial({
+        equipeJurii: false,
+        advogadoAprovado: true,
+        escritorios: [],
+      }),
+    ).toBe("/advogado");
+  });
+
+  test("a preferência guardada escolhe entre os vínculos", () => {
+    const fluxos = {
+      equipeJurii: false,
+      advogadoAprovado: false,
+      escritorios: [firma, outra],
+    };
+    expect(destinoInicial(fluxos, "f2")).toBe("/escritorio/f2");
+    // Preferência apontando para escritório de onde a pessoa saiu não pode
+    // travar a entrada num contexto morto: cai no primeiro vínculo válido.
+    expect(destinoInicial(fluxos, "f9")).toBe("/escritorio/f1");
   });
 
   test("funcionário da Jurii sem papel profissional vai para a REVISÃO", () => {
@@ -49,7 +87,7 @@ describe("destino inicial", () => {
       destinoInicial({
         equipeJurii: true,
         advogadoAprovado: false,
-        escritorio: null,
+        escritorios: [],
       }),
     ).toBe("/revisao");
   });
@@ -58,9 +96,51 @@ describe("destino inicial", () => {
     // O webapp virou ferramenta de trabalho: cliente não tem mesa aqui, e
     // mandá-lo para uma tela vazia seria pior do que dizer onde é a área
     // dele. /cliente é essa porta.
-    expect(destinoInicial({ equipeJurii: false, advogadoAprovado: false, escritorio: null })).toBe(
-      "/cliente",
-    );
+    expect(
+      destinoInicial({
+        equipeJurii: false,
+        advogadoAprovado: false,
+        escritorios: [],
+      }),
+    ).toBe("/cliente");
+  });
+});
+
+describe("vínculo pelo id da rota", () => {
+  const fluxos = {
+    equipeJurii: false,
+    advogadoAprovado: false,
+    escritorios: [
+      { id: "f1", nome: "Firma", iniciais: "FI", papeis: ["owner" as const] },
+      { id: "f2", nome: "Outra", iniciais: "OU", papeis: ["intern" as const] },
+    ],
+  };
+
+  test("id de escritório alheio não vira vínculo", () => {
+    // A razão de `vinculoCom` existir: o id chega da URL, isto é, do
+    // cliente. Sem conferir contra a lista, trocar o id na barra de
+    // endereço trocaria de escritório na tela.
+    expect(vinculoCom(fluxos, "f3")).toBeNull();
+    expect(vinculoCom(fluxos, "")).toBeNull();
+    expect(vinculoCom(fluxos, null)).toBeNull();
+  });
+
+  test("o cargo é do vínculo, e não da pessoa", () => {
+    // Sócia numa banca e estagiária em outra: as duas coisas ao mesmo
+    // tempo, e é por isso que gestor se pergunta ao vínculo.
+    expect(ehGestor(vinculoCom(fluxos, "f1")!)).toBe(true);
+    expect(ehGestor(vinculoCom(fluxos, "f2")!)).toBe(false);
+  });
+
+  test("ter vínculo não é ser sócia, e é a diferença que a cobrança usa", () => {
+    // Quem só é estagiária numa banca alheia NÃO tem licença: pode abrir a
+    // dela e pode contratar a primeira assinatura. Barrar por "tem vínculo"
+    // tirava dessa pessoa as duas coisas, pelo motivo errado.
+    const soEstagiaria = { ...fluxos, escritorios: [fluxos.escritorios[1]] };
+    expect(ehSocioEmAlguma(fluxos)).toBe(true);
+    expect(ehSocioEmAlguma(soEstagiaria)).toBe(false);
+    expect(escritorioDoSocio(fluxos)?.id).toBe("f1");
+    expect(escritorioDoSocio(soEstagiaria)).toBeNull();
   });
 });
 

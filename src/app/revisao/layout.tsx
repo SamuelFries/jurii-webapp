@@ -3,7 +3,8 @@ import Link from "next/link";
 import { sair } from "@/app/entrar/acoes";
 import { NavDaLateral } from "@/components/nav-da-lateral";
 import { lateralDaRevisao } from "@/lib/dominio/lateral";
-import { contextoLogado } from "@/lib/contexto";
+import { contextoLogado, escritorioPreferido } from "@/lib/contexto";
+import { escritorioPadrao } from "@/lib/fluxos";
 
 /**
  * A mesa de trabalho da REVISÃO, no mesmo formato dos fluxos de advogado e
@@ -24,14 +25,26 @@ export default async function LayoutDaRevisao({
 }: {
   children: React.ReactNode;
 }) {
-  const contexto = await contextoLogado();
+  const [contexto, preferido] = await Promise.all([
+    contextoLogado(),
+    escritorioPreferido(),
+  ]);
   if (!contexto.fluxos.equipeJurii) return <>{children}</>;
 
   const trocas: { rotulo: string; href: string }[] = [];
-  if (contexto.fluxos.escritorio !== null) {
+  // UM item de escritório, e não um por vínculo: aqui a pergunta é "trocar
+  // de ÁREA", e a escolha ENTRE escritórios é do seletor da mesa do
+  // escritório. O escolhido é o último aberto (o cookie), conferido contra
+  // os vínculos por `escritorioPadrao`, e a rota já leva o id porque a mesa
+  // do escritório não abre sem ele.
+  const escritorioDaTroca = escritorioPadrao(contexto.fluxos, preferido);
+  if (escritorioDaTroca !== null) {
     trocas.push({
-      rotulo: contexto.fluxos.escritorio.nome,
-      href: "/escritorio",
+      rotulo:
+        contexto.fluxos.escritorios.length > 1
+          ? "Área do escritório"
+          : escritorioDaTroca.nome,
+      href: `/escritorio/${escritorioDaTroca.id}`,
     });
   }
   if (contexto.fluxos.advogadoAprovado) {
