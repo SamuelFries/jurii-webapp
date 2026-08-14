@@ -46,8 +46,8 @@ export default async function PaginaDaEquipe({
       {erro !== undefined && <p className="erro">{erro}</p>}
       {ok === "convite" && (
         <p className="aviso-bom">
-          Convite enviado. O advogado decide pelo aplicativo, e aparece em
-          Convites pendentes até responder.
+          Convite enviado. O advogado responde em Notificações, aqui ou no
+          aplicativo, e aparece em Convites pendentes até decidir.
         </p>
       )}
       {ok === "papeis" && <p className="aviso-bom">Papéis atualizados.</p>}
