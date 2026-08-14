@@ -105,7 +105,9 @@ export async function irParaPagamento(dados: FormData): Promise<void> {
       valorEmCentavos: valor,
       // A primeira cobrança vence quando o teste acaba: assinar durante o
       // teste é deixar o pagamento pronto, e não abrir mão dos dias que
-      // faltam.
+      // faltam. Quando o teste JÁ VENCEU esta data está no passado, e quem
+      // não deixa ela chegar assim no provedor é `vencimentoNoFuturo`, na
+      // fronteira do Asaas, que é onde a restrição existe.
       primeiroVencimentoIso:
         assinatura.trial_ends_at == null
           ? new Date().toISOString()

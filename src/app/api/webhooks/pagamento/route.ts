@@ -1,5 +1,8 @@
 import { clienteDeServico } from "@/lib/supabase/servico";
-import { provedorConfigurado } from "@/lib/pagamentos/provedor";
+import {
+  ChamadaNaoAutenticada,
+  provedorConfigurado,
+} from "@/lib/pagamentos/provedor";
 
 /**
  * O webhook do provedor de pagamento. Único caminho que um dia moverá
@@ -19,14 +22,30 @@ export async function POST(requisicao: Request): Promise<Response> {
     );
   }
 
-  // Quem VALIDA a chamada é o provedor, e ele lança quando a assinatura da
-  // requisição não confere. Este bloco traduz isso em 401 sem devolver o
-  // motivo: dizer "assinatura inválida" para quem tentou forjar é ensinar.
+  // Quem VALIDA a chamada é o provedor, e ele lança quando o token da
+  // requisição não confere.
+  //
+  // OS DOIS ERROS PEDEM RESPOSTAS OPOSTAS, e tratá-los igual custava dinheiro
+  // de verdade. Chamada forjada merece 401 e nenhuma reentrega. Mas
+  // processarWebhook também CONSULTA a API do Asaas antes de decidir, e essa
+  // consulta pode falhar por rede, timeout ou provedor fora do ar. Enquanto
+  // este catch devolvia 401 para tudo, um timeout virava "recusado" para o
+  // Asaas, que não tenta de novo: dinheiro recebido e nunca aplicado, sem
+  // ninguém para perceber.
   let efeito;
   try {
     efeito = await provedor.processarWebhook(requisicao);
-  } catch {
-    return Response.json({ erro: "Chamada recusada." }, { status: 401 });
+  } catch (erro) {
+    if (erro instanceof ChamadaNaoAutenticada) {
+      // Sem devolver o motivo: dizer "token inválido" para quem tentou forjar
+      // é ensinar.
+      return Response.json({ erro: "Chamada recusada." }, { status: 401 });
+    }
+    console.error(
+      "webhook de pagamento falhou antes de decidir",
+      erro instanceof Error ? erro.message : erro,
+    );
+    return Response.json({ erro: "Falha ao processar." }, { status: 500 });
   }
 
   if (efeito.tipo === "ignorar") {

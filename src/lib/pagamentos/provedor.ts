@@ -69,6 +69,23 @@ export interface ProvedorDePagamento {
   processarWebhook(requisicao: Request): Promise<EfeitoDeWebhook>;
 }
 
+/**
+ * A chamada não é do provedor.
+ *
+ * TEM TIPO PRÓPRIO porque a resposta certa depende disso, e é o oposto nos
+ * dois casos: chamada forjada merece 401 e nenhuma reentrega, enquanto uma
+ * falha nossa (rede caindo no meio da consulta, provedor fora do ar) precisa
+ * de 500 para o provedor REENTREGAR. Enquanto o `catch` da rota tratava os
+ * dois como 401, um timeout na consulta virava "recusado" para o Asaas, que
+ * não tenta de novo: pagamento recebido e nunca aplicado.
+ */
+export class ChamadaNaoAutenticada extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "ChamadaNaoAutenticada";
+  }
+}
+
 export type EfeitoDeWebhook =
   | { tipo: "ativar"; assinaturaId: string }
   | { tipo: "pagamento_pendente"; assinaturaId: string }

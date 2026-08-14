@@ -131,6 +131,36 @@ export function rotuloPorAdvogado(plano: Plano): string | null {
   return `~R$ ${porAdvogado} por advogado`;
 }
 
+/**
+ * A assinatura dá passagem? Espelho de `assinatura_esta_viva` no banco
+ * (migration 20260906120000).
+ *
+ * A DATA É A METADE QUE FALTAVA: antes a regra olhava só o status, e
+ * 'trialing' nunca vencia. `past_due` fica de fora de propósito, senão o teste
+ * vencido viraria past_due e seguiria valendo.
+ */
+export function assinaturaViva(assinatura: Assinatura, agora: Date): boolean {
+  return (
+    assinatura.status === "active" ||
+    (assinatura.status === "trialing" && !testeVencido(assinatura, agora))
+  );
+}
+
+/**
+ * O teste acabou de verdade.
+ *
+ * Teste sem data de fim conta como vencido, e não como eterno: entre errar
+ * para o lado de cobrar e errar para o lado de liberar para sempre, este é o
+ * lado seguro. Mesma escolha da `assinatura_esta_viva`.
+ */
+export function testeVencido(assinatura: Assinatura, agora: Date): boolean {
+  return (
+    assinatura.status === "trialing" &&
+    (assinatura.trialEndsAt === null ||
+      assinatura.trialEndsAt.getTime() <= agora.getTime())
+  );
+}
+
 /** Dias restantes do teste, nunca negativo: "faltam -3 dias" não é frase. */
 export function diasRestantesDeTeste(
   assinatura: Assinatura,
@@ -144,19 +174,26 @@ export function diasRestantesDeTeste(
 }
 
 /** "Banca · anual · teste grátis, 23 dias restantes". O ciclo só aparece
- * quando é anual, porque mensal é o comum. Quando o período de teste já
- * passou, o rótulo NÃO diz "0 dias restantes" para sempre: diz só "teste
- * grátis", porque a cobrança ainda não foi implantada e prazo vencido sem
- * consequência é rótulo mentindo. */
+ * quando é anual, porque mensal é o comum.
+ *
+ * TESTE VENCIDO TEM NOME PRÓPRIO. Enquanto vencer não tinha consequência, o
+ * rótulo podia seguir dizendo "teste grátis"; agora que o escritório para de
+ * convidar advogados (20260906120000), repetir "teste grátis" seria o rótulo
+ * mentindo no exato momento em que a pessoa precisa entender o que mudou. */
 export function rotuloDeStatus(assinatura: Assinatura, agora: Date): string {
   const base = assinatura.plano?.name || assinatura.planCode;
   const nome =
     assinatura.billingCycle === "annual" ? `${base} · anual` : base;
   switch (assinatura.status) {
     case "trialing": {
+      if (testeVencido(assinatura, agora)) return `${nome} · teste encerrado`;
       const dias = diasRestantesDeTeste(assinatura, agora);
-      if (dias === 0) return `${nome} · teste grátis`;
-      const rotulo = dias === 1 ? "1 dia restante" : `${dias} dias restantes`;
+      const rotulo =
+        dias === 0
+          ? "último dia"
+          : dias === 1
+            ? "1 dia restante"
+            : `${dias} dias restantes`;
       return `${nome} · teste grátis, ${rotulo}`;
     }
     case "active":
@@ -187,6 +224,13 @@ export function traduzErroDeEscolhaDePlano(mensagem: string): string {
   }
   if (mensagem.includes("Firm already has a subscription")) {
     return "O escritório já tem uma assinatura ativa.";
+  }
+  if (mensagem.includes("Plan change requires billing update")) {
+    // Trocar de plano depois que a cobrança começou mudaria o `plan_code` no
+    // nosso banco sem mudar o valor no provedor: o escritório usaria o plano
+    // caro pagando o barato, ou pagaria o caro tendo pedido o barato.
+    // Enquanto a troca não souber conversar com o provedor, ela não acontece.
+    return "Sua assinatura já está em cobrança. Fale com a gente para trocar de plano sem cobrar errado.";
   }
   return "Não foi possível trocar o plano. Tente de novo em instantes.";
 }

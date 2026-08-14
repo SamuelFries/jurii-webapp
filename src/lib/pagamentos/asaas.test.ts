@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { asaas } from "./asaas";
+import { ChamadaNaoAutenticada } from "./provedor";
 
 /**
  * Os formatos daqui foram MEDIDOS contra o sandbox do Asaas antes de virarem
@@ -8,6 +9,11 @@ import { asaas } from "./asaas";
  * terceiro estar de pé, mas o que ele simula é o que a API respondeu.
  */
 const TOKEN = "token-de-webhook-com-mais-de-32-caracteres";
+
+/** O id da NOSSA assinatura. Tem forma de uuid porque é o que ele é: a
+ * chave primária de law_firm_license_subscriptions, que volta no
+ * externalReference da cobrança. */
+const ASSINATURA = "6f1f2f3f-4f5f-4f6f-8f7f-9f8f7f6f5f4f";
 
 function requisicao(corpo: unknown, token: string = TOKEN): Request {
   return new Request("https://app.jurii.com.br/api/webhooks/pagamento", {
@@ -66,7 +72,7 @@ describe("webhook do Asaas", () => {
         "/payments/pay_1": {
           id: "pay_1",
           status: "PENDING",
-          externalReference: "assinatura-1",
+          externalReference: ASSINATURA,
         },
       }),
     );
@@ -85,7 +91,7 @@ describe("webhook do Asaas", () => {
         "/payments/pay_1": {
           id: "pay_1",
           status: "RECEIVED",
-          externalReference: "assinatura-1",
+          externalReference: ASSINATURA,
         },
       }),
     );
@@ -94,7 +100,7 @@ describe("webhook do Asaas", () => {
       requisicao({ event: "PAYMENT_RECEIVED", payment: { id: "pay_1" } }),
     );
 
-    expect(efeito).toEqual({ tipo: "ativar", assinaturaId: "assinatura-1" });
+    expect(efeito).toEqual({ tipo: "ativar", assinaturaId: ASSINATURA });
   });
 
   test("pagamento em dinheiro também libera", async () => {
@@ -107,7 +113,7 @@ describe("webhook do Asaas", () => {
         "/payments/pay_1": {
           id: "pay_1",
           status: "RECEIVED_IN_CASH",
-          externalReference: "assinatura-1",
+          externalReference: ASSINATURA,
         },
       }),
     );
@@ -126,7 +132,7 @@ describe("webhook do Asaas", () => {
       vi.stubGlobal(
         "fetch",
         apiFalsa({
-          "/payments/pay_1": { id: "pay_1", status, externalReference: "a1" },
+          "/payments/pay_1": { id: "pay_1", status, externalReference: ASSINATURA },
         }),
       );
       const efeito = await asaas.processarWebhook(
@@ -145,7 +151,7 @@ describe("webhook do Asaas", () => {
         "/payments/pay_1": {
           id: "pay_1",
           status: "STATUS_QUE_NAO_EXISTIA",
-          externalReference: "a1",
+          externalReference: ASSINATURA,
         },
       }),
     );
@@ -176,6 +182,78 @@ describe("webhook do Asaas", () => {
   });
 });
 
+describe("guardas da fronteira do provedor", () => {
+  test("referência que não é uuid é IGNORADA, e não repassada ao banco", async () => {
+    // Cobrança avulsa criada à mão no painel do Asaas pode ter qualquer texto
+    // em externalReference. Sem esta guarda o texto virava argumento uuid de
+    // aplicar_efeito_de_pagamento, o Postgres recusava o cast, a rota
+    // devolvia 500, e o Asaas reentregava o MESMO evento para sempre: uma
+    // cobrança de outra pessoa travava a fila inteira.
+    vi.stubGlobal(
+      "fetch",
+      apiFalsa({
+        "/payments/pay_1": {
+          id: "pay_1",
+          status: "RECEIVED",
+          externalReference: "pedido interno 4471",
+        },
+      }),
+    );
+
+    const efeito = await asaas.processarWebhook(
+      requisicao({ payment: { id: "pay_1" } }),
+    );
+    expect(efeito.tipo).toBe("ignorar");
+  });
+
+  test("id de cobrança fora do formato do provedor não vira caminho de URL", async () => {
+    // O id vem do CORPO da chamada, ou seja, de fora, e é concatenado num
+    // caminho da API do Asaas. Formato medido no sandbox: pay_<alfanumérico>.
+    const fetchFalso = apiFalsa({});
+    vi.stubGlobal("fetch", fetchFalso);
+
+    for (const id of [
+      "../../customers",
+      "pay_1/../../customers",
+      "pay_1?limit=100",
+      "",
+    ]) {
+      const efeito = await asaas.processarWebhook(
+        requisicao({ payment: { id } }),
+      );
+      expect(efeito.tipo, `id ${JSON.stringify(id)}`).toBe("ignorar");
+    }
+
+    // E nenhum deles chegou a virar consulta.
+    expect(fetchFalso).not.toHaveBeenCalled();
+  });
+
+  test("token inválido tem TIPO próprio, para virar 401 e não 500", async () => {
+    // A rota decide reentrega por este tipo: forjada não se reentrega,
+    // falha nossa se reentrega. Ver a rota do webhook.
+    vi.stubGlobal("fetch", apiFalsa({}));
+    await expect(
+      asaas.processarWebhook(requisicao({ payment: { id: "pay_1" } }, "outro")),
+    ).rejects.toBeInstanceOf(ChamadaNaoAutenticada);
+  });
+
+  test("falha de REDE na consulta NÃO é falha de autenticação", async () => {
+    // A distinção que faltava: enquanto a rota tratava as duas igual, um
+    // timeout na consulta virava 401 e o Asaas lia "recusado", sem tentar de
+    // novo. Pagamento recebido e nunca aplicado.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      }),
+    );
+
+    await expect(
+      asaas.processarWebhook(requisicao({ payment: { id: "pay_1" } })),
+    ).rejects.not.toBeInstanceOf(ChamadaNaoAutenticada);
+  });
+});
+
 describe("checkout do Asaas", () => {
   test("cria cliente e assinatura, e devolve a URL da COBRANÇA", async () => {
     // A assinatura NÃO tem URL de pagamento: quem tem é a cobrança que ela
@@ -187,6 +265,12 @@ describe("checkout do Asaas", () => {
       vi.fn(async (url: string | URL) => {
         const caminho = String(url).replace(/^.*\/v3/, "");
         chamadas.push(caminho);
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          // Ninguém pagou ainda: a busca de idempotência não acha nada.
+          return new Response(JSON.stringify({ data: [], totalCount: 0 }), {
+            status: 200,
+          });
+        }
         if (caminho === "/customers") {
           return new Response(JSON.stringify({ id: "cus_1" }), { status: 200 });
         }
@@ -218,10 +302,274 @@ describe("checkout do Asaas", () => {
 
     expect(sessao.url).toBe("https://sandbox.asaas.com/i/abc");
     expect(chamadas).toEqual([
+      "/subscriptions?externalReference=assinatura-1",
       "/customers",
       "/subscriptions",
       "/subscriptions/sub_1/payments",
     ]);
+  });
+
+  test("SEGUNDO clique não cria a segunda assinatura: reusa a que existe", async () => {
+    // O furo mais caro do checkout. Cada clique em "Ativar cobrança" criava
+    // OUTRA assinatura recorrente com a mesma referência: dois cliques, duas
+    // mensalidades para sempre. E a duplicata que ninguém paga vence sozinha,
+    // e o OVERDUE dela joga de volta para past_due quem acabou de pagar.
+    const chamadas: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        chamadas.push(caminho);
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  id: "sub_1",
+                  status: "ACTIVE",
+                  value: 149,
+                  cycle: "MONTHLY",
+                },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const sessao = await asaas.criarCheckout({
+      assinaturaId: "assinatura-1",
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      primeiroVencimentoIso: "2026-09-13T00:00:00Z",
+      descricao: "Jurii Essencial (mensal)",
+    });
+
+    // A mesma URL de pagamento, e NENHUM POST: nem cliente novo, nem
+    // assinatura nova, nem PUT (valor e ciclo não mudaram).
+    expect(sessao.url).toBe("https://sandbox.asaas.com/i/abc");
+    expect(chamadas).toEqual([
+      "/subscriptions?externalReference=assinatura-1",
+      "/subscriptions/sub_1/payments",
+    ]);
+  });
+
+  test("plano trocado no meio do caminho RECOBRA o valor certo no provedor", async () => {
+    // A outra metade do mesmo furo, e a que é simétrica: trocar de plano é um
+    // UPDATE no nosso banco. Sem reconciliar aqui, quem subiu de plano usaria
+    // a equipe grande pagando barato, e quem desceu seguiria pagando caro.
+    const corpos: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, opcoes?: RequestInit) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        if (opcoes?.body) {
+          corpos.push({
+            caminho,
+            metodo: opcoes.method,
+            ...(JSON.parse(String(opcoes.body)) as Record<string, unknown>),
+          });
+        }
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                { id: "sub_1", status: "ACTIVE", value: 149, cycle: "MONTHLY" },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/nova" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    await asaas.criarCheckout({
+      assinaturaId: "assinatura-1",
+      planCode: "banca",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 69900,
+      primeiroVencimentoIso: "2026-09-13T00:00:00Z",
+      descricao: "Jurii Banca (mensal)",
+    });
+
+    expect(corpos).toEqual([
+      {
+        caminho: "/subscriptions/sub_1",
+        metodo: "PUT",
+        value: 699,
+        cycle: "MONTHLY",
+        description: "Jurii Banca (mensal)",
+        // MEDIDO no sandbox, e é a linha que decide: sem ela o PUT muda a
+        // assinatura para 699 e a cobrança PENDENTE fica em 149, ou seja, o
+        // furo continua aberto na única cobrança que a pessoa vai pagar.
+        updatePendingPayments: true,
+      },
+    ]);
+  });
+
+  test("teste JÁ VENCIDO ainda consegue pagar: o vencimento não nasce no passado", async () => {
+    // MEDIDO contra a API: nextDueDate no passado devolve 400
+    // invalid_nextDueDate, "Não é permitido data de vencimento inferior a
+    // hoje". Como o vencimento que mandamos é o fim do teste, quem deixou o
+    // teste vencer caía exatamente aqui: decidia pagar e o checkout morria.
+    const corpos: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, opcoes?: RequestInit) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        if (opcoes?.body) {
+          corpos.push(JSON.parse(String(opcoes.body)) as Record<string, unknown>);
+        }
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(JSON.stringify({ data: [] }), { status: 200 });
+        }
+        if (caminho === "/customers") {
+          return new Response(JSON.stringify({ id: "cus_1" }), { status: 200 });
+        }
+        if (caminho === "/subscriptions") {
+          return new Response(JSON.stringify({ id: "sub_1" }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    await asaas.criarCheckout({
+      assinaturaId: "assinatura-1",
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      // Teste que acabou em 2020: o caso de quem some e volta para pagar.
+      primeiroVencimentoIso: "2020-01-01T00:00:00Z",
+      descricao: "Jurii Essencial (mensal)",
+    });
+
+    const hoje = new Date().toISOString().slice(0, 10);
+    const assinatura = corpos.find((c) => "nextDueDate" in c);
+    expect(assinatura?.nextDueDate).toBe(hoje);
+  });
+
+  test("e o vencimento FUTURO é respeitado: assinar cedo não encurta o teste", async () => {
+    // A outra ponta da mesma regra. Trocar a data por "hoje" sempre seria
+    // cobrar no ato de quem só quis deixar o pagamento pronto.
+    const corpos: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, opcoes?: RequestInit) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        if (opcoes?.body) {
+          corpos.push(JSON.parse(String(opcoes.body)) as Record<string, unknown>);
+        }
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(JSON.stringify({ data: [] }), { status: 200 });
+        }
+        if (caminho === "/customers") {
+          return new Response(JSON.stringify({ id: "cus_1" }), { status: 200 });
+        }
+        if (caminho === "/subscriptions") {
+          return new Response(JSON.stringify({ id: "sub_1" }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const daquiUmAno = new Date(Date.now() + 365 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+
+    await asaas.criarCheckout({
+      assinaturaId: "assinatura-1",
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      primeiroVencimentoIso: `${daquiUmAno}T00:00:00Z`,
+      descricao: "Jurii Essencial (mensal)",
+    });
+
+    expect(corpos.find((c) => "nextDueDate" in c)?.nextDueDate).toBe(daquiUmAno);
+  });
+
+  test("assinatura EXPIRADA no provedor não é reusada: geraria link morto", async () => {
+    const chamadas: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        chamadas.push(caminho);
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                { id: "sub_velha", status: "EXPIRED", value: 149, cycle: "MONTHLY" },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        if (caminho === "/customers") {
+          return new Response(JSON.stringify({ id: "cus_1" }), { status: 200 });
+        }
+        if (caminho === "/subscriptions") {
+          return new Response(JSON.stringify({ id: "sub_nova" }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    await asaas.criarCheckout({
+      assinaturaId: "assinatura-1",
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      primeiroVencimentoIso: "2026-09-13T00:00:00Z",
+      descricao: "Jurii Essencial (mensal)",
+    });
+
+    expect(chamadas).toContain("/subscriptions");
+    expect(chamadas).toContain("/subscriptions/sub_nova/payments");
   });
 
   test("assinatura sem cobrança para pagar falha ALTO", async () => {

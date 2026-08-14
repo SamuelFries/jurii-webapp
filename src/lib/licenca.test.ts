@@ -2,14 +2,16 @@ import { describe, expect, test } from "vitest";
 
 import {
   assinaturaDaLinha,
+  assinaturaViva,
   descontoAnualPercent,
   diasRestantesDeTeste,
   formataPreco,
   planoDaLinha,
   precoMensalDoAnual,
-  rotuloDeStatus,
   rotuloDaEquipe,
+  rotuloDeStatus,
   rotuloPorAdvogado,
+  testeVencido,
   type Plano,
 } from "./licenca";
 
@@ -105,11 +107,36 @@ describe("rótulos", () => {
       "Banca · anual · teste grátis, 23 dias restantes",
     );
 
-    // Depois do fim do teste o rótulo NÃO vira "0 dias restantes" eterno,
-    // que é o que o app faz hoje e é rótulo mentindo: prazo sem
-    // consequência não é prazo.
+    // TESTE VENCIDO TEM NOME PRÓPRIO. Enquanto vencer não tinha consequência,
+    // "teste grátis" ainda passava; agora que o escritório para de convidar
+    // advogados (20260906120000), dizer "grátis" seria mentir no momento em
+    // que a pessoa precisa entender o que mudou.
     const depois = new Date("2026-10-01T12:00:00Z");
-    expect(rotuloDeStatus(assinatura, depois)).toBe("Banca · anual · teste grátis");
+    expect(rotuloDeStatus(assinatura, depois)).toBe(
+      "Banca · anual · teste encerrado",
+    );
+    expect(assinaturaViva(assinatura, antes)).toBe(true);
+    expect(assinaturaViva(assinatura, depois)).toBe(false);
+
+    // O último dia é o último dia, e não "0 dias restantes".
+    const ultimoDia = new Date("2026-09-07T00:00:00Z");
+    expect(rotuloDeStatus(assinatura, ultimoDia)).toBe(
+      "Banca · anual · teste grátis, último dia",
+    );
+    expect(assinaturaViva(assinatura, ultimoDia)).toBe(true);
+  });
+
+  test("teste sem data de fim vale como vencido, e não como eterno", () => {
+    // Entre errar para o lado de cobrar e errar para o lado de liberar para
+    // sempre, este é o lado seguro. Mesma escolha do banco.
+    const semData = assinaturaDaLinha({
+      id: "s0",
+      plan_code: "essencial",
+      status: "trialing",
+      trial_ends_at: null,
+    });
+    expect(testeVencido(semData, new Date())).toBe(true);
+    expect(assinaturaViva(semData, new Date())).toBe(false);
   });
 
   test("status pagos", () => {

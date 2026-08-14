@@ -5,6 +5,7 @@ import { irParaPagamento } from "@/app/pagamento/acoes";
 import { provedorConfigurado } from "@/lib/pagamentos/provedor";
 import {
   assinaturaDaLinha,
+  assinaturaViva,
   formataPreco,
   precoMensalDoAnual,
   rotuloDaEquipe,
@@ -78,9 +79,12 @@ export async function MioloDaAssinatura({
         </div>
       ) : (
         <div className="cartao">
+          {/* Dourado é o selo de quem está em dia. Teste VENCIDO não é, e
+              antes ficava dourado junto com o teste válido porque a regra
+              olhava só o status. */}
           <span
             className={
-              assinatura.status === "past_due" ? "selo" : "selo dourado"
+              assinaturaViva(assinatura, agora) ? "selo dourado" : "selo"
             }
           >
             {rotuloDeStatus(assinatura, agora)}
