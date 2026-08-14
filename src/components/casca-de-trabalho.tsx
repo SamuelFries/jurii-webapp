@@ -138,6 +138,12 @@ export async function CascaDeTrabalho({
               <Link href="/abrir-escritorio">Abrir escritório</Link>
             )}
             <Link href="/conta">Conta</Link>
+            {/* A ajuda vive ao lado da conta, e não num item de topo: ela é
+                consulta pontual, não parte do trabalho. Fica em todos os
+                fluxos porque a página é neutra (não pede vínculo nem
+                verificação), e sem link aqui só se chegaria a ela digitando
+                o endereço. */}
+            <Link href="/ajuda">Ajuda</Link>
           </nav>
           <form action={sair}>
             <button type="submit" className="discreto">
