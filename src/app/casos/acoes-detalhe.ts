@@ -9,6 +9,7 @@
 import { redirect } from "next/navigation";
 
 import { caminhoInterno } from "@/lib/caminho-seguro";
+import { contextoLogado, vinculoDaAcao } from "@/lib/contexto";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -97,9 +98,19 @@ export async function atribuirAdvogado(dados: FormData): Promise<void> {
   const lawyerProfileId = String(dados.get("advogado") ?? "");
   if (lawyerProfileId === "") volta(voltar, "Escolha um advogado.");
 
-  const supabase = await clienteDoServidor();
+  // O ESCRITÓRIO É CONFERIDO ANTES DE VIRAR ARGUMENTO. A RPC já recusa quem
+  // não gerencia casos daquela banca, então o id forjado não passava pelo
+  // banco; o que passava era a MENSAGEM: a pessoa recebia "só gestores de
+  // caso podem atribuir" sem entender por quê, porque a tela dizia um
+  // escritório e a chamada ia com outro. Com dois vínculos isso deixa de ser
+  // hipótese.
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(contexto, String(dados.get("escritorio") ?? ""));
+  if (vinculo === null) volta(voltar, "Escritório inválido para esta ação.");
+
+  const supabase = contexto.supabase;
   const { error } = await supabase.rpc("assign_law_firm_case", {
-    law_firm_id_value: String(dados.get("escritorio") ?? ""),
+    law_firm_id_value: vinculo.id,
     case_id_value: String(dados.get("caso") ?? ""),
     lawyer_profile_id_value: lawyerProfileId,
   });

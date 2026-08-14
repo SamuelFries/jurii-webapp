@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { caminhoInterno } from "@/lib/caminho-seguro";
+import { contextoLogado, vinculoDaAcao } from "@/lib/contexto";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -42,17 +43,33 @@ export async function marcarComoLida(dados: FormData): Promise<void> {
 export async function marcarTodasComoLidas(dados: FormData): Promise<void> {
   const voltar = caminhoSeguro(dados.get("voltar"), "/");
   const escopo = String(dados.get("escopo") ?? "client");
-  const lawFirmId = dados.get("escritorio");
 
-  const supabase = await clienteDoServidor();
+  const contexto = await contextoLogado();
+  const supabase = contexto.supabase;
   let consulta = supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("scope", escopo)
     .filter("read_at", "is", null);
-  if (escopo === "firm" && lawFirmId != null) {
-    consulta = consulta.eq("law_firm_id", String(lawFirmId));
+
+  // NO ESCOPO DE ESCRITÓRIO, o vínculo é obrigatório e conferido.
+  //
+  // Antes, o campo era opcional: sem ele, "marcar todas" varria as
+  // notificações de TODOS os escritórios da pessoa. Com um vínculo só isso
+  // passava despercebido; com dois, ler no escritório A apagava o aviso do B
+  // em silêncio, e o que sumiu ninguém recupera.
+  //
+  // E o id vem do formulário, isto é, do cliente: é conferido contra a lista
+  // de vínculos antes de virar filtro, como em toda ação de escritório.
+  if (escopo === "firm") {
+    const vinculo = vinculoDaAcao(
+      contexto,
+      String(dados.get("escritorio") ?? ""),
+    );
+    if (vinculo === null) redirect(voltar);
+    consulta = consulta.eq("law_firm_id", vinculo.id);
   }
+
   await consulta;
   redirect(voltar);
 }

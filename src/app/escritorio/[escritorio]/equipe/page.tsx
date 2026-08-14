@@ -20,7 +20,8 @@ export default async function PaginaDaEquipe({
   const podeConvidar = ehGestor(escritorio);
 
   // O MESMO select do app (_fetchTeamMemberRows): membros não desativados
-  // com o perfil junto. Convites e edição de papéis continuam no app.
+  // com o perfil junto. Convite e edição de papéis vivem em acoes.ts, aqui
+  // do lado: o comentário dizia que continuavam no app, e não continuam.
   const { data } = await contexto.supabase
     .from("law_firm_members")
     .select(
