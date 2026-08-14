@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CascaDeTrabalho } from "@/components/casca-de-trabalho";
 import { contextoLogado } from "@/lib/contexto";
-import { destinoInicial, ehSocioEmAlguma } from "@/lib/fluxos";
+import { destinoInicial } from "@/lib/fluxos";
 import { rotuloDoStatusDaVerificacao } from "@/lib/dominio/verificacao";
 
 import { FormularioDeEscritorio } from "./formulario";
@@ -18,12 +18,14 @@ export const dynamic = "force-dynamic";
  * o que só existia no celular. Aqui ainda reaproveita a cascata de CEP, que
  * preenche endereço e coordenada sozinha.
  *
- * QUEM É BARRADO AQUI é quem já é SÓCIO de alguma banca, e não quem tem
- * vínculo. A diferença apareceu quando o vínculo virou lista: estagiário,
- * secretária e advogado de um escritório podem fundar o deles, e a versão
- * anterior os expulsava desta tela pelo motivo errado. O que continua
- * fechado é a SEGUNDA banca do mesmo sócio, porque a licença é por pessoa
- * (owner_profile_id), e é isso que `ehSocioEmAlguma` pergunta.
+ * QUEM É BARRADO AQUI é quem não tem LICENÇA sobrando, e ninguém mais.
+ *
+ * A régua já foi outras duas, e as duas erravam. Primeiro "tem qualquer
+ * vínculo", que expulsava o estagiário e a secretária que queriam fundar a
+ * banca deles. Depois "já é sócio", que era a licença por pessoa dita com
+ * outra palavra. Desde que a cobrança virou por escritório, abrir uma banca
+ * GASTA uma licença e abrir a segunda pede outra, então a régua da tela e a
+ * do banco (has_law_firm_license) passaram a ser a mesma frase.
  */
 export default async function AbrirEscritorio({
   searchParams,
@@ -32,13 +34,6 @@ export default async function AbrirEscritorio({
 }) {
   const { ok, erro } = await searchParams;
   const contexto = await contextoLogado();
-  // Volta para a casa DE QUEM ESTÁ AQUI, e não para "/escritorio" fixo: com
-  // vários vínculos o destino depende da preferência, e quem sabe disso é
-  // `destinoInicial`.
-  if (ehSocioEmAlguma(contexto.fluxos)) {
-    redirect(destinoInicial(contexto.fluxos));
-  }
-
   // A LICENÇA vem junto porque a policy de INSERT de law_firm_verifications
   // exige has_law_firm_license(auth.uid()). Sem ela o formulário inteiro é
   // um beco: a pessoa preenchia CNPJ, endereço e cinco arquivos e recebia
@@ -56,6 +51,12 @@ export default async function AbrirEscritorio({
       .from("law_firm_license_subscriptions")
       .select("status")
       .eq("owner_profile_id", contexto.usuario.id)
+      // A LICENÇA NÃO GASTA, que é exatamente o que a policy de INSERT
+      // pergunta desde que a cobrança virou por escritório. Sem este filtro
+      // a tela mostraria o formulário para quem já gastou a licença na
+      // primeira banca, e o banco recusaria no fim: formulário que só sabe
+      // produzir recusa foi o defeito que a gente já corrigiu uma vez aqui.
+      .is("law_firm_id", null)
       .in("status", ["trialing", "active"])
       .limit(1)
       .maybeSingle(),

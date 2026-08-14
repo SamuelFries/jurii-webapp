@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { MioloDePlanos } from "@/components/planos/miolo-de-planos";
 import { contextoLogado } from "@/lib/contexto";
@@ -32,14 +31,28 @@ export default async function PlanosDaPrimeiraLicenca({
 }) {
   const { erro } = await searchParams;
   const contexto = await contextoLogado();
+  // NÃO redireciona quem já é sócio. Este é o funil de COMPRA, e desde que a
+  // cobrança virou por escritório comprar a segunda licença (para abrir a
+  // segunda banca) é um pedido legítimo. Mandar essa pessoa para o plano da
+  // banca que ela já tem sequestraria a intenção dela.
+  //
+  // O que a tela precisa fazer é não deixar ninguém comprar por engano
+  // achando que está trocando o plano da banca: por isso o aviso abaixo,
+  // quando já existe uma.
   const minhaBanca = escritorioDoSocio(contexto.fluxos);
-  if (minhaBanca !== null) redirect(`/escritorio/${minhaBanca.id}/planos`);
 
   return (
     <main className="pagina">
       <Link href="/" className="marca marca-pequena">
         jurii<span className="ouro">.</span>
       </Link>
+      {minhaBanca !== null && (
+        <p className="aviso-bom" style={{ marginBottom: 12 }}>
+          Você já é sócio de {minhaBanca.nome}. Contratar aqui abre uma
+          licença NOVA, para uma segunda banca. Para trocar o plano de{" "}
+          {minhaBanca.nome}, vá em Assinatura, dentro do escritório.
+        </p>
+      )}
       <MioloDePlanos
         supabase={contexto.supabase}
         escritorioId={null}
