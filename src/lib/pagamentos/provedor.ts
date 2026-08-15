@@ -30,6 +30,14 @@ import { asaas } from "./asaas";
 export interface SessaoDeCheckout {
   /** Para onde mandar a pessoa para pagar. */
   url: string;
+  /**
+   * O id da assinatura NO PROVEDOR.
+   *
+   * Sobe junto com a URL porque quem chama precisa gravá-lo, e é a gravação
+   * que arbitra a corrida: dois cliques simultâneos criam duas assinaturas lá,
+   * e só uma consegue ocupar a coluna. Quem perde apaga a sua.
+   */
+  assinaturaNoProvedor: string;
 }
 
 /**
@@ -54,6 +62,15 @@ export interface EntradaDeCheckout {
   /** Quando a primeira cobrança vence: o fim do teste grátis. */
   primeiroVencimentoIso: string;
   descricao: string;
+  /**
+   * O id que JÁ gravamos para esta assinatura, quando existe.
+   *
+   * É a fonte de verdade da idempotência, e a busca por `externalReference`
+   * ficou como recurso de quem veio de antes desta coluna existir: buscar é
+   * uma foto do provedor num instante, e duas chamadas simultâneas tiram a
+   * mesma foto vazia antes de qualquer uma criar.
+   */
+  assinaturaNoProvedorConhecida: string | null;
 }
 
 export interface ProvedorDePagamento {
@@ -67,6 +84,18 @@ export interface ProvedorDePagamento {
   /** Valida e interpreta uma chamada de webhook. Lança se a assinatura da
    * chamada for inválida; devolve o efeito a aplicar. */
   processarWebhook(requisicao: Request): Promise<EfeitoDeWebhook>;
+
+  /**
+   * Apaga a assinatura que perdeu a corrida.
+   *
+   * Só é chamada para uma assinatura que ACABAMOS de criar e que o banco
+   * recusou, ou seja, uma duplicata com zero pagamentos. Deixá-la de pé seria
+   * uma segunda mensalidade recorrente na conta de quem clicou duas vezes.
+   */
+  descartarAssinaturaDuplicada(assinaturaNoProvedor: string): Promise<void>;
+
+  /** A página de pagamento de uma assinatura que já existe no provedor. */
+  linkDePagamentoDe(assinaturaNoProvedor: string): Promise<string>;
 }
 
 /**

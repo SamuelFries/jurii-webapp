@@ -131,6 +131,16 @@ function vencimentoNoFuturo(iso: string): string {
  * MEDIDO: `GET /subscriptions?externalReference=<id>` devolve `data` com as
  * assinaturas daquela referência. Só a `ACTIVE` interessa: reaproveitar uma
  * expirada devolveria uma cobrança que não dá para pagar.
+ *
+ * ESTE É O CAMINHO DE TRÁS, e não a fonte de verdade. Quem manda é o
+ * `provider_subscription_id` gravado no banco; a busca serve para as linhas
+ * criadas antes daquela coluna existir. Buscar é uma foto do provedor num
+ * instante, e duas chamadas simultâneas tiram a mesma foto vazia.
+ *
+ * Quando acha MAIS DE UMA, usa a mais antiga em vez de qualquer uma. Duas
+ * ativas com a mesma referência é incidente, e escolher sempre a mesma é o que
+ * faz a reconciliação de plano cair sempre na mesma assinatura, em vez de
+ * corrigir uma e deixar a outra cobrando o valor velho para sempre.
  */
 async function assinaturaJaCriada(
   assinaturaId: string,
@@ -139,7 +149,23 @@ async function assinaturaJaCriada(
     `/subscriptions?externalReference=${encodeURIComponent(assinaturaId)}`,
   );
   const linhas = (busca.data as Record<string, unknown>[]) ?? [];
-  return linhas.find((linha) => linha.status === "ACTIVE") ?? null;
+  const ativas = linhas.filter((linha) => linha.status === "ACTIVE");
+
+  if (ativas.length > 1) {
+    console.error(
+      `assinatura duplicada no provedor para ${assinaturaId}: ${ativas
+        .map((a) => String(a.id))
+        .join(", ")}`,
+    );
+  }
+
+  // `dateCreated` vem no formato AAAA-MM-DD, então ordem alfabética é ordem
+  // cronológica. Sem ele, o id serve de desempate estável.
+  return (
+    [...ativas].sort((a, b) =>
+      String(a.dateCreated ?? a.id).localeCompare(String(b.dateCreated ?? b.id)),
+    )[0] ?? null
+  );
 }
 
 export const asaas: ProvedorDePagamento = {
@@ -168,7 +194,16 @@ export const asaas: ProvedorDePagamento = {
   async criarCheckout(entrada: EntradaDeCheckout): Promise<SessaoDeCheckout> {
     const valor = entrada.valorEmCentavos / 100;
     const ciclo = CICLO[entrada.billingCycle];
-    const existente = await assinaturaJaCriada(entrada.assinaturaId);
+
+    // O ID GRAVADO MANDA. Ele é a única prova estável de "esta assinatura já
+    // existe lá"; a busca por referência é o que sobrou para as linhas
+    // anteriores à coluna, e ela não fecha corrida nenhuma sozinha.
+    const existente =
+      entrada.assinaturaNoProvedorConhecida === null
+        ? await assinaturaJaCriada(entrada.assinaturaId)
+        : await chamaAsaas(
+            `/subscriptions/${entrada.assinaturaNoProvedorConhecida}`,
+          );
 
     let assinaturaNoAsaas: string;
 
@@ -241,7 +276,37 @@ export const asaas: ProvedorDePagamento = {
       );
     }
 
-    return { url };
+    return { url, assinaturaNoProvedor: assinaturaNoAsaas };
+  },
+
+  /**
+   * MEDIDO: `DELETE /subscriptions/{id}` responde `{deleted: true, id}` e a
+   * assinatura some da busca por referência. É o que fecha a corrida sem
+   * deixar rastro na conta de quem clicou duas vezes.
+   */
+  async descartarAssinaturaDuplicada(assinaturaNoProvedor: string): Promise<void> {
+    if (!ID_DO_ASAAS.test(assinaturaNoProvedor)) {
+      throw new Error("Id de assinatura fora do formato do provedor.");
+    }
+    await chamaAsaas(`/subscriptions/${assinaturaNoProvedor}`, {
+      metodo: "DELETE",
+    });
+  },
+
+  async linkDePagamentoDe(assinaturaNoProvedor: string): Promise<string> {
+    if (!ID_DO_ASAAS.test(assinaturaNoProvedor)) {
+      throw new Error("Id de assinatura fora do formato do provedor.");
+    }
+    const cobrancas = await chamaAsaas(
+      `/subscriptions/${assinaturaNoProvedor}/payments`,
+    );
+    const primeira = ((cobrancas.data as Record<string, unknown>[]) ?? [])[0];
+    const url = primeira?.invoiceUrl;
+
+    if (typeof url !== "string" || url === "") {
+      throw new Error("Asaas não devolveu cobrança para pagar.");
+    }
+    return url;
   },
 
   /**

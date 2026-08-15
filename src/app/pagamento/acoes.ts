@@ -43,7 +43,9 @@ export async function irParaPagamento(dados: FormData): Promise<void> {
   // duas (a da banca, ou a ainda não gasta).
   let consulta = contexto.supabase
     .from("law_firm_license_subscriptions")
-    .select("id, plan_code, billing_cycle, trial_ends_at, law_firm_license_plans(*)")
+    .select(
+      "id, plan_code, billing_cycle, trial_ends_at, provider_subscription_id, law_firm_license_plans(*)",
+    )
     .eq("owner_profile_id", contexto.usuario.id)
     .neq("status", "canceled");
   consulta =
@@ -113,7 +115,43 @@ export async function irParaPagamento(dados: FormData): Promise<void> {
           ? new Date().toISOString()
           : String(assinatura.trial_ends_at),
       descricao: `Jurii ${plano?.name ?? assinatura.plan_code} (${anual ? "anual" : "mensal"})`,
+      assinaturaNoProvedorConhecida:
+        assinatura.provider_subscription_id == null
+          ? null
+          : String(assinatura.provider_subscription_id),
     });
+
+    // O COMPARE-AND-SET, e é ele que arbitra a corrida.
+    //
+    // Procurar no provedor antes de criar não fecha nada sozinho: entre a
+    // busca e o POST cabem três viagens de rede, e dois cliques ao mesmo
+    // tempo tiram a mesma foto vazia e criam duas assinaturas recorrentes. O
+    // índice único da coluna é o único ponto do sistema onde só um passa.
+    //
+    // A RPC devolve SEMPRE o vencedor. Resposta diferente do que mandamos
+    // significa que perdemos, e que a assinatura que acabamos de criar é uma
+    // duplicata a apagar antes que ela vire mensalidade.
+    const { data: vencedor, error: erroDoRegistro } =
+      await contexto.supabase.rpc("registrar_assinatura_no_provedor", {
+        assinatura_id_value: String(assinatura.id),
+        provider_id_value: sessao.assinaturaNoProvedor,
+      });
+
+    if (erroDoRegistro) {
+      // Sem saber quem ganhou, mandar para pagar seria arriscar cobrar duas
+      // vezes. Melhor voltar e a pessoa clicar de novo, agora com a coluna
+      // decidindo.
+      console.error("registro da assinatura no provedor falhou", erroDoRegistro.message);
+      redirect(
+        `${voltar}?erro=${encodeURIComponent("Não foi possível abrir o pagamento agora. Tente de novo em instantes.")}`,
+      );
+    }
+
+    if (String(vencedor) !== sessao.assinaturaNoProvedor) {
+      await provedor.descartarAssinaturaDuplicada(sessao.assinaturaNoProvedor);
+      redirect(await provedor.linkDePagamentoDe(String(vencedor)));
+    }
+
     redirect(sessao.url);
   } catch (erro) {
     // `redirect` do Next funciona lançando: relançar é obrigatório, senão o

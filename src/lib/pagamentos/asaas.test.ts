@@ -182,6 +182,140 @@ describe("webhook do Asaas", () => {
   });
 });
 
+describe("a corrida entre dois cliques", () => {
+  test("com o id GRAVADO, nem chega a buscar: a busca não fecha corrida", async () => {
+    // Procurar antes de criar é uma foto do provedor num instante, e duas
+    // chamadas simultâneas tiram a mesma foto vazia. Quem fecha a corrida é o
+    // índice único da coluna provider_subscription_id; a busca ficou como
+    // recurso para as linhas anteriores a ela.
+    const chamadas: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        chamadas.push(caminho);
+        if (caminho === "/subscriptions/sub_gravada") {
+          return new Response(
+            JSON.stringify({ id: "sub_gravada", value: 149, cycle: "MONTHLY" }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const sessao = await asaas.criarCheckout({
+      assinaturaId: ASSINATURA,
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      primeiroVencimentoIso: "2026-09-13T00:00:00Z",
+      descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: "sub_gravada",
+    });
+
+    expect(sessao.assinaturaNoProvedor).toBe("sub_gravada");
+    expect(chamadas).toEqual([
+      "/subscriptions/sub_gravada",
+      "/subscriptions/sub_gravada/payments",
+    ]);
+    // NENHUMA busca por referência: o id gravado é a fonte de verdade.
+    expect(chamadas.some((c) => c.includes("externalReference"))).toBe(false);
+  });
+
+  test("duas assinaturas ativas na mesma referência: usa sempre a MAIS ANTIGA", async () => {
+    // Quando a duplicata já existe (criada antes da coluna), escolher sempre a
+    // mesma é o que faz a reconciliação de plano cair sempre na mesma
+    // assinatura. Com `.find` ela corrigia uma e deixava a outra cobrando o
+    // valor velho para sempre.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        const caminho = String(url).replace(/^.*\/v3/, "");
+        if (caminho.startsWith("/subscriptions?externalReference=")) {
+          return new Response(
+            JSON.stringify({
+              // A MAIS ANTIGA FICA NO MEIO de propósito: com ela na ponta,
+              // pegar "a primeira" ou "a última" da lista acertaria por
+              // acidente, e o teste passaria sem exigir ordenação nenhuma.
+              data: [
+                { id: "sub_nova", status: "ACTIVE", value: 149, cycle: "MONTHLY", dateCreated: "2026-08-14" },
+                { id: "sub_antiga", status: "ACTIVE", value: 149, cycle: "MONTHLY", dateCreated: "2026-06-01" },
+                { id: "sub_meio", status: "ACTIVE", value: 149, cycle: "MONTHLY", dateCreated: "2026-07-20" },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "pay_1", invoiceUrl: "https://sandbox.asaas.com/i/abc" }],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const sessao = await asaas.criarCheckout({
+      assinaturaId: ASSINATURA,
+      planCode: "essencial",
+      billingCycle: "monthly",
+      emailDoContratante: "socio@jurii.local",
+      nomeDoContratante: "Joao Socio",
+      documentoDoContratante: "24971563792",
+      valorEmCentavos: 14900,
+      primeiroVencimentoIso: "2026-09-13T00:00:00Z",
+      descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: null,
+    });
+
+    expect(sessao.assinaturaNoProvedor).toBe("sub_antiga");
+  });
+
+  test("quem perde a corrida apaga a própria duplicata", async () => {
+    // MEDIDO: DELETE /subscriptions/{id} responde {deleted:true} e some da
+    // busca. Deixá-la de pé seria uma segunda mensalidade recorrente na conta
+    // de quem clicou duas vezes.
+    const chamadas: { caminho: string; metodo?: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, opcoes?: RequestInit) => {
+        chamadas.push({
+          caminho: String(url).replace(/^.*\/v3/, ""),
+          metodo: opcoes?.method,
+        });
+        return new Response(JSON.stringify({ deleted: true }), { status: 200 });
+      }),
+    );
+
+    await asaas.descartarAssinaturaDuplicada("sub_perdedora");
+    expect(chamadas).toEqual([
+      { caminho: "/subscriptions/sub_perdedora", metodo: "DELETE" },
+    ]);
+  });
+
+  test("e o descarte recusa id fora do formato antes de virar caminho de URL", async () => {
+    const fetchFalso = apiFalsa({});
+    vi.stubGlobal("fetch", fetchFalso);
+
+    await expect(
+      asaas.descartarAssinaturaDuplicada("../../customers"),
+    ).rejects.toThrow("fora do formato");
+    await expect(
+      asaas.linkDePagamentoDe("sub_1/../../customers"),
+    ).rejects.toThrow("fora do formato");
+    expect(fetchFalso).not.toHaveBeenCalled();
+  });
+});
+
 describe("guardas da fronteira do provedor", () => {
   test("referência que não é uuid é IGNORADA, e não repassada ao banco", async () => {
     // Cobrança avulsa criada à mão no painel do Asaas pode ter qualquer texto
@@ -298,6 +432,7 @@ describe("checkout do Asaas", () => {
       valorEmCentavos: 148800,
       primeiroVencimentoIso: "2026-09-13T00:00:00Z",
       descricao: "Jurii Essencial (anual)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     expect(sessao.url).toBe("https://sandbox.asaas.com/i/abc");
@@ -354,6 +489,7 @@ describe("checkout do Asaas", () => {
       valorEmCentavos: 14900,
       primeiroVencimentoIso: "2026-09-13T00:00:00Z",
       descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     // A mesma URL de pagamento, e NENHUM POST: nem cliente novo, nem
@@ -410,6 +546,7 @@ describe("checkout do Asaas", () => {
       valorEmCentavos: 69900,
       primeiroVencimentoIso: "2026-09-13T00:00:00Z",
       descricao: "Jurii Banca (mensal)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     expect(corpos).toEqual([
@@ -469,6 +606,7 @@ describe("checkout do Asaas", () => {
       // Teste que acabou em 2020: o caso de quem some e volta para pagar.
       primeiroVencimentoIso: "2020-01-01T00:00:00Z",
       descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     const hoje = new Date().toISOString().slice(0, 10);
@@ -519,6 +657,7 @@ describe("checkout do Asaas", () => {
       valorEmCentavos: 14900,
       primeiroVencimentoIso: `${daquiUmAno}T00:00:00Z`,
       descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     expect(corpos.find((c) => "nextDueDate" in c)?.nextDueDate).toBe(daquiUmAno);
@@ -566,6 +705,7 @@ describe("checkout do Asaas", () => {
       valorEmCentavos: 14900,
       primeiroVencimentoIso: "2026-09-13T00:00:00Z",
       descricao: "Jurii Essencial (mensal)",
+      assinaturaNoProvedorConhecida: null,
     });
 
     expect(chamadas).toContain("/subscriptions");
@@ -595,6 +735,7 @@ describe("checkout do Asaas", () => {
         valorEmCentavos: 14900,
         primeiroVencimentoIso: "2026-09-13T00:00:00Z",
         descricao: "x",
+        assinaturaNoProvedorConhecida: null,
       }),
     ).rejects.toThrow("não devolveu cobrança");
   });
