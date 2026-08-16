@@ -118,6 +118,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * O hoje é em UTC de propósito. O Brasil está em UTC-3, então a data UTC
  * nunca é ANTERIOR à data brasileira, e o erro que existe é impossível. No
  * máximo o vencimento cai um dia à frente, que a API aceita sem reclamar.
+ *
+ * ISSO SÓ VALE PARA ESTE CAMPO. A API do Asaas trabalha em horário
+ * brasileiro, e num campo com a restrição CONTRÁRIA o mesmo UTC erra: a prova
+ * de navegador mediu "A data selecionada 16/08/2026 não pode ser posterior a
+ * data atual" ao mandar o UTC de hoje num campo que não aceita futuro. Quem
+ * copiar este padrão para outro campo precisa checar de que lado a restrição
+ * cai antes.
  */
 function vencimentoNoFuturo(iso: string): string {
   const hoje = new Date().toISOString().slice(0, 10);
