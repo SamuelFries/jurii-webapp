@@ -5,7 +5,6 @@ import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { convidarAdvogado, salvarPapeis } from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
 import { ehGestor, papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
-import { assinaturaDaLinha, bancaPodeCrescer } from "@/lib/licenca";
 
 export const dynamic = "force-dynamic";
 
@@ -41,22 +40,25 @@ export default async function PaginaDaEquipe({
 
   // A COBRANÇA DA BANCA, para a tela poder dizer ANTES em vez de recusar
   // DEPOIS. Com a assinatura parada o servidor recusa convite e promoção, e
-  // até esta consulta a pessoa só descobria isso preenchendo a OAB e levando
+  // sem esta pergunta a pessoa só descobria isso preenchendo a OAB e levando
   // um "não" no fim. Oferecer um formulário que vai certamente falhar é o
   // link morto de sempre, vestido de outra roupa.
   //
-  // TODAS as linhas, inclusive canceladas: é a diferença entre "nunca teve
-  // licença" (banca anterior ao licenciamento, que segue sem teto) e "teve e
-  // acabou" que decide, e filtrar cancelada aqui apagaria essa diferença.
-  const { data: linhasDeCobranca } = await contexto.supabase
-    .from("law_firm_license_subscriptions")
-    .select("*, law_firm_license_plans(*)")
-    .eq("law_firm_id", escritorio.id);
-
-  const assinaturas = ((linhasDeCobranca as unknown[]) ?? []).map((linha) =>
-    assinaturaDaLinha(linha as Record<string, unknown>),
+  // A PERGUNTA VAI PARA O BANCO. Ela já foi respondida aqui, em TypeScript,
+  // espelhando teto_de_advogados, e o espelho era exatamente o risco: a regra
+  // tem três respostas que dependem de enxergar as assinaturas CANCELADAS, e
+  // confundir "nunca teve licença" com "teve e acabou" foi o furo que fazia
+  // cancelar virar equipe ilimitada. Uma cópia em cada linguagem é uma cópia
+  // que ninguém obriga a mudar junto. Ver a 20260909120000.
+  //
+  // Otimista quando falha: quem recusa de verdade é o servidor, e sumir com o
+  // convite por causa de um erro de rede seria a tela mentindo sobre a
+  // assinatura de quem está em dia.
+  const { data: podeCrescerBruto } = await contexto.supabase.rpc(
+    "banca_pode_crescer",
+    { law_firm_id_value: escritorio.id },
   );
-  const podeCrescer = bancaPodeCrescer(assinaturas, new Date());
+  const podeCrescer = podeCrescerBruto !== false;
 
   return (
       <div className="pagina-de-trabalho"><div className="miolo">
