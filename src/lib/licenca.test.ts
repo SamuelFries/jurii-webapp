@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   assinaturaDaLinha,
   assinaturaViva,
+  bancaPodeCrescer,
   descontoAnualPercent,
   diasRestantesDeTeste,
   formataPreco,
@@ -137,6 +138,47 @@ describe("rótulos", () => {
     });
     expect(testeVencido(semData, new Date())).toBe(true);
     expect(assinaturaViva(semData, new Date())).toBe(false);
+  });
+
+  test("a banca cresce, ou não, pela MESMA regra do banco", () => {
+    // Espelho de teto_de_advogados (20260906120000). Se a tela divergir do
+    // banco, a pessoa preenche a OAB, clica, e leva um "não" que ninguém
+    // explicou. As três respostas, na ordem em que a função do banco as dá.
+    const linha = (extra: Record<string, unknown> = {}) =>
+      assinaturaDaLinha({
+        id: "s1",
+        plan_code: "essencial",
+        status: "trialing",
+        billing_cycle: "monthly",
+        trial_ends_at: "2026-09-07T12:00:00Z",
+        ...extra,
+      });
+    const agora = new Date("2026-08-15T12:00:00Z");
+
+    // SEM TRAVA RETROATIVA: banca aprovada antes do licenciamento nunca teve
+    // linha, e segue crescendo como sempre.
+    expect(bancaPodeCrescer([], agora)).toBe(true);
+
+    expect(bancaPodeCrescer([linha()], agora)).toBe(true);
+    expect(bancaPodeCrescer([linha({ status: "active" })], agora)).toBe(true);
+
+    // Teste vencido, inadimplência e cancelamento congelam igual: são a mesma
+    // coisa vista de lados diferentes.
+    expect(
+      bancaPodeCrescer([linha({ trial_ends_at: "2026-08-01T00:00:00Z" })], agora),
+    ).toBe(false);
+    expect(bancaPodeCrescer([linha({ status: "past_due" })], agora)).toBe(false);
+    expect(bancaPodeCrescer([linha({ status: "canceled" })], agora)).toBe(false);
+
+    // "TEVE E ACABOU" não é "nunca teve". Era exatamente aqui que o banco
+    // trocava uma pela outra e cancelar virava equipe ilimitada; a tela não
+    // pode repetir o mesmo engano por filtrar cancelada antes de perguntar.
+    expect(
+      bancaPodeCrescer(
+        [linha({ id: "s0", status: "canceled" }), linha({ status: "active" })],
+        agora,
+      ),
+    ).toBe(true);
   });
 
   test("status pagos", () => {

@@ -161,6 +161,35 @@ export function testeVencido(assinatura: Assinatura, agora: Date): boolean {
   );
 }
 
+/**
+ * A banca pode ganhar mais um advogado? Espelho de `teto_de_advogados`
+ * (migration 20260906120000), e a fidelidade importa: se a tela disser uma
+ * coisa e o banco outra, a pessoa tenta e leva um "não" que ninguém explicou.
+ *
+ * As três respostas do banco, na mesma ordem:
+ *
+ *   NENHUMA linha  a banca nunca teve licença. São as aprovadas antes do
+ *                  licenciamento, e elas seguem sem trava retroativa.
+ *   linha viva     cresce até o teto do plano.
+ *   linha parada   teve licença e não tem mais: teste vencido, inadimplência
+ *                  ou cancelamento. Não cresce.
+ *
+ * Recebe TODAS as linhas da banca, inclusive canceladas, porque é a diferença
+ * entre "nunca teve" e "teve e acabou" que decide. Filtrar cancelada antes de
+ * chamar faria as duas parecerem a mesma coisa, que era exatamente o furo que
+ * a 20260906120000 fechou no banco.
+ */
+export function bancaPodeCrescer(
+  assinaturas: Assinatura[],
+  agora: Date,
+): boolean {
+  if (assinaturas.length === 0) return true;
+  const viva = assinaturas.find(
+    (assinatura) => assinatura.status !== "canceled",
+  );
+  return viva !== undefined && assinaturaViva(viva, agora);
+}
+
 /** Dias restantes do teste, nunca negativo: "faltam -3 dias" não é frase. */
 export function diasRestantesDeTeste(
   assinatura: Assinatura,

@@ -16,6 +16,18 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
  * decide tudo de novo: papel de quem convida (sócio/admin), limite de
  * vagas do plano, OAB válida e limite de tentativas.
  */
+/**
+ * A frase de quem esbarrou na assinatura parada, e ela é a MESMA nos dois
+ * caminhos de propósito: convidar de fora e promover quem já está dentro
+ * ocupam a mesma vaga, então recusar por motivos diferentes seria inventar
+ * uma distinção que o banco não faz.
+ *
+ * E é diferente da frase do teto cheio. "Aumente o plano" mandaria a pessoa
+ * gastar mais quando o que resolve o caso dela é pagar o que já contratou.
+ */
+const ASSINATURA_PARADA =
+  "A assinatura do escritório está pendente. Regularize o pagamento em Assinatura para voltar a incluir advogados.";
+
 export async function convidarAdvogado(dados: FormData): Promise<void> {
   // O id do escritório vem do formulário, isto é, do cliente, e por isso só
   // vira argumento da RPC depois de achado entre os vínculos que o banco
@@ -47,15 +59,17 @@ export async function convidarAdvogado(dados: FormData): Promise<void> {
   });
 
   if (error) {
-    const mensagem = error.message.includes("seat limit")
-      ? "O plano atual não tem mais vaga de advogado. Aumente o plano em Assinatura."
-      : error.message.includes("Only active office owners")
-        ? "Apenas sócio e admin convidam advogados."
-        : error.message.includes("Invalid OAB")
-          ? "Não achamos advogado verificado com essa OAB. Confira UF e número."
-          : error.message.includes("Too many invite attempts")
-            ? "Muitas tentativas de convite. Aguarde um pouco e tente de novo."
-            : "Não foi possível convidar. Tente de novo.";
+    const mensagem = error.message.includes("Subscription is not active")
+      ? ASSINATURA_PARADA
+      : error.message.includes("seat limit")
+        ? "O plano atual não tem mais vaga de advogado. Aumente o plano em Assinatura."
+        : error.message.includes("Only active office owners")
+          ? "Apenas sócio e admin convidam advogados."
+          : error.message.includes("Invalid OAB")
+            ? "Não achamos advogado verificado com essa OAB. Confira UF e número."
+            : error.message.includes("Too many invite attempts")
+              ? "Muitas tentativas de convite. Aguarde um pouco e tente de novo."
+              : "Não foi possível convidar. Tente de novo.";
     redirect(
       `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
     );
@@ -105,15 +119,23 @@ export async function salvarPapeis(dados: FormData): Promise<void> {
   });
 
   if (error) {
-    const mensagem = error.message.includes("keep at least one owner")
-      ? "O escritório precisa de pelo menos um sócio. Promova outra pessoa antes de tirar este papel."
-      : error.message.includes("Only owners can grant or remove owner")
-        ? "Somente um sócio concede ou retira o papel de sócio."
-        : error.message.includes("Only active office owners and admins")
-          ? "Somente sócio e admin do escritório editam papéis."
-          : error.message.includes("Firm member not found")
-            ? "Esta pessoa não está mais na equipe."
-            : "Não foi possível salvar os papéis. Tente de novo.";
+    // Promover a advogado passou a ocupar vaga na 20260907120000, então esta
+    // ação ganhou as duas recusas de teto que antes só o convite tinha. Sem
+    // elas, promover alguém com a assinatura parada devolvia "não foi
+    // possível salvar os papéis", que não diz nada nem leva a lugar nenhum.
+    const mensagem = error.message.includes("Subscription is not active")
+      ? ASSINATURA_PARADA
+      : error.message.includes("seat limit")
+        ? "O plano atual não tem mais vaga de advogado. Aumente o plano em Assinatura para promover."
+        : error.message.includes("keep at least one owner")
+          ? "O escritório precisa de pelo menos um sócio. Promova outra pessoa antes de tirar este papel."
+          : error.message.includes("Only owners can grant or remove owner")
+            ? "Somente um sócio concede ou retira o papel de sócio."
+            : error.message.includes("Only active office owners and admins")
+              ? "Somente sócio e admin do escritório editam papéis."
+              : error.message.includes("Firm member not found")
+                ? "Esta pessoa não está mais na equipe."
+                : "Não foi possível salvar os papéis. Tente de novo.";
     redirect(
       `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
     );
