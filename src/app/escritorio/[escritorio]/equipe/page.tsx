@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
 import { convidarAdvogado, salvarPapeis } from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
 import { ehGestor, papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
+import { assinaturaDaLinha, bancaPodeCrescer } from "@/lib/licenca";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +39,25 @@ export default async function PaginaDaEquipe({
   const ativos = membros.filter((membro) => membro.ativo);
   const pendentes = membros.filter((membro) => membro.convitePendente);
 
+  // A COBRANÇA DA BANCA, para a tela poder dizer ANTES em vez de recusar
+  // DEPOIS. Com a assinatura parada o servidor recusa convite e promoção, e
+  // até esta consulta a pessoa só descobria isso preenchendo a OAB e levando
+  // um "não" no fim. Oferecer um formulário que vai certamente falhar é o
+  // link morto de sempre, vestido de outra roupa.
+  //
+  // TODAS as linhas, inclusive canceladas: é a diferença entre "nunca teve
+  // licença" (banca anterior ao licenciamento, que segue sem teto) e "teve e
+  // acabou" que decide, e filtrar cancelada aqui apagaria essa diferença.
+  const { data: linhasDeCobranca } = await contexto.supabase
+    .from("law_firm_license_subscriptions")
+    .select("*, law_firm_license_plans(*)")
+    .eq("law_firm_id", escritorio.id);
+
+  const assinaturas = ((linhasDeCobranca as unknown[]) ?? []).map((linha) =>
+    assinaturaDaLinha(linha as Record<string, unknown>),
+  );
+  const podeCrescer = bancaPodeCrescer(assinaturas, new Date());
+
   return (
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
@@ -52,7 +74,25 @@ export default async function PaginaDaEquipe({
       )}
       {ok === "papeis" && <p className="aviso-bom">Papéis atualizados.</p>}
 
-      {podeConvidar && (
+      {/* A EQUIPE QUE JÁ EXISTE NÃO MUDA. O aviso fala de crescer, e só, para
+          ninguém ler "assinatura pendente" como "perdi o escritório". Quem
+          está dentro continua trabalhando normalmente, que é a decisão da
+          20260906120000. */}
+      {podeConvidar && !podeCrescer && (
+        <div className="cartao" style={{ marginBottom: 16 }}>
+          <span className="selo">Assinatura pendente</span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            Enquanto o pagamento não entra, o escritório não inclui advogados
+            novos, nem por convite nem promovendo quem já está aqui. Quem já
+            faz parte da equipe continua trabalhando normalmente.
+          </p>
+          <Link className="botao" href={`/escritorio/${escritorio.id}/assinatura`}>
+            Regularizar pagamento
+          </Link>
+        </div>
+      )}
+
+      {podeConvidar && podeCrescer && (
         <details className="propor-caso">
           <summary>Convidar advogado</summary>
           <form
