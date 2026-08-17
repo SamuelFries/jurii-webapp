@@ -633,17 +633,62 @@ a.cartao-de-lista:hover {
 
 /* ---- Seletor de escritório ----
  *
- * Mora no rodapé da lateral, na mesma gramática de "Trocar de área": o nome
- * em cima, o cargo embaixo, o ativo marcado. Não é um menu suspenso porque a
- * lista tem duas ou três linhas e um dropdown esconderia justamente o dado
- * que importa (em qual cargo a pessoa está atuando agora). */
+ * Recolhido por padrão: o cabeçalho é o escritório ATIVO (com o cargo nele),
+ * e a seta abre os demais. A lista completa sempre visível escalava mal —
+ * com quatro ou cinco vínculos ela dominava o rodapé da lateral e empurrava
+ * "Trocar de área" e "Sair" para fora da dobra, para exibir escritórios em
+ * que a pessoa não está atuando. `details`/`summary` nativo: abre e fecha
+ * sem JavaScript, como o resto da lateral. */
 .seletor-de-escritorio {
   margin-bottom: 14px;
+}
+
+.seletor-de-escritorio summary {
+  /* Cabeçalho com a cara do item ativo de sempre: fundo aceso e o fio
+     dourado. É o "você está aqui" da lateral, agora clicável. */
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--gold);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+/* O marcador nativo do details, fora (Safari usa pseudo próprio). */
+.seletor-de-escritorio summary::-webkit-details-marker {
+  display: none;
+}
+
+.seletor-de-escritorio summary .identidade {
+  min-width: 0;
+}
+
+.seletor-de-escritorio .seta {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-2);
+  border-bottom: 2px solid var(--text-2);
+  /* Fechado aponta para BAIXO (há mais coisa abaixo)... */
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  margin-top: -2px;
+}
+
+/* ...aberto aponta para cima, no mesmo fio do gesto de recolher. */
+.seletor-de-escritorio details[open] .seta {
+  transform: rotate(-135deg);
+  margin-top: 4px;
 }
 
 .seletor-de-escritorio form {
   display: grid;
   gap: 2px;
+  margin-top: 2px;
 }
 
 .seletor-de-escritorio .opcao-de-escritorio {
@@ -659,14 +704,9 @@ a.cartao-de-lista:hover {
   border-left: 2px solid transparent;
 }
 
-.seletor-de-escritorio .opcao-de-escritorio:hover {
+.seletor-de-escritorio .opcao-de-escritorio:hover,
+.seletor-de-escritorio .opcao-de-escritorio:focus-visible {
   background: var(--surface-2);
-}
-
-.seletor-de-escritorio .opcao-de-escritorio.ativa {
-  background: var(--surface-2);
-  border-left-color: var(--gold);
-  cursor: default;
 }
 
 .seletor-de-escritorio .nome {
