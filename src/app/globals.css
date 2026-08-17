@@ -2804,3 +2804,80 @@ button.compacto {
   flex-wrap: wrap;
   margin-top: 12px;
 }
+
+/* ---- Convite por link ----
+ *
+ * A página do convite é uma cena de uma coisa só: quem chamou, para quê, e
+ * um botão. Quem chega nela foi chamado — nada de lateral, nada de menu. */
+.pagina-do-convite {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.pagina-do-convite .cartao {
+  text-align: center;
+}
+
+.pagina-do-convite .marca {
+  display: inline-block;
+  margin-bottom: 18px;
+}
+
+.pagina-do-convite h1 {
+  margin: 8px 0 4px;
+}
+
+.pagina-do-convite .botao {
+  margin-top: 14px;
+}
+
+.avatar-do-convite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.copiar-link {
+  display: flex;
+  gap: 8px;
+}
+
+.copiar-link input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.copiar-link button {
+  /* O botão global é bloco de largura cheia; aqui ele divide a linha com o
+     input, senão esmaga o link que a pessoa veio copiar. */
+  flex: none;
+  width: auto;
+}
+
+.linha-de-link-aberto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.linha-de-link-aberto .botao {
+  padding: 6px 12px;
+  font-size: 13px;
+}

@@ -2,6 +2,8 @@ import Image from "next/image";
 
 import { Aurora } from "./aurora";
 import { CartaoVivo } from "./cartao-vivo";
+import { caminhoInterno } from "@/lib/caminho-seguro";
+
 import { FormularioDeEntrada } from "./formulario";
 
 /**
@@ -11,7 +13,16 @@ import { FormularioDeEntrada } from "./formulario";
  * estreita o palco sai de cena e o cartão volta ao centro, que é a
  * composição do aplicativo.
  */
-export default function PaginaDeEntrada() {
+export default async function PaginaDeEntrada({
+  searchParams,
+}: {
+  searchParams: Promise<{ depois?: string }>;
+}) {
+  // Para onde voltar depois de entrar. Saneado AQUI, no servidor: destino de
+  // redirecionamento vindo da URL é a definição de open redirect, e quem
+  // decide o que é caminho interno é o parser, não prefixo de string.
+  const { depois } = await searchParams;
+  const destino = caminhoInterno(depois, "/");
   return (
     <div className="tela-de-entrada">
       <Aurora />
@@ -60,7 +71,7 @@ export default function PaginaDeEntrada() {
             A mesa de trabalho do seu escritório, com a mesma conta do
             aplicativo.
           </p>
-          <FormularioDeEntrada />
+          <FormularioDeEntrada depois={destino} />
         </CartaoVivo>
         <p className="selo-da-entrada">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

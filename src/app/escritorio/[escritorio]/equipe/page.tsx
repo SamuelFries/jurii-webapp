@@ -2,8 +2,16 @@ import Link from "next/link";
 
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
-import { convidarAdvogado, salvarPapeis } from "./acoes";
+import {
+  convidarAdvogado,
+  gerarLinkDeConvite,
+  revogarLinkDeConvite,
+  salvarPapeis,
+} from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
+import { headers } from "next/headers";
+
+import { CopiarLink } from "@/components/copiar-link";
 import { ehGestor, papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +21,15 @@ export default async function PaginaDaEquipe({
   searchParams,
 }: {
   params: Promise<{ escritorio: string }>;
-  searchParams: Promise<{ ok?: string; erro?: string }>;
+  searchParams: Promise<{
+    ok?: string;
+    erro?: string;
+    link?: string;
+    papel?: string;
+  }>;
 }) {
   const { escritorio: escritorioId } = await params;
-  const { ok, erro } = await searchParams;
+  const { ok, erro, link, papel } = await searchParams;
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto, escritorioId);
   const podeConvidar = ehGestor(escritorio);
@@ -60,6 +73,31 @@ export default async function PaginaDaEquipe({
   );
   const podeCrescer = podeCrescerBruto !== false;
 
+  // Os links de convite em aberto (a listagem nunca traz token: ele não
+  // existe mais, só o hash). E o link recém-gerado, quando há, vira URL
+  // completa com o host REAL da requisição — em produção app.jurii.com.br,
+  // no ambiente local o localhost, sem hardcode.
+  const { data: linksBrutos } = podeConvidar
+    ? await contexto.supabase.rpc("listar_links_de_convite", {
+        law_firm_id_value: escritorio.id,
+      })
+    : { data: null };
+  const linksAbertos = ((linksBrutos as unknown[]) ?? []) as {
+    id: string;
+    member_role: string;
+    expires_at: string;
+    criado_por: string;
+  }[];
+
+  let linkGerado: string | null = null;
+  if (link !== undefined && link !== "") {
+    const cabecalhos = await headers();
+    const host =
+      cabecalhos.get("x-forwarded-host") ?? cabecalhos.get("host") ?? "";
+    const protocolo = host.startsWith("localhost") ? "http" : "https";
+    linkGerado = `${protocolo}://${host}/convite/${link}`;
+  }
+
   return (
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
@@ -92,6 +130,74 @@ export default async function PaginaDaEquipe({
             Regularizar pagamento
           </Link>
         </div>
+      )}
+
+      {/* O link de uso único recém-gerado, mostrado UMA vez: o banco guarda
+          só o hash, então ou se copia agora ou se gera outro. */}
+      {podeConvidar && linkGerado !== null && (
+        <div className="cartao" style={{ marginBottom: 16 }}>
+          <span className="selo dourado">Link gerado</span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            Convite de{" "}
+            <strong>{papel === "intern" ? "estagiário" : "secretária"}</strong>
+            , de uso único, válido por 7 dias. Copie e mande para a pessoa —
+            este link não aparece de novo.
+          </p>
+          <CopiarLink url={linkGerado} />
+        </div>
+      )}
+
+      {podeConvidar && podeCrescer && (
+        <details className="propor-caso">
+          <summary>Convidar por link (secretária ou estagiário)</summary>
+          <div className="cartao" style={{ marginTop: 10, maxWidth: 480 }}>
+            <p className="detalhe" style={{ marginTop: 0 }}>
+              Para quem não tem OAB. O link entra UMA pessoa, vale 7 dias, e
+              você escolhe o papel agora; promover depois é na própria
+              equipe.
+            </p>
+            <form action={gerarLinkDeConvite} className="acoes-em-linha">
+              <input type="hidden" name="escritorio" value={escritorio.id} />
+              <select name="papel" aria-label="Papel de quem entra">
+                <option value="secretary">Secretária</option>
+                <option value="intern">Estagiário</option>
+              </select>
+              <button type="submit">Gerar link</button>
+            </form>
+
+            {linksAbertos.length > 0 && (
+              <>
+                <p className="detalhe" style={{ marginBottom: 6 }}>
+                  Links em aberto:
+                </p>
+                {linksAbertos.map((aberto) => (
+                  <form
+                    key={aberto.id}
+                    action={revogarLinkDeConvite}
+                    className="linha-de-link-aberto"
+                  >
+                    <input
+                      type="hidden"
+                      name="escritorio"
+                      value={escritorio.id}
+                    />
+                    <input type="hidden" name="link" value={aberto.id} />
+                    <span>
+                      {aberto.member_role === "intern"
+                        ? "Estagiário"
+                        : "Secretária"}{" "}
+                      · por {aberto.criado_por} · vence{" "}
+                      {new Date(aberto.expires_at).toLocaleDateString("pt-BR")}
+                    </span>
+                    <button type="submit" className="botao secundario">
+                      Cancelar
+                    </button>
+                  </form>
+                ))}
+              </>
+            )}
+          </div>
+        </details>
       )}
 
       {podeConvidar && podeCrescer && (
