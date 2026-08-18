@@ -59,6 +59,23 @@ export default async function AbrirEscritorio({
   ]);
   const temLicenca = licenca === true;
 
+  // "NUNCA TEVE" E "TEVE E ACABOU" PRECISAM DE COISAS DIFERENTES, e só o
+  // booleano do portão não distingue as duas. Quem nunca teve escolhe um
+  // plano e ganha o teste; quem teve o teste vencer precisa PAGAR, e
+  // mandá-la para a lista de planos com a promessa de "30 dias grátis"
+  // seria oferecer de novo o que ela já usou.
+  const { data: licencaMorta } = temLicenca
+    ? { data: null }
+    : await contexto.supabase
+        .from("law_firm_license_subscriptions")
+        .select("status")
+        .eq("owner_profile_id", contexto.usuario.id)
+        .is("law_firm_id", null)
+        .neq("status", "canceled")
+        .limit(1)
+        .maybeSingle();
+  const licencaVencida = licencaMorta != null;
+
   const status = data?.status == null ? null : String(data.status);
   const motivo =
     data?.rejection_reason == null ? null : String(data.rejection_reason);
@@ -114,22 +131,25 @@ export default async function AbrirEscritorio({
           <FormularioDeEscritorio usuarioId={contexto.usuario.id} />
         ) : (
           <div className="cartao" style={{ marginTop: 16 }}>
-            <strong>Comece pelo plano</strong>
+            <strong>
+              {licencaVencida ? "Seu teste grátis acabou" : "Comece pelo plano"}
+            </strong>
             <p className="detalhe" style={{ marginTop: 4 }}>
-              O escritório abre com uma licença, e a primeira é um teste
-              grátis de 30 dias. Escolha o plano e a papelada continua aqui,
-              com os dados que você já tiver à mão.
+              {licencaVencida
+                ? "O plano que você escolheu continua guardado. Ative a cobrança e a abertura do escritório segue de onde parou, com os dados que você já tiver à mão."
+                : "O escritório abre com uma licença, e a primeira é um teste grátis de 30 dias. Escolha o plano e a papelada continua aqui, com os dados que você já tiver à mão."}
             </p>
-            {/* "/planos", e não uma rota de escritório: quem está aqui
-                ainda não tem escritório, logo não tem id para pôr em
-                `/escritorio/{id}/planos`. O funil de compra mora fora do
-                segmento por isso. */}
+            {/* Destinos diferentes porque as necessidades são diferentes:
+                quem nunca teve precisa ESCOLHER, quem já teve precisa PAGAR.
+                E "/planos" (não uma rota de escritório) porque quem está
+                aqui ainda não tem banca, logo não tem id para a rota
+                segmentada. */}
             <Link
               className="botao compacto"
-              href="/planos"
+              href={licencaVencida ? "/assinatura" : "/planos"}
               style={{ marginTop: 10 }}
             >
-              Ver os planos
+              {licencaVencida ? "Ativar cobrança" : "Ver os planos"}
             </Link>
           </div>
         ))}
