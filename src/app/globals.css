@@ -854,7 +854,10 @@ a.cartao-de-lista:hover {
   align-items: flex-end;
   gap: 6px;
   flex: none;
-  min-width: 140px;
+}
+
+.medidor-texto {
+  white-space: nowrap;
 }
 
 .medidor-texto {

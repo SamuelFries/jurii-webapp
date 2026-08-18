@@ -169,10 +169,10 @@ export default async function PaginaDoEscritorio({
       <h1 style={{ marginTop: 0 }}>{escritorio.nome}</h1>
       <p className="subtitulo">
         {pendencias === 0
-          ? "Nada esperando por uma pessoa agora."
+          ? "Nenhuma pendência aguardando resposta."
           : pendencias === 1
-            ? "1 coisa esperando por uma pessoa."
-            : `${pendencias} coisas esperando por uma pessoa.`}
+            ? "1 pendência aguardando resposta."
+            : `${pendencias} pendências aguardando resposta.`}
       </p>
 
       {/* Uma FAIXA, não quatro cartões: os números são atalho de contexto,
@@ -291,7 +291,7 @@ export default async function PaginaDoEscritorio({
                 Precisa de você
               </h2>
               <p className="vazio">
-                Nenhum caso sem responsável e nenhum cliente esperando
+                Nenhum caso sem responsável e nenhuma conversa aguardando
                 resposta.
               </p>
             </>
@@ -312,15 +312,12 @@ export default async function PaginaDoEscritorio({
                     Perfil público
                   </h2>
                   <p className="detalhe" style={{ margin: "2px 0 0" }}>
-                    O que o cliente vê na busca.{" "}
-                    {passos.length === 1
-                      ? "Falta 1 item."
-                      : `Faltam ${passos.length} itens.`}
+                    O que o cliente vê na busca.
                   </p>
                 </div>
                 <div className="medidor" aria-label={`${progresso.feitos} de ${progresso.total} concluídos`}>
                   <span className="medidor-texto">
-                    {progresso.feitos} de {progresso.total}
+                    {progresso.feitos} de {progresso.total} itens completos
                   </span>
                   <span className="medidor-trilho">
                     <span

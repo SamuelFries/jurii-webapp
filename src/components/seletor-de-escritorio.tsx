@@ -50,7 +50,11 @@ export function SeletorDeEscritorio({
           {vinculoAtivo.iniciais}
         </span>
         <span className="identidade">
-          <span className="nome">{vinculoAtivo.nome}</span>
+          {/* O nome trunca na largura da lateral; o title entrega o nome
+              inteiro no hover sem alargar nada. */}
+          <span className="nome" title={vinculoAtivo.nome}>
+            {vinculoAtivo.nome}
+          </span>
           <span className="cargo">
             {rotuloDoPapel(papelPrincipal(vinculoAtivo.papeis))}
           </span>
@@ -75,7 +79,6 @@ export function SeletorDeEscritorio({
         <details>
           <summary
             aria-current={vinculoAtivo !== null ? "true" : undefined}
-            title="Trocar de escritório"
           >
             {cabecalho}
             <Icone nome="seta-baixo" tamanho={16} className="seta" />
@@ -93,7 +96,9 @@ export function SeletorDeEscritorio({
                   {escritorio.iniciais}
                 </span>
                 <span className="identidade">
-                  <span className="nome">{escritorio.nome}</span>
+                  <span className="nome" title={escritorio.nome}>
+                    {escritorio.nome}
+                  </span>
                   <span className="cargo">
                     {rotuloDoPapel(papelPrincipal(escritorio.papeis))}
                   </span>
