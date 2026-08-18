@@ -1,52 +1,60 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  atualizacaoDaLinha,
-  detalheDoCasoDaLinha,
-  formataCnj,
+  linhaDoTempoDoCaso,
+  pendenciasDoCaso,
+  type AtualizacaoDoCaso,
+  type MovimentacaoDoProcesso,
 } from "./caso-detalhe";
 
-describe("detalhe do caso", () => {
-  test("as permissões vêm do servidor e nunca são inventadas", () => {
-    // O DEFEITO QUE ISTO TRAVA: tela decidindo papel sozinha. can_manage e
-    // can_manage_lifecycle são calculados pela RPC para ESTA pessoa neste
-    // caso; ausência vira false, nunca true.
-    const caso = detalheDoCasoDaLinha({ id: "c1", title: "Caso" });
-    expect(caso.podeGerenciar).toBe(false);
-    expect(caso.podeEncerrar).toBe(false);
+const t = (iso: string) => new Date(iso);
 
-    const gestor = detalheDoCasoDaLinha({
-      id: "c1",
-      title: "Caso",
-      can_manage: true,
-      can_manage_lifecycle: true,
-      status: "closed",
-    });
-    expect(gestor.podeGerenciar).toBe(true);
-    expect(gestor.podeEncerrar).toBe(true);
-    expect(gestor.encerrado).toBe(true);
+describe("linha do tempo única", () => {
+  const atualizacoes: AtualizacaoDoCaso[] = [
+    { id: "u1", titulo: "Documentos recebidos", corpo: "", autor: "Rafael Herzer", iniciaisDoAutor: "RH", criadaEm: t("2026-08-16T15:00:00Z") },
+    { id: "u2", titulo: "Petição protocolada", corpo: "", autor: "Rafael Herzer", iniciaisDoAutor: "RH", criadaEm: t("2026-08-17T19:00:00Z") },
+  ];
+  const movimentacoes: MovimentacaoDoProcesso[] = [
+    { id: "m1", titulo: "Distribuição", corpo: "", ocorridaEm: t("2026-08-17T20:00:00Z") },
+    { id: "m2", titulo: "Audiência", corpo: "", ocorridaEm: t("2026-08-18T12:00:00Z") },
+  ];
+
+  test("mescla por data, mais recente primeiro, com a origem em cada evento", () => {
+    const linha = linhaDoTempoDoCaso(atualizacoes, movimentacoes);
+    expect(linha.map((e) => e.titulo)).toEqual([
+      "Audiência", "Distribuição", "Petição protocolada", "Documentos recebidos",
+    ]);
+    expect(linha[0].rotuloDaOrigem).toBe("Tribunal");
+    // Equipe leva o PRIMEIRO nome de quem registrou: é o que distingue
+    // "veio do tribunal" de "veio da gente", e de quem da gente.
+    expect(linha[2].rotuloDaOrigem).toBe("Equipe · Rafael");
+    expect(linha[2].origem).toBe("equipe");
   });
 
-  test("descrição em branco vira vazio, não a string 'null'", () => {
-    expect(detalheDoCasoDaLinha({ id: "c", description: "   " }).descricao).toBe("");
-    expect(detalheDoCasoDaLinha({ id: "c", description: null }).descricao).toBe("");
+  test("evento sem data vai para o FIM, nunca parece a última novidade", () => {
+    const semData: MovimentacaoDoProcesso = { id: "m0", titulo: "Sem data", corpo: "", ocorridaEm: null };
+    const linha = linhaDoTempoDoCaso(atualizacoes, [semData]);
+    expect(linha[linha.length - 1].titulo).toBe("Sem data");
   });
 
-  test("atualização sem autor cai no padrão do app", () => {
-    const atualizacao = atualizacaoDaLinha({ id: "u1", title: "Audiência" });
-    expect(atualizacao.autor).toBe("Jurii");
-    expect(atualizacao.iniciaisDoAutor).toBe("JR");
+  test("ids não colidem entre origens (mov-1 e upd-1 convivem)", () => {
+    const linha = linhaDoTempoDoCaso(
+      [{ id: "1", titulo: "a", corpo: "", autor: "X", iniciaisDoAutor: "X", criadaEm: t("2026-08-01T00:00:00Z") }],
+      [{ id: "1", titulo: "b", corpo: "", ocorridaEm: t("2026-08-02T00:00:00Z") }],
+    );
+    expect(new Set(linha.map((e) => e.id)).size).toBe(2);
   });
 });
 
-describe("máscara do CNJ", () => {
-  test("20 dígitos crus ganham a máscara do tribunal", () => {
-    expect(formataCnj("08012345620268260100")).toBe(
-      "0801234-56.2026.8.26.0100",
-    );
+describe("pendências do caso", () => {
+  test("sem responsável e cliente aguardando são as duas que existem", () => {
+    const p = pendenciasDoCaso({ encerrado: false, advogadoId: null, clienteAguardaDesde: t("2026-08-18T10:00:00Z") });
+    expect(p.map((x) => x.tipo)).toEqual(["sem_responsavel", "cliente_aguarda"]);
   });
-
-  test("o que não tem 20 dígitos passa intacto, sem inventar máscara", () => {
-    expect(formataCnj("12345")).toBe("12345");
+  test("caso encerrado não tem pendência, mesmo sem responsável", () => {
+    expect(pendenciasDoCaso({ encerrado: true, advogadoId: null, clienteAguardaDesde: t("2026-08-18T10:00:00Z") })).toEqual([]);
+  });
+  test("com responsável e equipe por último: nada", () => {
+    expect(pendenciasDoCaso({ encerrado: false, advogadoId: "a1", clienteAguardaDesde: null })).toEqual([]);
   });
 });

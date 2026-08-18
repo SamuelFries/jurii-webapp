@@ -13,10 +13,10 @@ export default async function CasoDoEscritorio({
 }: {
   // Dois segmentos na rota: o escritório do contexto e o caso aberto.
   params: Promise<{ escritorio: string; id: string }>;
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; ok?: string }>;
 }) {
   const { escritorio: escritorioId, id } = await params;
-  const { erro } = await searchParams;
+  const { erro, ok } = await searchParams;
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto, escritorioId);
 
@@ -51,7 +51,9 @@ export default async function CasoDoEscritorio({
         casoId={id}
         voltarPara={`/escritorio/${escritorioId}/casos/${id}`}
         listaHref={`/escritorio/${escritorioId}/casos`}
+        conversaHref={(conversaId) => `/escritorio/${escritorioId}/conversas/${conversaId}`}
         erro={erro}
+        ok={ok}
         escritorioId={escritorio.id}
         podeAtribuir={podeAtribuir}
       />

@@ -97,3 +97,88 @@ function dataOuNulo(valor: unknown): Date | null {
   const data = new Date(String(valor));
   return Number.isNaN(data.getTime()) ? null : data;
 }
+
+/**
+ * A linha do tempo ÚNICA do caso: atualizações da equipe e movimentações do
+ * tribunal, mescladas por data, da mais recente para trás.
+ *
+ * Antes eram duas listas separadas ("Andamento no tribunal", "Atualizações")
+ * e quem queria saber "o que houve nos últimos dias" lia as duas e mesclava
+ * de cabeça. Cada evento carrega a ORIGEM ("Tribunal" ou "Equipe · Rafael")
+ * para o olho separar o que é oficial do que é registro interno sem duas
+ * listas.
+ *
+ * Sem data vai para o FIM (o mais antigo), nunca para o topo: evento sem
+ * data no topo pareceria a última novidade.
+ */
+export interface EventoDaLinhaDoTempo {
+  id: string;
+  origem: "tribunal" | "equipe";
+  titulo: string;
+  corpo: string;
+  /** "Tribunal" ou "Equipe · Rafael". */
+  rotuloDaOrigem: string;
+  quando: Date | null;
+}
+
+export function linhaDoTempoDoCaso(
+  atualizacoes: AtualizacaoDoCaso[],
+  movimentacoes: MovimentacaoDoProcesso[],
+): EventoDaLinhaDoTempo[] {
+  const eventos: EventoDaLinhaDoTempo[] = [
+    ...movimentacoes.map((m) => ({
+      id: `mov-${m.id}`,
+      origem: "tribunal" as const,
+      titulo: m.titulo,
+      corpo: m.corpo,
+      rotuloDaOrigem: "Tribunal",
+      quando: m.ocorridaEm,
+    })),
+    ...atualizacoes.map((a) => ({
+      id: `upd-${a.id}`,
+      origem: "equipe" as const,
+      titulo: a.titulo,
+      corpo: a.corpo,
+      rotuloDaOrigem: `Equipe · ${primeiroNomeDe(a.autor)}`,
+      quando: a.criadaEm,
+    })),
+  ];
+  return eventos.sort((x, y) => {
+    if (x.quando === null && y.quando === null) return 0;
+    if (x.quando === null) return 1;
+    if (y.quando === null) return -1;
+    return y.quando.getTime() - x.quando.getTime();
+  });
+}
+
+function primeiroNomeDe(nome: string): string {
+  const partes = nome.trim().split(/\s+/);
+  return partes[0] ?? nome;
+}
+
+/**
+ * O que precisa de atenção neste caso, para a faixa de estado. Só o que o
+ * domínio já sabe: sem responsável, e o cliente aguardando (a mesma regra e
+ * limiar do `urgent` da carteira e da faixa do chat). Vazio quer dizer que a
+ * faixa não aparece.
+ */
+export interface PendenciaDoCaso {
+  tipo: "sem_responsavel" | "cliente_aguarda";
+  desde: Date | null;
+}
+
+export function pendenciasDoCaso(entrada: {
+  encerrado: boolean;
+  advogadoId: string | null;
+  clienteAguardaDesde: Date | null;
+}): PendenciaDoCaso[] {
+  if (entrada.encerrado) return [];
+  const lista: PendenciaDoCaso[] = [];
+  if (entrada.advogadoId === null) {
+    lista.push({ tipo: "sem_responsavel", desde: null });
+  }
+  if (entrada.clienteAguardaDesde !== null) {
+    lista.push({ tipo: "cliente_aguarda", desde: entrada.clienteAguardaDesde });
+  }
+  return lista;
+}

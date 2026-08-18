@@ -4056,3 +4056,479 @@ button.discreto.compacto {
     transform: translateY(0);
   }
 }
+
+/* ---- O detalhe do caso --------------------------------------------------------
+   "Onde este caso está e o que eu faço com ele." Complementa o chat: mesma
+   grade de cabeçalho, mesma faixa de estado, mesmos separadores de dia,
+   mesma densidade. Nada de página vertical gigante: cabeçalho fixo, corpo
+   rola. */
+.detalhe-do-caso {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.cabecalho-do-caso {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "voltar avatar quem atendimento acoes";
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cabecalho-do-caso .voltar {
+  grid-area: voltar;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.cabecalho-do-caso .voltar:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.cabecalho-do-caso .seta-de-voltar {
+  transform: rotate(180deg);
+}
+
+.cabecalho-do-caso > .avatar {
+  grid-area: avatar;
+}
+
+.cabecalho-do-caso .quem {
+  grid-area: quem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cabecalho-do-caso .linha-1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* O cliente LIDERA e nunca some: encolhe com elipse, mas com um mínimo
+   legível; área e selo cedem antes (flex: none neles, então quem estica é
+   ele). Sem o min-width o overflow:hidden o zerava e só sobrava a área. */
+.cabecalho-do-caso .cliente {
+  font-weight: 700;
+  font-size: var(--t-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Encolhe com elipse quando falta espaço, mas NÃO estica: área e selo
+     ficam colados ao nome, não jogados para a outra ponta. */
+  flex: 0 1 auto;
+  min-width: 8ch;
+}
+
+.cabecalho-do-caso .area {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* O título do caso é a segunda linha, menor: o cliente lidera, o assunto
+   detalha. Antes o nome do cliente aparecia duas vezes. */
+.cabecalho-do-caso .linha-2 {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cabecalho-do-caso .atendimento {
+  grid-area: atendimento;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-do-caso .responsavel,
+.cabecalho-do-caso .link-do-caso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.cabecalho-do-caso .responsavel.sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cabecalho-do-caso .link-do-caso {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.cabecalho-do-caso .link-do-caso:hover {
+  background: var(--surface-2);
+  border-color: var(--gold-soft);
+}
+
+.cabecalho-do-caso .acoes-do-chat {
+  grid-area: acoes;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+/* A ação primária: pílula cheia, à vista; o formulário só quando aberto. */
+.cabecalho-do-caso .acao-primaria > summary {
+  background: var(--botao);
+  color: #fff;
+  border-color: transparent;
+  list-style: none;
+}
+
+.cabecalho-do-caso .acao-primaria > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cabecalho-do-caso .acao-primaria > summary:hover {
+  background: var(--botao-hover);
+}
+
+.cabecalho-do-caso .acao-primaria[open] > form {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  width: min(420px, 80vw);
+  box-shadow: var(--shadow-md);
+}
+
+.cabecalho-do-caso .acao-primaria {
+  position: relative;
+  margin: 0;
+}
+
+.cabecalho-do-caso .acao-primaria > summary {
+  padding: 6px 12px;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+}
+
+/* Confirmação de encerrar: um details dentro do menu, curto. */
+.confirmar-encerrar > summary {
+  list-style: none;
+  display: inline-flex;
+  width: auto;
+  margin-top: 4px;
+}
+
+.confirmar-encerrar > summary::-webkit-details-marker {
+  display: none;
+}
+
+.confirmar-encerrar[open] > summary {
+  display: none;
+}
+
+.confirmar-encerrar .detalhe {
+  margin: 6px 0 8px;
+}
+
+/* O nome do cliente nao trunca enquanto ha espaco: abaixo de 900px de
+   painel (que e o caso a 1440 com a lista aberta), atendimento e acoes
+   descem para a segunda linha ANTES de comprimir o nome. */
+@container (max-width: 900px) {
+  .cabecalho-do-caso {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "voltar avatar quem acoes"
+      "voltar atendimento atendimento atendimento";
+    row-gap: 6px;
+  }
+}
+
+/* Painel estreito (a 1024 de viewport com a lista aberta): TUDO cede ao
+   nome. Identidade em cima; atendimento e ações numa segunda linha, lado a
+   lado, as ações à direita. */
+@container (max-width: 640px) {
+  .cabecalho-do-caso {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "voltar avatar quem"
+      "voltar atendimento atendimento"
+      "voltar acoes acoes";
+    row-gap: 8px;
+  }
+  .cabecalho-do-caso .atendimento {
+    padding-left: 2px;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  /* Ações numa TERCEIRA linha, à esquerda como o resto: nada sobrepõe. */
+  .cabecalho-do-caso .acoes-do-chat {
+    justify-self: start;
+    padding-left: 2px;
+  }
+  .cabecalho-do-caso .linha-1 {
+    flex-wrap: wrap;
+  }
+}
+
+/* Várias faixas de estado empilhadas, sem cartão. */
+.faixas-de-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.faixas-de-estado .faixa-de-estado a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* O corpo rola; o cabeçalho e as faixas ficam. */
+.corpo-do-caso {
+  padding-top: var(--s-2);
+}
+
+.bloco-do-caso {
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bloco-do-caso:last-child {
+  border-bottom: 0;
+}
+
+.titulo-do-bloco {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.texto-do-caso {
+  margin: 0;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  max-width: 72ch;
+}
+
+/* CNJ como dado: rótulo · valor · editar, numa linha. */
+.linha-de-dado {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.linha-de-dado .rotulo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  min-width: 100px;
+}
+
+.linha-de-dado .valor {
+  font-weight: 600;
+  font-size: var(--t-base);
+}
+
+.linha-de-dado .valor.detalhe {
+  font-weight: 400;
+}
+
+.editar-inline > summary {
+  list-style: none;
+  display: inline-flex;
+  width: auto;
+}
+
+.editar-inline > summary::-webkit-details-marker {
+  display: none;
+}
+
+.editar-inline[open] > summary {
+  display: none;
+}
+
+.editar-inline .acoes-em-linha {
+  margin-top: 6px;
+  align-items: center;
+}
+
+.editar-inline .acoes-em-linha input {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ---- A linha do tempo única -------------------------------------------- */
+.linha-do-tempo-unica {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.linha-do-tempo-unica .separador-de-dia {
+  margin: 10px 0 4px;
+}
+
+.conteudo-do-evento {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+/* A marca de origem: um ponto. Tribunal em dourado (o oficial, o accent);
+   equipe em navy (o de dentro). Sem cor nova. */
+.marca-da-origem {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--navy-2);
+}
+
+.origem-tribunal .marca-da-origem {
+  background: var(--gold);
+}
+
+@media (prefers-color-scheme: dark) {
+  .marca-da-origem {
+    background: var(--text-2);
+  }
+}
+
+.conteudo-do-evento .texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conteudo-do-evento .cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.conteudo-do-evento .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.conteudo-do-evento .meta {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.conteudo-do-evento .origem {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.conteudo-do-evento .corpo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  line-height: var(--lh-normal);
+}
+
+.historico-fora-do-alcance {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--info-fundo);
+  border: 1px solid var(--info-borda);
+  margin: 0;
+  max-width: 64ch;
+}
+
+/* ---- Documentos ------------------------------------------------------------ */
+.lista-de-documentos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.lista-de-documentos li + li {
+  border-top: 1px solid var(--border);
+}
+
+.lista-de-documentos .documento {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.lista-de-documentos a.documento:hover {
+  background: var(--surface-2);
+}
+
+.lista-de-documentos .documento.indisponivel {
+  opacity: 0.6;
+}
+
+.lista-de-documentos .texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lista-de-documentos .titulo {
+  font-weight: 600;
+  font-size: var(--t-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lista-de-documentos .meta {
+  font-size: var(--t-xs);
+  color: var(--text-2);
+}
+
+.lista-de-documentos .seta {
+  flex: none;
+  color: var(--text-2);
+}

@@ -12,10 +12,10 @@ export default async function CasoDoAdvogado({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; ok?: string }>;
 }) {
   const { id } = await params;
-  const { erro } = await searchParams;
+  const { erro, ok } = await searchParams;
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
@@ -36,7 +36,9 @@ export default async function CasoDoAdvogado({
         casoId={id}
         voltarPara={`/advogado/casos/${id}`}
         listaHref="/advogado/casos"
+        conversaHref={(conversaId) => `/advogado/conversas/${conversaId}`}
         erro={erro}
+        ok={ok}
       />
     </PainelDeCasos>
   );
