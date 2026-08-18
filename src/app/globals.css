@@ -251,7 +251,7 @@ h2.secao {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   padding: 22px;
 }
 
@@ -311,13 +311,42 @@ textarea,
 select,
 .seletor {
   width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
+  padding: 10px 12px;
+  min-height: 40px;
+  font-size: var(--t-base);
   font-family: inherit;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
+}
+
+/* Hover levanta a borda um tom; foco troca pelo anel dourado da casa (o
+   focus-visible global cuida do anel; aqui só a borda acompanha). */
+input:not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover {
+  border-color: var(--gold-soft);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: var(--anel-foco);
+}
+
+/* Inválido só DEPOIS de a pessoa mexer, senão o formulário abre vermelho. */
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: var(--danger);
+}
+
+::placeholder {
+  color: var(--text-2);
+  opacity: 0.7;
 }
 
 /* Campo travado precisa PARECER travado. O CNPJ do escritório é só leitura
@@ -381,22 +410,33 @@ textarea:focus,
   border-color: var(--gold);
 }
 
+/* ---- Botões: um sistema, quatro variantes, todos os estados ---------------
+   Primário (navy cheio), secundário (contorno), discreto (texto) e compacto
+   (modificador de tamanho). Cada um com hover, active, focus-visible e
+   disabled. O `active` afunda meio pixel: é o feedback tátil de "cliquei"
+   que faltava e que separa botão vivo de retângulo pintado. */
 button,
 a.botao,
 label.botao {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   margin-top: 18px;
-  padding: 12px 16px;
-  font-size: 15px;
-  font-weight: 800;
+  padding: 10px 16px;
+  min-height: 40px;
+  font-size: var(--t-base);
+  font-weight: 700;
+  line-height: 1.2;
   text-align: center;
   text-decoration: none;
   color: #fff;
   background: var(--botao);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  user-select: none;
 }
 
 button:hover,
@@ -405,9 +445,18 @@ label.botao:hover {
   background: var(--botao-hover);
 }
 
-button:disabled {
-  opacity: 0.55;
-  cursor: default;
+button:active,
+a.botao:active,
+label.botao:active {
+  transform: translateY(0.5px);
+}
+
+button:disabled,
+button[aria-disabled="true"],
+a.botao[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 button.secundario,
@@ -415,29 +464,45 @@ a.botao.secundario,
 label.botao.secundario {
   background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
+  border-color: var(--border);
 }
 
 button.secundario:hover,
 a.botao.secundario:hover,
 label.botao.secundario:hover {
   background: var(--surface-2);
+  border-color: var(--gold-soft);
 }
 
 button.discreto {
   width: auto;
   margin: 0;
-  padding: 8px 12px;
+  padding: 6px 10px;
+  min-height: 32px;
   background: transparent;
   color: var(--text-2);
-  border: 0;
+  border-color: transparent;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--t-sm);
 }
 
 button.discreto:hover {
-  background: transparent;
+  background: var(--surface-2);
   color: var(--text);
+}
+
+/* Botão de perigo: só onde a ação apaga ou cancela de verdade. Contorno,
+   não cheio: perigo cheio grita, e a tela de trabalho não deve gritar. */
+button.perigo,
+a.botao.perigo {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--erro-borda);
+}
+
+button.perigo:hover,
+a.botao.perigo:hover {
+  background: var(--erro-fundo);
 }
 
 .formulario-de-busca {
@@ -458,18 +523,39 @@ button.discreto:hover {
 /* ---- Selos e pílulas ---- */
 
 .selo {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  min-height: 20px;
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .selo.dourado {
-  background: rgba(184, 151, 42, 0.16);
+  background: var(--aviso-fundo);
   color: var(--accent-ink);
+}
+
+.selo.sucesso {
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+}
+
+.selo.aviso {
+  background: var(--aviso-fundo);
+  color: var(--aviso);
+}
+
+.selo.perigo {
+  background: var(--erro-fundo);
+  color: var(--danger);
 }
 
 .selo-papel {
@@ -875,7 +961,7 @@ a.cartao-de-lista:hover {
   align-items: start;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
   .visao-em-duas-colunas {
     /* A coluna da ação leva quase o dobro: ela cresce com a operação, a
        lateral tem tamanho fixo. */
@@ -1123,7 +1209,7 @@ a.cartao-de-lista:hover {
 
 .cabecalho-do-chat .acoes-do-chat .propor-caso > summary {
   padding: 6px 12px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   white-space: nowrap;
 }
 
@@ -1412,7 +1498,7 @@ body:has(.tela-de-entrada) footer.rodape {
 
 .chamada-do-palco {
   margin: 0 0 14px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1446,7 +1532,7 @@ body:has(.tela-de-entrada) footer.rodape {
 .provas-do-palco li {
   position: relative;
   padding-left: 22px;
-  font-size: 14.5px;
+  font-size: var(--t-base);
   color: rgba(238, 241, 248, 0.82);
 }
 
@@ -1750,7 +1836,7 @@ body:has(.tela-de-entrada) footer.rodape {
   width: 100%;
   margin: 18px 0 12px;
   color: var(--text-2);
-  font-size: 12.5px;
+  font-size: var(--t-sm);
 }
 
 .divisor-da-entrada::before,
@@ -1768,7 +1854,7 @@ body:has(.tela-de-entrada) footer.rodape {
   align-items: center;
   gap: 7px;
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: rgba(238, 241, 248, 0.6);
   animation: surge-da-entrada 0.55s var(--ease) 0.15s both;
 }
@@ -2392,7 +2478,7 @@ body:has(.area-de-trabalho) footer.rodape {
 
 /* Em tela estreita o par vira um painel só: com detalhe aberto, a lista
    sai de cena (o link Voltar do cabeçalho leva de volta). */
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   /* Empilhada, a mesa não cabe na janela e a página volta a rolar: manter
      o overflow travado prenderia o conteúdo fora de alcance. */
   body:has(.area-de-trabalho) {
@@ -2993,7 +3079,7 @@ button.compacto {
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  font-size: 13.5px;
+  font-size: var(--t-base);
   margin-bottom: 6px;
 }
 
@@ -3050,7 +3136,7 @@ button.compacto {
   border-radius: 8px;
   background: transparent;
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: var(--t-xs);
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -3196,7 +3282,7 @@ button.compacto {
 }
 
 .linha-da-fila .espera {
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: var(--text-2);
   white-space: nowrap;
 }
@@ -3232,7 +3318,7 @@ button.compacto {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-top: 4px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: var(--danger);
 }
 
