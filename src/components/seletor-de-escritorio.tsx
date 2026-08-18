@@ -5,83 +5,108 @@ import {
   type VinculoDeEscritorio,
 } from "@/lib/fluxos";
 
+import { Icone } from "./icone";
+
 /**
- * "Atuando como": o escritório ativo, e os outros atrás de um toque.
+ * "Atuando como": onde estou, e como quem.
  *
- * SÓ APARECE COM DOIS OU MAIS vínculos. Com um só, um seletor de uma opção
- * seria um controle que não controla nada, e o nome do escritório já está no
- * título da tela.
+ * SEMPRE PRESENTE. A versão anterior só existia com dois ou mais vínculos,
+ * pela lógica de que seletor de uma opção não seleciona nada. A lógica era
+ * certa para o SELETOR e errada para o CONTEXTO: quem tem um escritório só
+ * também precisa ler, na lateral, em qual banca está e com que papel, sem
+ * caçar isso no título da tela. Então o cabeçalho é sempre exibido, e a seta
+ * de abrir a lista só aparece quando há para onde ir.
  *
- * RECOLHIDO POR PADRÃO, mostrando só o ativo. A lista completa na lateral
- * escalava mal: com quatro ou cinco vínculos ela dominava o rodapé e
- * empurrava "Trocar de área" e "Sair" para fora da dobra, para exibir
- * escritórios em que a pessoa NÃO está atuando agora. O que importa sempre
- * (onde estou) fica visível; o que importa às vezes (para onde posso ir)
- * fica a um toque.
+ * Na área do ADVOGADO nenhum escritório está ativo, e o cabeçalho diz isso
+ * com todas as letras ("Área pessoal"): "estou vendo o meu, não o da banca"
+ * é a informação que mais evita erro de contexto.
  *
- * Expandido, a lista traz SÓ os outros: repetir o ativo ali seria um botão
- * que não faz nada. E é `details`/`summary`, não menu de cliente, pela mesma
- * regra da troca em si: `form` com server action, funcionando sem
- * JavaScript. Depois de trocar, o redirect entrega a página nova com a
- * lista fechada, sem estado pendurado.
- *
- * Mora no rodapé da lateral, junto de "Trocar de área", porque é a mesma
- * pergunta feita num nível abaixo: lá se troca de FLUXO (escritório,
- * advogado), aqui se troca de ESCRITÓRIO.
+ * Recolhido por padrão, `details`/`summary` nativo, `form` com server
+ * action: abre e fecha sem JavaScript, e depois de trocar o redirect entrega
+ * a página nova com a lista fechada.
  */
 export function SeletorDeEscritorio({
   escritorios,
   ativo,
+  fluxo,
 }: {
   escritorios: VinculoDeEscritorio[];
   ativo: string;
+  fluxo: "escritorio" | "advogado";
 }) {
-  if (escritorios.length < 2) return null;
-
   const vinculoAtivo =
-    escritorios.find((escritorio) => escritorio.id === ativo) ?? null;
-  // Na área do advogado nenhum escritório está ativo: o cabeçalho vira o
-  // convite neutro e a lista traz todos.
+    fluxo === "escritorio"
+      ? (escritorios.find((escritorio) => escritorio.id === ativo) ?? null)
+      : null;
   const opcoes = escritorios.filter(
     (escritorio) => escritorio.id !== vinculoAtivo?.id,
   );
+  const temParaOndeIr = opcoes.length > 0;
+
+  const cabecalho =
+    vinculoAtivo !== null ? (
+      <>
+        <span className="avatar-de-contexto" aria-hidden>
+          {vinculoAtivo.iniciais}
+        </span>
+        <span className="identidade">
+          <span className="nome">{vinculoAtivo.nome}</span>
+          <span className="cargo">
+            {rotuloDoPapel(papelPrincipal(vinculoAtivo.papeis))}
+          </span>
+        </span>
+      </>
+    ) : (
+      <>
+        <span className="avatar-de-contexto pessoal" aria-hidden>
+          <Icone nome="advogado" tamanho={16} />
+        </span>
+        <span className="identidade">
+          <span className="nome">Área pessoal</span>
+          <span className="cargo">Suas conversas e casos</span>
+        </span>
+      </>
+    );
 
   return (
     <div className="seletor-de-escritorio">
       <span className="rotulo-da-secao">Atuando como</span>
-      <details>
-        <summary aria-current={vinculoAtivo !== null ? "true" : undefined}>
-          <span className="identidade">
-            {vinculoAtivo !== null ? (
-              <>
-                <span className="nome">{vinculoAtivo.nome}</span>
-                <span className="cargo">
-                  {rotuloDoPapel(papelPrincipal(vinculoAtivo.papeis))}
+      {temParaOndeIr ? (
+        <details>
+          <summary
+            aria-current={vinculoAtivo !== null ? "true" : undefined}
+            title="Trocar de escritório"
+          >
+            {cabecalho}
+            <Icone nome="seta-baixo" tamanho={16} className="seta" />
+          </summary>
+          <form action={trocarDeEscritorio}>
+            {opcoes.map((escritorio) => (
+              <button
+                key={escritorio.id}
+                type="submit"
+                name="escritorio"
+                value={escritorio.id}
+                className="opcao-de-escritorio"
+              >
+                <span className="avatar-de-contexto" aria-hidden>
+                  {escritorio.iniciais}
                 </span>
-              </>
-            ) : (
-              <span className="nome">Trocar de escritório</span>
-            )}
-          </span>
-          <span className="seta" aria-hidden="true" />
-        </summary>
-        <form action={trocarDeEscritorio}>
-          {opcoes.map((escritorio) => (
-            <button
-              key={escritorio.id}
-              type="submit"
-              name="escritorio"
-              value={escritorio.id}
-              className="opcao-de-escritorio"
-            >
-              <span className="nome">{escritorio.nome}</span>
-              <span className="cargo">
-                {rotuloDoPapel(papelPrincipal(escritorio.papeis))}
-              </span>
-            </button>
-          ))}
-        </form>
-      </details>
+                <span className="identidade">
+                  <span className="nome">{escritorio.nome}</span>
+                  <span className="cargo">
+                    {rotuloDoPapel(papelPrincipal(escritorio.papeis))}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </form>
+        </details>
+      ) : (
+        <div className="contexto-fixo" aria-current="true">
+          {cabecalho}
+        </div>
+      )}
     </div>
   );
 }

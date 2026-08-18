@@ -26,6 +26,65 @@
   /* Os mesmos valores do app (app_colors.dart): o verde do "Caso aceito"
      precisa ser o verde que o profissional já conhece do celular. */
   --sucesso: #2d7a4f;
+  --sucesso-fundo: #e8f4ed;
+  --sucesso-borda: #bfe0cd;
+  --aviso: #8a6a10;
+  --aviso-fundo: #fbf3dc;
+  --aviso-borda: #ecd89a;
+  --info-fundo: #eaf0fb;
+  --info-borda: #c9d6ee;
+
+  /* ---- ESCALA, e não valores soltos ---------------------------------------
+     A auditoria de 18/08 achou 14 tamanhos de fonte (com um 12.5px solto),
+     9 raios e 8 sombras, e só uma delas era token. Não é falta de gosto,
+     é falta de escala: sem régua, cada tela inventa a sua. Daqui em diante
+     tamanho, raio, sombra e espaço vêm daqui, e o CSS de tela só ESCOLHE
+     um passo. ------------------------------------------------------------ */
+
+  /* Tipografia: 7 passos. O corpo é 14, porque isto é ferramenta de
+     trabalho e não landing page: mais informação por tela, sem apertar. */
+  --t-xs: 11px;
+  --t-sm: 12px;
+  --t-base: 14px;
+  --t-md: 15px;
+  --t-lg: 17px;
+  --t-xl: 20px;
+  --t-2xl: 26px;
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+
+  /* Espaço: base 4. */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+
+  /* Raios: TRÊS. Pílula para chip/badge/botão compacto, sm para input e
+     item de lista, o grande para cartão. */
+  --radius-pill: 999px;
+
+  /* Sombras: TRÊS níveis. Repouso, elevado (menu, popover) e modal. O
+     cartão comum NÃO tem sombra pesada: borda sutil e superfície bastam,
+     e a sombra fica para o que realmente flutua. */
+  --shadow-sm: 0 1px 2px rgba(10, 28, 59, 0.06);
+  --shadow-md: 0 8px 24px rgba(10, 28, 59, 0.1);
+  --shadow-lg: 0 16px 40px rgba(10, 28, 59, 0.18);
+
+  /* Foco: o MESMO anel em tudo que recebe teclado. Dourado, que é o accent
+     e não briga com o navy do fundo nem com o branco. */
+  --anel-foco: 0 0 0 3px rgba(184, 151, 42, 0.35);
+
+  /* Movimento: rápido e discreto. Quem trabalha não espera animação. */
+  --mov-rapido: 120ms;
+  --mov-normal: 180ms;
+  --mov-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Larguras da casca. */
+  --lateral: 248px;
+  --lateral-estreita: 72px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,6 +105,17 @@
     --erro-fundo: #2a1512;
     --erro-borda: #5c2620;
     --sucesso: #5bbd8b;
+    --sucesso-fundo: #12291d;
+    --sucesso-borda: #22503a;
+    --aviso: #e0c463;
+    --aviso-fundo: #2a2410;
+    --aviso-borda: #5a4c1c;
+    --info-fundo: #14203a;
+    --info-borda: #223252;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+    --anel-foco: 0 0 0 3px rgba(212, 177, 74, 0.4);
   }
 }
 
@@ -62,11 +132,73 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
+  /* A fonte da casa vem do next/font (layout.tsx) pela variável; a pilha
+     do sistema fica só como rede de segurança. */
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  line-height: 1.5;
+    var(--fonte), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
+  /* Números que ALINHAM em coluna: contagem, hora, preço. É o detalhe que
+     separa tabela de trabalho de texto corrido. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Foco visível, o MESMO em tudo ----------------------------------------
+   Antes cada controle decidia sozinho, e a maioria decidia nada: navegar
+   por teclado era adivinhar onde se estava. Um anel só, dourado, em tudo
+   que recebe foco, e só quando o foco veio do teclado (focus-visible), para
+   o clique de mouse não deixar anel pendurado. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--anel-foco);
+}
+
+/* ---- Barra de rolagem discreta ---------------------------------------------
+   Ferramenta que fica aberta o dia todo mostra barra o dia todo; a do
+   sistema é grossa e cinza. Fina, da cor da borda, e some quando não há o
+   que rolar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Movimento com propósito ---------------------------------------------
+   Transição curta em cor, fundo e sombra de tudo que é interativo, para o
+   hover e o ativo não "piscarem". E quem pediu menos movimento no sistema
+   recebe nada: a regra global abaixo zera tudo. */
+:where(a, button, input, select, textarea, summary, .cartao, .selo) {
+  transition:
+    background-color var(--mov-rapido) var(--mov-ease),
+    border-color var(--mov-rapido) var(--mov-ease),
+    color var(--mov-rapido) var(--mov-ease),
+    box-shadow var(--mov-rapido) var(--mov-ease),
+    opacity var(--mov-rapido) var(--mov-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ---- Larguras: a MESMA régua para cabeçalho e conteúdo. Cabeçalho numa
@@ -352,17 +484,20 @@ button.discreto:hover {
 }
 
 .pilula-nao-lidas {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
   background: var(--gold);
   color: #fff;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Cor fixa de propósito: o dourado é o mesmo nos dois temas e o branco
+     lê nele em ambos (contraste medido 4.6:1). */
 }
 
 .linha-topo {
@@ -631,77 +766,105 @@ a.cartao-de-lista:hover {
   font-size: 13px;
 }
 
-/* ---- Seletor de escritório ----
- *
- * Recolhido por padrão: o cabeçalho é o escritório ATIVO (com o cargo nele),
- * e a seta abre os demais. A lista completa sempre visível escalava mal —
- * com quatro ou cinco vínculos ela dominava o rodapé da lateral e empurrava
- * "Trocar de área" e "Sair" para fora da dobra, para exibir escritórios em
- * que a pessoa não está atuando. `details`/`summary` nativo: abre e fecha
- * sem JavaScript, como o resto da lateral. */
+/* ---- Contexto: "Atuando como" -------------------------------------------------
+   Sempre presente. Cabeçalho = onde estou e como quem; a seta só existe
+   quando há para onde ir. O avatar de iniciais é o mesmo da lista de
+   conversas: a banca tem a mesma cara em toda a casa. */
 .seletor-de-escritorio {
-  margin-bottom: 14px;
+  margin-bottom: var(--s-3);
 }
 
-.seletor-de-escritorio summary {
-  /* Cabeçalho com a cara do item ativo de sempre: fundo aceso e o fio
-     dourado. É o "você está aqui" da lateral, agora clicável. */
+.seletor-de-escritorio summary,
+.seletor-de-escritorio .contexto-fixo {
   list-style: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
-  border-left: 2px solid var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
   background: var(--surface-2);
+}
+
+.seletor-de-escritorio summary {
   cursor: pointer;
 }
 
-/* O marcador nativo do details, fora (Safari usa pseudo próprio). */
 .seletor-de-escritorio summary::-webkit-details-marker {
   display: none;
 }
 
-.seletor-de-escritorio summary .identidade {
+.avatar-de-contexto {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: #fff;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.avatar-de-contexto.pessoal {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent-ink);
+}
+
+.seletor-de-escritorio .identidade {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.seletor-de-escritorio .nome {
+  font-size: var(--t-base);
+  font-weight: 700;
+  color: var(--text);
+  line-height: var(--lh-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seletor-de-escritorio .cargo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  line-height: var(--lh-tight);
 }
 
 .seletor-de-escritorio .seta {
   flex: none;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--text-2);
-  border-bottom: 2px solid var(--text-2);
-  /* Fechado aponta para BAIXO (há mais coisa abaixo)... */
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
-  margin-top: -2px;
+  color: var(--text-2);
+  transition: transform var(--mov-normal) var(--mov-ease);
 }
 
-/* ...aberto aponta para cima, no mesmo fio do gesto de recolher. */
 .seletor-de-escritorio details[open] .seta {
-  transform: rotate(-135deg);
-  margin-top: 4px;
+  transform: rotate(180deg);
 }
 
 .seletor-de-escritorio form {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   margin-top: 2px;
 }
 
 .seletor-de-escritorio .opcao-de-escritorio {
-  /* O `button` global é dourado e alto; aqui ele precisa parecer item de
-     navegação, como os vizinhos. */
   all: unset;
   box-sizing: border-box;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  border-left: 2px solid transparent;
 }
 
 .seletor-de-escritorio .opcao-de-escritorio:hover,
@@ -709,18 +872,10 @@ a.cartao-de-lista:hover {
   background: var(--surface-2);
 }
 
-.seletor-de-escritorio .nome {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
+.seletor-de-escritorio .opcao-de-escritorio .avatar-de-contexto {
+  background: var(--surface-2);
   color: var(--text);
-  line-height: 1.25;
-}
-
-.seletor-de-escritorio .cargo {
-  display: block;
-  font-size: 12px;
-  color: var(--text-2);
+  border: 1px solid var(--border);
 }
 
 /* ---- A conversa denunciada, no painel ----
@@ -1616,67 +1771,124 @@ body:has(.area-de-trabalho) footer.rodape {
   display: none;
 }
 
+/* ---- A lateral ---------------------------------------------------------------
+   Ferramenta de navegação, não vitrine. Quem trabalha o dia todo aqui precisa
+   de três coisas: achar o item pela FORMA antes de ler (ícone), saber onde
+   está sem pensar (ativo inequívoco) e nunca ser surpreendido (tudo no mesmo
+   lugar, sempre). */
 .lateral {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 18px 14px;
+  gap: 2px;
+  padding: var(--s-4) var(--s-3);
   background: var(--surface);
   border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
 .lateral .marca-pequena {
-  padding: 0 10px 14px;
+  padding: var(--s-1) var(--s-3) var(--s-4);
 }
 
 .lateral nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-.lateral nav a {
+.lateral nav a,
+.lateral .item-de-sair {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 var(--s-3);
+  border-radius: var(--radius-sm);
   color: var(--text-2);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--t-base);
+  font-weight: 600;
   text-decoration: none;
-  border-left: 3px solid transparent;
+  position: relative;
 }
 
-.lateral nav a:hover {
+/* O ícone e o texto são a MESMA cor, e escurecem juntos no hover e no
+   ativo: dois tons na mesma linha fariam o olho ler duas colunas. */
+.lateral .icone-do-item {
+  flex: none;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.lateral .rotulo-do-item {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lateral nav a:hover,
+.lateral .item-de-sair:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 
+/* ATIVO: fundo aceso, texto no tom cheio, e o fio dourado do lado de
+   dentro (inset, não border-left) para não deslocar o texto um pixel em
+   relação aos vizinhos. É o único item com fio; ninguém confunde. */
 .lateral nav a.ativa {
   background: var(--surface-2);
   color: var(--text);
-  border-left-color: var(--gold);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.lateral nav a.ativa .icone-do-item {
+  opacity: 1;
+  color: var(--accent-ink);
+}
+
+/* Badge de não lidas: alinhado à direita pelo margin-left, tamanho fixo
+   para 1, 2 ou 99+ não mudarem a altura da linha. */
+.lateral .pilula-nao-lidas {
+  margin-left: auto;
 }
 
 .lateral .rodape-da-lateral {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 12px;
+  gap: 1px;
+  padding-top: var(--s-3);
   border-top: 1px solid var(--border);
 }
 
 .lateral .rotulo-da-secao {
-  padding: 14px 12px 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  padding: var(--s-3) var(--s-3) var(--s-1);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
+  opacity: 0.8;
+}
+
+.lateral .item-de-sair {
+  /* O `button.discreto` global centraliza; aqui ele é item de lista como
+     os vizinhos, alinhado à esquerda com ícone. */
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  width: 100%;
+  padding: 0 var(--s-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .conteudo-de-trabalho {

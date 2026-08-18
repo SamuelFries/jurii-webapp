@@ -10,6 +10,7 @@ import type { FluxosDoUsuario } from "@/lib/fluxos";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 import { NavDaLateral } from "./nav-da-lateral";
+import { Icone, type NomeDoIcone } from "./icone";
 import { SeletorDeEscritorio } from "./seletor-de-escritorio";
 
 export type { FluxoDeTrabalho };
@@ -64,7 +65,12 @@ export async function CascaDeTrabalho({
     fluxos.escritorios.find((vinculo) => vinculo.id === escritorioId) ??
     fluxos.escritorios[0] ??
     null;
-  const trocas: { rotulo: string; href: string; ativa: boolean }[] = [];
+  const trocas: {
+    rotulo: string;
+    href: string;
+    ativa: boolean;
+    icone: NomeDoIcone;
+  }[] = [];
   if (escritorioDaTroca !== null) {
     trocas.push({
       rotulo:
@@ -73,6 +79,7 @@ export async function CascaDeTrabalho({
           : escritorioDaTroca.nome,
       href: `/escritorio/${escritorioDaTroca.id}`,
       ativa: fluxo === "escritorio",
+      icone: "escritorio",
     });
   }
   if (fluxos.advogadoAprovado) {
@@ -80,6 +87,7 @@ export async function CascaDeTrabalho({
       rotulo: "Área do advogado",
       href: "/advogado",
       ativa: fluxo === "advogado",
+      icone: "advogado",
     });
   }
   // A "Área do cliente" NAO entra mais na troca: o webapp virou ferramenta
@@ -104,6 +112,7 @@ export async function CascaDeTrabalho({
           <SeletorDeEscritorio
             escritorios={fluxos.escritorios}
             ativo={escritorioId ?? ""}
+            fluxo={fluxo}
           />
           {trocas.length > 1 && (
             <>
@@ -114,8 +123,10 @@ export async function CascaDeTrabalho({
                     key={troca.href}
                     href={troca.href}
                     className={troca.ativa ? "ativa" : ""}
+                    aria-current={troca.ativa ? "true" : undefined}
                   >
-                    {troca.rotulo}
+                    <Icone nome={troca.icone} className="icone-do-item" />
+                    <span className="rotulo-do-item">{troca.rotulo}</span>
                   </Link>
                 ))}
               </nav>
@@ -127,7 +138,10 @@ export async function CascaDeTrabalho({
                 a URL. Não confundir com papel de escritório: isto é gente da
                 casa, e some para todo mundo que não for. */}
             {fluxos.equipeJurii && (
-              <Link href="/revisao">Revisar verificações</Link>
+              <Link href="/revisao">
+                <Icone nome="verificacoes" className="icone-do-item" />
+                <span className="rotulo-do-item">Revisar verificações</span>
+              </Link>
             )}
             {/* SEMPRE visível. Escondia de quem já era sócio, porque a
                 licença era por pessoa e a segunda banca era impossível. Com
@@ -135,18 +149,28 @@ export async function CascaDeTrabalho({
                 é comprar a segunda licença, e a própria tela explica isso a
                 quem chega sem licença sobrando. Esconder o caminho seria
                 decidir pela pessoa uma coisa que ela pode fazer. */}
-            <Link href="/abrir-escritorio">Abrir escritório</Link>
-            <Link href="/conta">Conta</Link>
+            <Link href="/abrir-escritorio">
+              <Icone nome="abrir" className="icone-do-item" />
+              <span className="rotulo-do-item">Abrir escritório</span>
+            </Link>
+            <Link href="/conta">
+              <Icone nome="conta" className="icone-do-item" />
+              <span className="rotulo-do-item">Conta</span>
+            </Link>
             {/* A ajuda vive ao lado da conta, e não num item de topo: ela é
                 consulta pontual, não parte do trabalho. Fica em todos os
                 fluxos porque a página é neutra (não pede vínculo nem
                 verificação), e sem link aqui só se chegaria a ela digitando
                 o endereço. */}
-            <Link href="/ajuda">Ajuda</Link>
+            <Link href="/ajuda">
+              <Icone nome="ajuda" className="icone-do-item" />
+              <span className="rotulo-do-item">Ajuda</span>
+            </Link>
           </nav>
           <form action={sair}>
-            <button type="submit" className="discreto">
-              Sair
+            <button type="submit" className="discreto item-de-sair">
+              <Icone nome="sair" className="icone-do-item" />
+              <span className="rotulo-do-item">Sair</span>
             </button>
           </form>
         </div>
