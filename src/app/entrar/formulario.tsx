@@ -20,7 +20,7 @@ function traduzErroDeLogin(mensagem: string): string {
   return "Não foi possível entrar. Verifique a conexão e tente de novo.";
 }
 
-export function FormularioDeEntrada() {
+export function FormularioDeEntrada({ depois = "/" }: { depois?: string }) {
   const roteador = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -47,7 +47,9 @@ export function FormularioDeEntrada() {
 
     // A raiz roteia para o fluxo da pessoa (escritório > advogado >
     // cliente); refresh para as páginas do servidor relerem os cookies.
-    roteador.push("/");
+    // `depois` devolve quem veio de um link (convite de equipe) para onde
+    // estava — já SANEADO no servidor por caminhoInterno, nunca cru da URL.
+    roteador.push(depois);
     roteador.refresh();
   }
 
@@ -121,7 +123,14 @@ export function FormularioDeEntrada() {
       <div className="divisor-da-entrada">
         <span>Ainda não tem conta?</span>
       </div>
-      <a href="/criar-conta" className="botao secundario">
+      <a
+        href={
+          depois === "/"
+            ? "/criar-conta"
+            : `/criar-conta?depois=${encodeURIComponent(depois)}`
+        }
+        className="botao secundario"
+      >
         Criar conta
       </a>
     </form>

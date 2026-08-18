@@ -48,7 +48,12 @@ export async function middleware(requisicao: NextRequest) {
     rota.startsWith("/entrar") ||
     rota.startsWith("/criar-conta") ||
     rota.startsWith("/recuperar") ||
-    rota.startsWith("/redefinir");
+    rota.startsWith("/redefinir") ||
+    // O convite de equipe chega a quem AINDA não tem conta: a página precisa
+    // dizer quem chamou e para quê antes do login, senão a pessoa cria conta
+    // às cegas. O token não abre nada sozinho — aceitar continua exigindo
+    // sessão, e é o banco quem valida.
+    rota.startsWith("/convite");
   const precisaDeLogin = !rotaPublica;
 
   if (precisaDeLogin && !user) {

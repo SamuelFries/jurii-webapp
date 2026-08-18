@@ -1,3 +1,4 @@
+import { caminhoInterno } from "@/lib/caminho-seguro";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,7 +10,13 @@ import { FormularioDeCadastro } from "./formulario";
  * validações (nome e sobrenome, CPF com dígito verificador, senha de 8),
  * mesmo signUp com full_name e cpf nos metadados, que é o que o gatilho do
  * banco usa para criar o perfil. */
-export default function PaginaDeCadastro() {
+export default async function PaginaDeCadastro({
+  searchParams,
+}: {
+  searchParams: Promise<{ depois?: string }>;
+}) {
+  const { depois } = await searchParams;
+  const destino = caminhoInterno(depois, "/");
   return (
     <div className="tela-de-entrada">
       <Aurora />
@@ -37,7 +44,7 @@ export default function PaginaDeCadastro() {
           aplicativo; a mesa de trabalho abre depois que a Jurii verifica
           sua OAB.
         </p>
-        <FormularioDeCadastro />
+        <FormularioDeCadastro depois={destino} />
         <p className="detalhe" style={{ marginTop: 14 }}>
           Já tem conta? <Link href="/entrar">Entrar</Link>
         </p>

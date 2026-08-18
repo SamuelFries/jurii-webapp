@@ -2,8 +2,17 @@ import Link from "next/link";
 
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
-import { convidarAdvogado, salvarPapeis } from "./acoes";
+import {
+  convidarAdvogado,
+  decidirPedidoDeEntrada,
+  gerarLinkDeConvite,
+  revogarLinkDeConvite,
+  salvarPapeis,
+} from "./acoes";
 import { membroDaLinha } from "@/lib/dominio/equipe";
+import { headers } from "next/headers";
+
+import { CopiarLink } from "@/components/copiar-link";
 import { ehGestor, papeisEmOrdem, rotuloDoPapel } from "@/lib/fluxos";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +22,15 @@ export default async function PaginaDaEquipe({
   searchParams,
 }: {
   params: Promise<{ escritorio: string }>;
-  searchParams: Promise<{ ok?: string; erro?: string }>;
+  searchParams: Promise<{
+    ok?: string;
+    erro?: string;
+    link?: string;
+    papel?: string;
+  }>;
 }) {
   const { escritorio: escritorioId } = await params;
-  const { ok, erro } = await searchParams;
+  const { ok, erro, link, papel } = await searchParams;
   const contexto = await contextoLogado();
   const escritorio = exigeEscritorio(contexto, escritorioId);
   const podeConvidar = ehGestor(escritorio);
@@ -60,6 +74,49 @@ export default async function PaginaDaEquipe({
   );
   const podeCrescer = podeCrescerBruto !== false;
 
+  // Os links de convite em aberto (a listagem nunca traz token: ele não
+  // existe mais, só o hash). E o link recém-gerado, quando há, vira URL
+  // completa com o host REAL da requisição — em produção app.jurii.com.br,
+  // no ambiente local o localhost, sem hardcode.
+  const { data: linksBrutos } = podeConvidar
+    ? await contexto.supabase.rpc("listar_links_de_convite", {
+        law_firm_id_value: escritorio.id,
+      })
+    : { data: null };
+  const linksAbertos = ((linksBrutos as unknown[]) ?? []) as {
+    id: string;
+    member_role: string;
+    expires_at: string;
+    criado_por: string;
+  }[];
+
+  // OS PEDIDOS DE ENTRADA. A decisão mora AQUI, e não na notificação: o sino
+  // avisa que aconteceu, mas item de sino pode ser marcado como lido e aí o
+  // pedido ficaria órfão, sem nenhuma outra superfície. Equipe é onde a
+  // equipe se administra.
+  const { data: pedidosBrutos } = podeConvidar
+    ? await contexto.supabase.rpc("listar_pedidos_de_entrada", {
+        law_firm_id_value: escritorio.id,
+      })
+    : { data: null };
+  const pedidos = ((pedidosBrutos as unknown[]) ?? []) as {
+    id: string;
+    requester_name: string;
+    requester_email: string;
+    cpf_confirmado: boolean;
+    member_role: string;
+    expires_at: string;
+  }[];
+
+  let linkGerado: string | null = null;
+  if (link !== undefined && link !== "") {
+    const cabecalhos = await headers();
+    const host =
+      cabecalhos.get("x-forwarded-host") ?? cabecalhos.get("host") ?? "";
+    const protocolo = host.startsWith("localhost") ? "http" : "https";
+    linkGerado = `${protocolo}://${host}/convite/${link}`;
+  }
+
   return (
       <div className="pagina-de-trabalho"><div className="miolo">
       <h1>Equipe</h1>
@@ -75,6 +132,17 @@ export default async function PaginaDaEquipe({
         </p>
       )}
       {ok === "papeis" && <p className="aviso-bom">Papéis atualizados.</p>}
+      {ok === "entrada-aprovada" && (
+        <p className="aviso-bom">
+          Pedido aprovado. A pessoa já faz parte da equipe e foi avisada.
+        </p>
+      )}
+      {ok === "entrada-recusada" && (
+        <p className="aviso-bom">Pedido recusado. A pessoa foi avisada.</p>
+      )}
+      {ok === "link-cancelado" && (
+        <p className="aviso-bom">Link cancelado. Ele não entra mais ninguém.</p>
+      )}
 
       {/* A EQUIPE QUE JÁ EXISTE NÃO MUDA. O aviso fala de crescer, e só, para
           ninguém ler "assinatura pendente" como "perdi o escritório". Quem
@@ -92,6 +160,130 @@ export default async function PaginaDaEquipe({
             Regularizar pagamento
           </Link>
         </div>
+      )}
+
+      {/* OS PEDIDOS primeiro: é a única coisa da tela que espera por uma
+          pessoa, e alguém do outro lado está parado aguardando. */}
+      {podeConvidar && pedidos.length > 0 && (
+        <div className="cartao" style={{ marginBottom: 16 }}>
+          <span className="selo dourado">
+            {pedidos.length === 1
+              ? "1 pedido para entrar"
+              : `${pedidos.length} pedidos para entrar`}
+          </span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            Quem entra passa a ver as conversas com clientes do escritório.
+            Confirme que você reconhece a pessoa antes de aprovar.
+          </p>
+          {pedidos.map((pedido) => (
+            <div key={pedido.id} className="pedido-de-entrada">
+              <div>
+                <strong>{pedido.requester_name}</strong>
+                {/* O sinal mais forte que temos de que é quem diz ser. O
+                    número em si não é da conta do gestor: vai o fato. */}
+                {pedido.cpf_confirmado ? (
+                  <span className="selo" title="CPF confirmado na conta">
+                    CPF confirmado
+                  </span>
+                ) : (
+                  <span className="selo" title="Esta conta ainda não confirmou CPF">
+                    sem CPF
+                  </span>
+                )}
+                <span className="detalhe">
+                  {pedido.requester_email} · quer entrar como{" "}
+                  {pedido.member_role === "intern"
+                    ? "estagiário"
+                    : "secretária"}
+                </span>
+              </div>
+              <div className="acoes-em-linha">
+                <form action={decidirPedidoDeEntrada}>
+                  <input type="hidden" name="escritorio" value={escritorio.id} />
+                  <input type="hidden" name="pedido" value={pedido.id} />
+                  <input type="hidden" name="decisao" value="recusar" />
+                  <button type="submit" className="botao secundario">
+                    Recusar
+                  </button>
+                </form>
+                <form action={decidirPedidoDeEntrada}>
+                  <input type="hidden" name="escritorio" value={escritorio.id} />
+                  <input type="hidden" name="pedido" value={pedido.id} />
+                  <input type="hidden" name="decisao" value="aprovar" />
+                  <button type="submit">Aprovar</button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* O link de uso único recém-gerado, mostrado UMA vez: o banco guarda
+          só o hash, então ou se copia agora ou se gera outro. */}
+      {podeConvidar && linkGerado !== null && (
+        <div className="cartao" style={{ marginBottom: 16 }}>
+          <span className="selo dourado">Link gerado</span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            Convite de{" "}
+            <strong>{papel === "intern" ? "estagiário" : "secretária"}</strong>
+            , de uso único, válido por 7 dias. Copie e mande para a pessoa —
+            este link não aparece de novo.
+          </p>
+          <CopiarLink url={linkGerado} />
+        </div>
+      )}
+
+      {podeConvidar && podeCrescer && (
+        <details className="propor-caso">
+          <summary>Convidar por link (secretária ou estagiário)</summary>
+          <div className="cartao" style={{ marginTop: 10, maxWidth: 480 }}>
+            <p className="detalhe" style={{ marginTop: 0 }}>
+              Para quem não tem OAB. O link vale 7 dias e serve UMA vez: quem
+              clicar manda um pedido, e você aprova aqui depois de ver quem é.
+              Promover depois é na própria equipe.
+            </p>
+            <form action={gerarLinkDeConvite} className="acoes-em-linha">
+              <input type="hidden" name="escritorio" value={escritorio.id} />
+              <select name="papel" aria-label="Papel de quem entra">
+                <option value="secretary">Secretária</option>
+                <option value="intern">Estagiário</option>
+              </select>
+              <button type="submit">Gerar link</button>
+            </form>
+
+            {linksAbertos.length > 0 && (
+              <>
+                <p className="detalhe" style={{ marginBottom: 6 }}>
+                  Links em aberto:
+                </p>
+                {linksAbertos.map((aberto) => (
+                  <form
+                    key={aberto.id}
+                    action={revogarLinkDeConvite}
+                    className="linha-de-link-aberto"
+                  >
+                    <input
+                      type="hidden"
+                      name="escritorio"
+                      value={escritorio.id}
+                    />
+                    <input type="hidden" name="link" value={aberto.id} />
+                    <span>
+                      {aberto.member_role === "intern"
+                        ? "Estagiário"
+                        : "Secretária"}{" "}
+                      · por {aberto.criado_por} · vence{" "}
+                      {new Date(aberto.expires_at).toLocaleDateString("pt-BR")}
+                    </span>
+                    <button type="submit" className="botao secundario">
+                      Cancelar
+                    </button>
+                  </form>
+                ))}
+              </>
+            )}
+          </div>
+        </details>
       )}
 
       {podeConvidar && podeCrescer && (

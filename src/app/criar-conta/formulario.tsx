@@ -25,7 +25,7 @@ function traduzErroDeCadastro(mensagem: string): string {
   return "Não foi possível criar a conta. Verifique a conexão e tente de novo.";
 }
 
-export function FormularioDeCadastro() {
+export function FormularioDeCadastro({ depois = "/" }: { depois?: string }) {
   const roteador = useRouter();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -87,7 +87,10 @@ export function FormularioDeCadastro() {
       return;
     }
 
-    roteador.push("/");
+    // `depois` devolve quem veio de um link (convite de equipe) para onde
+    // estava — saneado no servidor. Quem cai na confirmação de e-mail reabre
+    // o link do convite depois; ele continua válido.
+    roteador.push(depois);
     roteador.refresh();
   }
 

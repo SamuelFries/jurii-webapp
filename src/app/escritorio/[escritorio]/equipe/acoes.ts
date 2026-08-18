@@ -142,3 +142,131 @@ export async function salvarPapeis(dados: FormData): Promise<void> {
   }
   redirect(`/escritorio/${vinculo.id}/equipe?ok=papeis`);
 }
+
+/**
+ * Gera um link de convite de uso único para secretária ou estagiário.
+ *
+ * QUEM DECIDE É O BANCO (criar_link_de_convite): gestor, papel na lista
+ * fechada, assinatura viva e o orçamento de tentativas compartilhado com o
+ * convite por OAB. O token volta UMA vez, no redirect, e é a única vez que
+ * ele existe fora do hash: a tela o mostra para copiar e ele não é
+ * recuperável depois, de propósito.
+ */
+export async function gerarLinkDeConvite(dados: FormData): Promise<void> {
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
+  const papel = String(dados.get("papel") ?? "");
+
+  const supabase = await clienteDoServidor();
+  const { data, error } = await supabase.rpc("criar_link_de_convite", {
+    law_firm_id_value: vinculo.id,
+    member_role_value: papel,
+  });
+
+  if (error) {
+    const mensagem = error.message.includes("Subscription is not active")
+      ? ASSINATURA_PARADA
+      : error.message.includes("Too many invite attempts")
+        ? "Muitos convites em pouco tempo. Aguarde um pouco e tente de novo."
+        : error.message.includes("secretary or intern")
+          ? "Link de convite é só para secretária ou estagiário."
+          : "Não foi possível gerar o link. Tente de novo.";
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
+    );
+  }
+
+  const linha = ((data as unknown[]) ?? [])[0] as
+    | { token?: string; member_role?: string }
+    | undefined;
+  if (linha?.token === undefined) {
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent("Não foi possível gerar o link. Tente de novo.")}`,
+    );
+  }
+
+  redirect(
+    `/escritorio/${vinculo.id}/equipe?link=${encodeURIComponent(linha.token)}&papel=${encodeURIComponent(String(linha.member_role ?? papel))}`,
+  );
+}
+
+/** Cancela um link em aberto. Revogar o já usado não desfaz entrada. */
+export async function revogarLinkDeConvite(dados: FormData): Promise<void> {
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("revogar_link_de_convite", {
+    link_id_value: String(dados.get("link") ?? ""),
+  });
+
+  if (error) {
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent("Não foi possível cancelar o link. Tente de novo.")}`,
+    );
+  }
+  redirect(`/escritorio/${vinculo.id}/equipe?ok=link-cancelado`);
+}
+
+/**
+ * Aprovar ou recusar um pedido de entrada.
+ *
+ * A CORRIDA MORRE NO BANCO: decidir_entrada_no_escritorio tranca a linha
+ * (FOR UPDATE), então dois gestores clicando ao mesmo tempo dão uma decisão
+ * só, e o segundo ouve QUEM decidiu. A tela nunca tenta adivinhar isso.
+ *
+ * Recusar não tem campo de motivo de propósito: justificativa escrita no
+ * calor do momento vira mensagem que a gente entrega sem moderação nenhuma.
+ */
+export async function decidirPedidoDeEntrada(dados: FormData): Promise<void> {
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
+  const aprovar = String(dados.get("decisao") ?? "") === "aprovar";
+
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("decidir_entrada_no_escritorio", {
+    request_id_value: String(dados.get("pedido") ?? ""),
+    aprovar,
+  });
+
+  if (error) {
+    const jaDecidido = error.message.match(/already decided by (.+)$/);
+    const mensagem =
+      jaDecidido !== null
+        ? `${jaDecidido[1]} já decidiu este pedido.`
+        : error.message.includes("Subscription is not active")
+          ? ASSINATURA_PARADA
+          : error.message.includes("expired")
+            ? "Este pedido venceu. Peça à pessoa para pedir de novo com um link novo."
+            : error.message.includes("Already a member")
+              ? "Esta pessoa já faz parte da equipe."
+              : "Não foi possível decidir agora. Tente de novo.";
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
+    );
+  }
+
+  redirect(
+    `/escritorio/${vinculo.id}/equipe?ok=${aprovar ? "entrada-aprovada" : "entrada-recusada"}`,
+  );
+}

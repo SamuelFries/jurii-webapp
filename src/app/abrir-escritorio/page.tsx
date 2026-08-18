@@ -47,21 +47,17 @@ export default async function AbrirEscritorio({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    contexto.supabase
-      .from("law_firm_license_subscriptions")
-      .select("status")
-      .eq("owner_profile_id", contexto.usuario.id)
-      // A LICENÇA NÃO GASTA, que é exatamente o que a policy de INSERT
-      // pergunta desde que a cobrança virou por escritório. Sem este filtro
-      // a tela mostraria o formulário para quem já gastou a licença na
-      // primeira banca, e o banco recusaria no fim: formulário que só sabe
-      // produzir recusa foi o defeito que a gente já corrigiu uma vez aqui.
-      .is("law_firm_id", null)
-      .in("status", ["trialing", "active"])
-      .limit(1)
-      .maybeSingle(),
+    // A MESMA PERGUNTA QUE A POLICY FAZ, e não uma reprodução dela. Esta tela
+    // já espelhou a regra à mão (licença não gasta, status na lista) e o
+    // espelho quebrou quando a expiração do teste passou a ser derivada:
+    // `status` fica 'trialing' para sempre, então a versão literal convidava
+    // a preencher CNPJ, endereço e cinco arquivos para o banco recusar no
+    // fim. has_law_firm_license é a própria função do `with check`.
+    contexto.supabase.rpc("has_law_firm_license", {
+      profile_id_value: contexto.usuario.id,
+    }),
   ]);
-  const temLicenca = licenca != null;
+  const temLicenca = licenca === true;
 
   const status = data?.status == null ? null : String(data.status);
   const motivo =
