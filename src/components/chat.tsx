@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import {
+  clienteAguarda,
+  comecaSequencia,
+  resolveAutor,
+  separadorDeDia,
+  type MembroParaAutoria,
+} from "@/lib/dominio/chat-aberto";
+import { esperaDesde, esperandoHaMuito } from "@/lib/dominio/conversas";
 
 import { caminhoDoAnexo, validaAnexo } from "@/lib/anexos";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
@@ -31,6 +40,9 @@ export interface MensagemParaTela {
   id: string;
   corpo: string;
   minha: boolean;
+  /** Quem escreveu, para a tela dizer nome e papel. Nulo = sistema. */
+  senderId?: string | null;
+  senderType?: string;
   criadaEmIso: string;
   apagadaParaTodos: boolean;
   tipo: "texto" | "anexo" | "solicitacao_de_caso" | "indicacao";
@@ -56,16 +68,39 @@ export function Chat({
   meuId,
   senderType,
   mensagensIniciais,
+  temAnterioresInicial = false,
   bloqueada = false,
+  nomeDoCliente = "Cliente",
+  equipe = [],
 }: {
   conversaId: string;
   meuId: string;
   senderType: "client" | "lawyer";
   mensagensIniciais: MensagemParaTela[];
+  /** Se a primeira página não é o começo da conversa (paginação para cima). */
+  temAnterioresInicial?: boolean;
   /** Conversa bloqueada: o servidor recusa envio; a tela avisa antes. */
   bloqueada?: boolean;
+  /** Para dar nome e papel a cada mensagem que não é minha. */
+  nomeDoCliente?: string;
+  equipe?: MembroParaAutoria[];
 }) {
   const [mensagens, setMensagens] = useState(mensagensIniciais);
+  const [temAnteriores, setTemAnteriores] = useState(temAnterioresInicial);
+  const [carregandoAnteriores, setCarregandoAnteriores] = useState(false);
+  // Novas chegaram enquanto eu lia lá em cima: conta para o botão "voltar ao
+  // fim", em vez de me arrastar para baixo.
+  const [novasForaDaVista, setNovasForaDaVista] = useState(0);
+  const listaRef = useRef<HTMLDivElement>(null);
+  // Se a pessoa está (ou estava) no fim, acompanhamos; se subiu para ler,
+  // NÃO. Lido a cada scroll, decidido a cada mensagem nova.
+  const pertoDoFim = useRef(true);
+  const rascunhoFalhou = useRef<string | null>(null);
+  // Distância do fim a restaurar DEPOIS que a página anterior entrar por
+  // cima. Guardada aqui e consumida no layout effect, porque o
+  // requestAnimationFrame pode disparar antes de o React commitar as bolhas
+  // novas, e aí a conta sai com o scrollHeight velho.
+  const restaurarDistanciaDoFim = useRef<number | null>(null);
   const [rascunho, setRascunho] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [subindoAnexo, setSubindoAnexo] = useState(false);
@@ -122,6 +157,8 @@ export function Chat({
             id: String(linha.id),
             corpo: String(linha.body ?? ""),
             minha: String(linha.sender_id) === meuId,
+            senderId: linha.sender_id == null ? null : String(linha.sender_id),
+            senderType: String(linha.sender_type ?? ""),
             criadaEmIso: String(linha.created_at),
             apagadaParaTodos: linha.deleted_for_all_at != null,
             tipo,
@@ -182,9 +219,140 @@ export function Chat({
     };
   }, [conversaId, meuId]);
 
+  // ---- SCROLL COMO FERRAMENTA, não como visualizador --------------------
+  //
+  // As regras, todas testáveis pelo uso e não pelo código:
+  //  - abrir a conversa: já no fim;
+  //  - subir para ler: fica onde está;
+  //  - chegar mensagem nova enquanto leio uma antiga: NÃO me arrasta; conta
+  //    no botão "N novas · voltar ao fim";
+  //  - carregar anteriores ao chegar no topo: a posição de leitura fica
+  //    EXATAMENTE onde estava (compensa a altura que entrou por cima);
+  //  - voltar ao fim: um clique, ou rolar até lá (o botão some);
+  //  - enviar estando no meio: vai para o fim (a pessoa quer ver o que
+  //    mandou).
   useEffect(() => {
-    fimDaLista.current?.scrollIntoView({ block: "end" });
+    // Primeira montagem: no fim, sem animação.
+    const lista = listaRef.current;
+    if (lista) lista.scrollTop = lista.scrollHeight;
+    pertoDoFim.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversaId]);
+
+  function estaPertoDoFim(el: HTMLDivElement): boolean {
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
+  function aoRolar() {
+    const lista = listaRef.current;
+    if (!lista) return;
+    const perto = estaPertoDoFim(lista);
+    pertoDoFim.current = perto;
+    if (perto && novasForaDaVista > 0) setNovasForaDaVista(0);
+    // Topo: busca a página anterior. 200px de antecedência para a página
+    // chegar antes de a pessoa bater na borda.
+    if (lista.scrollTop < 200 && temAnteriores && !carregandoAnteriores) {
+      void carregarAnteriores();
+    }
+  }
+
+  function irParaOFim(suave = true) {
+    const lista = listaRef.current;
+    if (!lista) return;
+    lista.scrollTo({ top: lista.scrollHeight, behavior: suave ? "smooth" : "auto" });
+    pertoDoFim.current = true;
+    setNovasForaDaVista(0);
+  }
+
+  // Mensagem NOVA (minha ou deles): decide acompanhar ou não. Roda depois do
+  // layout para o scrollHeight já incluir a bolha nova.
+  const ultimoTotal = useRef(mensagens.length);
+  useLayoutEffect(() => {
+    // Página anterior entrou por CIMA: restaura a distância do fim medida
+    // antes, e a mensagem que a pessoa lia fica na mesma altura da tela.
+    // O ultimoTotal já foi somado em carregarAnteriores, então isto não é
+    // "mensagem nova".
+    if (restaurarDistanciaDoFim.current !== null) {
+      const l = listaRef.current;
+      if (l) l.scrollTop = l.scrollHeight - restaurarDistanciaDoFim.current;
+      restaurarDistanciaDoFim.current = null;
+      ultimoTotal.current = mensagens.length;
+      return;
+    }
+    if (mensagens.length <= ultimoTotal.current) {
+      ultimoTotal.current = mensagens.length;
+      return;
+    }
+    const cresceu = mensagens.length - ultimoTotal.current;
+    ultimoTotal.current = mensagens.length;
+    const ultima = mensagens[mensagens.length - 1];
+    if (ultima?.minha || pertoDoFim.current) {
+      irParaOFim(false);
+    } else {
+      setNovasForaDaVista((n) => n + cresceu);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mensagens.length]);
+
+  async function carregarAnteriores() {
+    const lista = listaRef.current;
+    const primeira = mensagens[0];
+    if (!lista || !primeira || carregandoAnteriores) return;
+    setCarregandoAnteriores(true);
+    // A posição de leitura, medida do FIM: é o que preservamos.
+    const distanciaDoFim = lista.scrollHeight - lista.scrollTop;
+    try {
+      const supabase = clienteDoNavegador();
+      const { data } = await supabase.rpc("fetch_conversation_messages_page", {
+        conversation_id_value: conversaId,
+        before_created_at: primeira.criadaEmIso,
+        before_id: primeira.id,
+        page_size: 51,
+      });
+      const brutas = ((data as Record<string, unknown>[] | null) ?? []);
+      const mais = brutas.length > 50;
+      const linhas = (mais ? brutas.slice(0, 50) : brutas).slice().reverse();
+      const anteriores: MensagemParaTela[] = linhas.map((linha) => {
+        const metadata = (linha.metadata ?? {}) as Record<string, unknown>;
+        const indicacao = indicacaoDaMetadata(metadata);
+        const tipo: MensagemParaTela["tipo"] =
+          metadata.type === "chat_attachment"
+            ? "anexo"
+            : metadata.type === "case_request"
+              ? "solicitacao_de_caso"
+              : indicacao !== null
+                ? "indicacao"
+                : "texto";
+        return {
+          id: String(linha.id),
+          corpo: String(linha.body ?? ""),
+          minha: String(linha.sender_id) === meuId,
+          senderId: linha.sender_id == null ? null : String(linha.sender_id),
+          senderType: String(linha.sender_type ?? ""),
+          criadaEmIso: String(linha.created_at),
+          apagadaParaTodos: linha.deleted_for_all_at != null,
+          tipo,
+          anexo: null,
+          indicacao,
+          solicitacao: solicitacaoDaMetadata(metadata),
+          entrega: estadoDeEntrega({
+            entregueEm: linha.delivered_at == null ? null : String(linha.delivered_at),
+            lidaEm: linha.read_at == null ? null : String(linha.read_at),
+          }),
+        };
+      });
+      const existentes = new Set(mensagens.map((m) => m.id));
+      const novas = anteriores.filter((m) => !existentes.has(m.id));
+      ultimoTotal.current += novas.length; // não conta como "nova no fim"
+      // A restauração acontece no layout effect, DEPOIS do commit: é lá que
+      // o scrollHeight já inclui o que entrou por cima.
+      restaurarDistanciaDoFim.current = distanciaDoFim;
+      setMensagens((atuais) => [...novas, ...atuais]);
+      setTemAnteriores(mais);
+    } finally {
+      setCarregandoAnteriores(false);
+    }
+  }
 
   async function enviar() {
     const corpo = rascunho.trim();
@@ -205,10 +373,15 @@ export function Chat({
       .single();
 
     if (error || data === null) {
-      setErro("A mensagem não foi enviada. Verifique a conexão e tente de novo.");
+      // O texto FICA no campo (setRascunho só roda no sucesso), e o aviso
+      // fica colado ao compositor com "Tentar de novo": erro de envio longe
+      // do campo era o que o toast fazia por padrão.
+      rascunhoFalhou.current = corpo;
+      setErro("A mensagem não foi enviada.");
       setEnviando(false);
       return;
     }
+    rascunhoFalhou.current = null;
 
     setMensagens((atuais) =>
       atuais.some((mensagem) => mensagem.id === String(data.id))
@@ -219,6 +392,8 @@ export function Chat({
               id: String(data.id),
               corpo: String(data.body),
               minha: true,
+              senderId: meuId,
+              senderType,
               criadaEmIso: String(data.created_at),
               apagadaParaTodos: false,
               tipo: "texto",
@@ -311,6 +486,8 @@ export function Chat({
                 id: idDaMensagem,
                 corpo: "",
                 minha: true,
+                senderId: meuId,
+                senderType,
                 criadaEmIso: new Date().toISOString(),
                 apagadaParaTodos: false,
                 tipo: "anexo",
@@ -458,22 +635,77 @@ export function Chat({
         </div>
       )}
 
-      <div className="chat">
+      <div className="chat" ref={listaRef} onScroll={aoRolar}>
+        {carregandoAnteriores && (
+          <p className="marco-do-historico">Carregando mensagens anteriores…</p>
+        )}
+        {!temAnteriores && mensagens.length > 0 && (
+          <p className="marco-do-historico">Início da conversa</p>
+        )}
         {mensagens.length === 0 && (
           <p className="vazio">Nenhuma mensagem ainda. Comece a conversa.</p>
         )}
-        {mensagens.map((mensagem) => {
+        {mensagens.map((mensagem, indice) => {
           const marcada = selecionadas.has(mensagem.id);
           const selecionavel = podeSelecionar(mensagem);
+          const anterior = indice > 0 ? mensagens[indice - 1] : null;
+          const criadaEm = new Date(mensagem.criadaEmIso);
+          const dia = separadorDeDia(
+            criadaEm,
+            anterior ? new Date(anterior.criadaEmIso) : null,
+            agora,
+          );
+          const autor = resolveAutor(
+            { senderId: mensagem.senderId ?? null, senderType: mensagem.senderType ?? "" },
+            { meuId, nomeDoCliente, equipe },
+          );
+          const autorAnterior = anterior
+            ? resolveAutor(
+                { senderId: anterior.senderId ?? null, senderType: anterior.senderType ?? "" },
+                { meuId, nomeDoCliente, equipe },
+              )
+            : null;
+          const inicioDeSequencia =
+            dia !== null ||
+            comecaSequencia(
+              { autorId: autor.id, criadaEm },
+              anterior && autorAnterior
+                ? { autorId: autorAnterior.id, criadaEm: new Date(anterior.criadaEmIso) }
+                : null,
+            );
+          // O lado visual: minha à direita; cliente à esquerda; EQUIPE que
+          // não sou eu também à esquerda, mas com a cara de "lado de dentro"
+          // (surface-2 + fio navy). Sem isso a secretária via cliente e
+          // sócia idênticos, e a conversa virava monólogo.
+          const lado = mensagem.minha
+            ? "minha"
+            : autor.lado === "equipe"
+              ? "equipe"
+              : autor.lado === "sistema"
+                ? "sistema"
+                : "deles";
           return (
-            // A faixa de seleção pinta a LINHA INTEIRA, não só o balão: é o
-            // alvo que a mão procura quando já está marcando várias.
+            <div key={mensagem.id} className="grupo-de-mensagem">
+            {dia !== null && (
+              <div className="separador-de-dia" role="separator">
+                <span>{dia}</span>
+              </div>
+            )}
+            {/* Nome + PAPEL na primeira mensagem da sequência de quem não sou
+                eu. O papel é o da pessoa na equipe/na conversa: "Cliente",
+                "Sócio", "Advogado", "Secretária". Sem avatar por linha. */}
+            {inicioDeSequencia && !mensagem.minha && autor.lado !== "sistema" && (
+              <span className={`autor-da-sequencia lado-${autor.lado}`}>
+                <span className="nome-do-autor">{autor.nome}</span>
+                <span className="papel-do-autor">{autor.papel}</span>
+              </span>
+            )}
             <div
-              key={mensagem.id}
               className={[
                 "linha-de-mensagem",
-                mensagem.minha ? "minha" : "deles",
+                lado,
                 marcada ? "marcada" : "",
+                inicioDeSequencia ? "inicio" : "continuacao",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -493,7 +725,7 @@ export function Chat({
               <div
                 className={[
                   "bolha",
-                  mensagem.minha ? "minha" : "deles",
+                  lado,
                   mensagem.apagadaParaTodos ? "apagada" : "",
                   mensagem.tipo === "solicitacao_de_caso" ? "cartao-no-chat" : "",
                 ]
@@ -502,19 +734,78 @@ export function Chat({
               >
                 <CorpoDaMensagem mensagem={mensagem} />
                 <span className="horario">
-                  {rotuloDeHorario(new Date(mensagem.criadaEmIso), agora)}
+                  {/* Só a HORA: o dia está no separador. "15/08 às 14:20"
+                      em cada bolha era o único marcador de tempo e virava
+                      ruído numa conversa de três dias. */}
+                  {horaCurta(criadaEm)}
                   {mensagem.minha && !mensagem.apagadaParaTodos && (
                     <TiqueDeEntrega estado={mensagem.entrega ?? "enviada"} />
                   )}
                 </span>
               </div>
             </div>
+            </div>
           );
         })}
         <div ref={fimDaLista} />
       </div>
 
-      {erro !== null && <p className="erro">{erro}</p>}
+      {/* Novas chegaram enquanto eu lia lá em cima: um botão, não um puxão. */}
+      {novasForaDaVista > 0 && (
+        <button
+          type="button"
+          className="voltar-ao-fim"
+          onClick={() => irParaOFim(true)}
+        >
+          {novasForaDaVista === 1
+            ? "1 nova mensagem · ir para o fim"
+            : `${novasForaDaVista} novas mensagens · ir para o fim`}
+        </button>
+      )}
+
+      {/* A FAIXA DE ESTADO: só quando o cliente falou por último. É a
+          resposta direta a "depois de 4 horas, a bola está comigo?". Some
+          quando a última é da equipe. */}
+      {(() => {
+        const estado = clienteAguarda(
+          mensagens.map((m) => ({
+            lado: resolveAutor(
+              { senderId: m.senderId ?? null, senderType: m.senderType ?? "" },
+              { meuId, nomeDoCliente, equipe },
+            ).lado,
+            criadaEm: new Date(m.criadaEmIso),
+          })),
+        );
+        if (!estado.aguarda || estado.desde === null || senderType === "client") return null;
+        const longa = esperandoHaMuito(estado.desde, agora);
+        return (
+          <p className={longa ? "faixa-de-estado espera-longa" : "faixa-de-estado"}>
+            <span className="ponto" aria-hidden />
+            Cliente aguarda resposta {esperaDesde(estado.desde, agora)}
+          </p>
+        );
+      })()}
+
+      {/* Erro de envio COLADO ao compositor, fora do toast (data-fixo), com
+          o rascunho preservado e reenvio a um clique. */}
+      {erro !== null && (
+        <p className="erro erro-de-envio" data-fixo="true">
+          {erro}{" "}
+          <button
+            type="button"
+            className="discreto compacto"
+            onClick={() => {
+              setErro(null);
+              if (rascunhoFalhou.current !== null && rascunho.trim() === "") {
+                setRascunho(rascunhoFalhou.current);
+              }
+              void enviar();
+            }}
+          >
+            Tentar de novo
+          </button>
+        </p>
+      )}
 
       {bloqueada && (
         <p className="erro">
@@ -633,6 +924,14 @@ export function Chat({
  * O rótulo não é decoração: sem ele um leitor de tela anuncia "imagem" e a
  * informação inteira se perde para quem não distingue um risco de dois.
  */
+/** "14:20", no fuso do Brasil, para a bolha. O dia mora no separador. */
+function horaCurta(data: Date): string {
+  const local = new Date(data.getTime() - 3 * 3_600_000);
+  return `${String(local.getUTCHours()).padStart(2, "0")}:${String(
+    local.getUTCMinutes(),
+  ).padStart(2, "0")}`;
+}
+
 function TiqueDeEntrega({ estado }: { estado: EstadoDeEntrega }) {
   return (
     <span

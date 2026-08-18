@@ -4,7 +4,13 @@ import { Chat } from "@/components/chat";
 import { ModeracaoDaConversa } from "@/components/moderacao-da-conversa";
 import { PainelDeMensagens } from "@/components/paineis";
 import { ProporCaso } from "@/components/propor-caso";
-import { carregaBloqueio, carregaConversa, carregaMensagens } from "@/lib/chat-servidor";
+import { Icone } from "@/components/icone";
+import {
+  carregaBloqueio,
+  carregaContextoDoAtendimento,
+  carregaConversa,
+  carregaMensagens,
+} from "@/lib/chat-servidor";
 import { contextoLogado, exigeAdvogado } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
@@ -23,14 +29,20 @@ export default async function ChatDoAdvogado({
   const contexto = await contextoLogado();
   exigeAdvogado(contexto);
 
-  const [conversasRes, mensagens, bloqueio] = await Promise.all([
+  const [conversasRes, pagina, bloqueio, atendimento] = await Promise.all([
     contexto.supabase.rpc("fetch_conversations_for_current_user", {
       scope_value: "lawyer",
       law_firm_id_value: null,
     }),
     carregaMensagens(contexto.supabase, id, contexto.usuario.id),
     carregaBloqueio(contexto.supabase, id),
+    carregaContextoDoAtendimento(contexto.supabase, id),
   ]);
+
+  // Na conversa PESSOAL o advogado é o responsável por definição, e é quem
+  // create_case_request aceita (lawyer_id da conversa = auth.uid()).
+  const souOResponsavel =
+    atendimento.advogadoDaConversaId === contexto.usuario.id;
 
   const agora = new Date();
   const conversas = ((conversasRes.data as unknown[]) ?? []).map((linha) =>
@@ -54,16 +66,43 @@ export default async function ChatDoAdvogado({
       comDetalhe
     >
       <div className="cabecalho-do-chat">
-        <Link href="/advogado">← Conversas</Link>
-        <span className="nome">{conversa?.titulo ?? "Conversa"}</span>
-        {conversa != null && conversa.especialidade !== "" && (
-          <span className="area">{conversa.especialidade}</span>
-        )}
-        {/* Acoes no CABECALHO, como no app (la sao icones da barra
-            superior). Empilhadas acima das mensagens, elas empurravam a
-            conversa para baixo e competiam com ela. */}
+        <Link
+          href="/advogado"
+          className="voltar"
+          aria-label="Voltar para Conversas"
+          title="Voltar para Conversas"
+        >
+          <Icone nome="seta-direita" tamanho={16} className="seta-de-voltar" />
+        </Link>
+        <span className="avatar pequeno identidade-do-chat" aria-hidden>
+          {conversa?.iniciais ?? "?"}
+        </span>
+        <span className="quem">
+          <span className="nome" title={conversa?.titulo ?? ""}>
+            {conversa?.titulo ?? "Conversa"}
+          </span>
+          {conversa != null && conversa.especialidade !== "" && (
+            <span className="area">{conversa.especialidade}</span>
+          )}
+        </span>
+        <span className="atendimento">
+          {/* Na área pessoal quem atende sou eu; dizer isso seria ruído. O
+              que vale é o caso ligado, quando há. */}
+          {atendimento.casoId !== null && (
+            <Link
+              className="link-do-caso"
+              href={`/advogado/casos/${atendimento.casoId}`}
+              title={atendimento.casoTitulo ?? "Abrir o caso"}
+            >
+              <Icone nome="casos" tamanho={14} />
+              Ver caso
+            </Link>
+          )}
+        </span>
         <span className="acoes-do-chat">
-          <ProporCaso conversaId={id} voltar={`/advogado/conversas/${id}`} />
+          {souOResponsavel && (
+            <ProporCaso conversaId={id} voltar={`/advogado/conversas/${id}`} />
+          )}
           <ModeracaoDaConversa
             conversaId={id}
             voltar={`/advogado/conversas/${id}`}
@@ -83,8 +122,10 @@ export default async function ChatDoAdvogado({
         conversaId={id}
         meuId={contexto.usuario.id}
         senderType="lawyer"
-        mensagensIniciais={mensagens}
+        mensagensIniciais={pagina.mensagens}
+        temAnterioresInicial={pagina.temAnteriores}
         bloqueada={bloqueio.bloqueada}
+        nomeDoCliente={conversa?.titulo ?? "Cliente"}
       />
     </PainelDeMensagens>
   );

@@ -1184,12 +1184,114 @@ a.cartao-de-lista:hover {
 
 /* ---- Chat ---- */
 
+/* ---- O cabeçalho do chat aberto ---------------------------------------------
+   Grade de quatro colunas: voltar | quem | atendimento | ações. A 1440 cabe
+   numa linha; abaixo de 1024 vira duas por DESENHO (quem em cima,
+   atendimento + ações embaixo), nunca "Joao / Pereira" quebrado por
+   acidente. */
 .cabecalho-do-chat {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "voltar avatar quem atendimento acoes";
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cabecalho-do-chat .voltar {
+  grid-area: voltar;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.cabecalho-do-chat .voltar:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.cabecalho-do-chat .seta-de-voltar {
+  transform: rotate(180deg);
+}
+
+.cabecalho-do-chat .identidade-do-chat {
+  grid-area: avatar;
+}
+
+.cabecalho-do-chat .quem {
+  grid-area: quem;
+  min-width: 0;
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  padding: 14px 0 6px;
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.cabecalho-do-chat .atendimento {
+  grid-area: atendimento;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-do-chat .responsavel,
+.cabecalho-do-chat .link-do-caso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.cabecalho-do-chat .responsavel.sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cabecalho-do-chat .link-do-caso {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.cabecalho-do-chat .link-do-caso:hover {
+  background: var(--surface-2);
+  border-color: var(--gold-soft);
+}
+
+/* O corte é pela largura do PAINEL, não da janela: a 1024 de viewport o
+   painel direito tem uns 400px, e é isso que decide se cabe uma linha.
+   Container query no painel principal. */
+.painel-principal {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .cabecalho-do-chat {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "voltar avatar quem acoes"
+      "voltar atendimento atendimento atendimento";
+    row-gap: 6px;
+  }
+  .cabecalho-do-chat .atendimento {
+    padding-left: 2px;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .cabecalho-do-chat .quem {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
 }
 
 /* As acoes da conversa (propor caso, indicar advogado, moderacao) ficam no
@@ -1197,11 +1299,11 @@ a.cartao-de-lista:hover {
    `margin-left: auto` empurra o grupo inteiro, entao o nome fica colado no
    voltar e as acoes na outra ponta. */
 .cabecalho-do-chat .acoes-do-chat {
-  margin-left: auto;
+  grid-area: acoes;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 auto;
+  justify-self: end;
 }
 
 /* Dentro do cabecalho, os `details` de acao viram pilulas compactas em vez
@@ -1231,42 +1333,87 @@ a.cartao-de-lista:hover {
   box-shadow: 0 16px 40px rgba(10, 28, 59, 0.28);
 }
 
-.cabecalho-do-chat a {
-  color: var(--text-2);
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
 .cabecalho-do-chat .nome {
-  font-weight: 800;
-  font-size: 17px;
+  font-weight: 700;
+  font-size: var(--t-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .cabecalho-do-chat .area {
   color: var(--text-2);
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: var(--t-sm);
   white-space: nowrap;
+  flex: none;
 }
 
 .chat {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   padding: 8px 0 16px;
   min-height: 40vh;
+  /* O scroll é decidido no componente (acompanhar ou não): sem smooth
+     nativo aqui, senão a restauração de posição ao carregar anteriores
+     animaria. */
+  scroll-behavior: auto;
+}
+
+.grupo-de-mensagem {
+  display: contents;
+}
+
+/* ---- Autor da sequência ------------------------------------------------------
+   Nome + PAPEL na primeira mensagem de quem não sou eu. O papel é o da
+   pessoa na equipe/na conversa ("Cliente", "Sócio", "Secretária"), e é o
+   que faz a secretária distinguir a fala da sócia da do cliente. Sem
+   avatar por linha: texto discreto, no tom secundário. */
+.autor-da-sequencia {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0 2px 6px;
+  font-size: var(--t-sm);
+  line-height: var(--lh-tight);
+}
+
+.autor-da-sequencia .nome-do-autor {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.autor-da-sequencia .papel-do-autor {
+  color: var(--text-2);
+}
+
+/* Cliente = fora; equipe = dentro. A cor do nome acompanha, para o olho
+   ler o lado antes da palavra. */
+.autor-da-sequencia.lado-equipe .nome-do-autor {
+  color: var(--navy-2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .autor-da-sequencia.lado-equipe .nome-do-autor {
+    color: var(--accent-ink);
+  }
 }
 
 .bolha {
   max-width: 76%;
-  padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 15px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Continuação da mesma sequência: cola na anterior. */
+.linha-de-mensagem.continuacao .bolha {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }
 
 .bolha.minha {
@@ -1283,11 +1430,38 @@ a.cartao-de-lista:hover {
   border-bottom-left-radius: 6px;
 }
 
+/* EQUIPE que não sou eu: mesmo lado do cliente (é o "outro" na tela), mas
+   com a cara de "lado de dentro": superfície 2 e um fio fino navy à
+   esquerda. Sem terceira cor: só superfície e fio, na paleta que existe. */
+.bolha.equipe {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--navy-2);
+  border-bottom-left-radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bolha.equipe {
+    border-left-color: var(--accent-ink);
+  }
+}
+
+.bolha.sistema {
+  align-self: center;
+}
+
 .bolha .horario {
-  display: block;
-  margin-top: 4px;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0 0 10px;
+  float: right;
+  font-size: var(--t-xs);
   opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+  /* Float à direita com margem: a hora fica no canto inferior direito da
+     bolha e nunca cola na última palavra ("faltavam.14:28"). */
 }
 
 .bolha.apagada {
@@ -2759,6 +2933,94 @@ button.compacto {
 
 .linha-de-mensagem.minha {
   justify-content: flex-end;
+}
+
+.linha-de-mensagem.sistema {
+  justify-content: center;
+}
+
+/* ---- Separador de dia --------------------------------------------------------
+   "Hoje", "Ontem", "15/08": a linha fina com o rótulo no meio. É o único
+   marcador de dia; a bolha mostra só a hora. */
+.separador-de-dia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 6px;
+  color: var(--text-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.separador-de-dia::before,
+.separador-de-dia::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.marco-do-historico {
+  margin: 4px 0 8px;
+  text-align: center;
+  color: var(--text-2);
+  font-size: var(--t-xs);
+}
+
+/* ---- Faixa de estado ---------------------------------------------------------
+   Só quando o cliente falou por último. Uma linha, acima do compositor.
+   Âmbar acima de 24 h. Nada de badge nem card. */
+.faixa-de-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 2px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.faixa-de-estado .ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.faixa-de-estado.espera-longa {
+  color: var(--aviso);
+}
+
+.faixa-de-estado.espera-longa .ponto {
+  background: var(--aviso);
+}
+
+/* ---- Voltar ao fim ---------------------------------------------------------
+   Novas chegaram enquanto eu lia lá em cima: um botão flutuante sobre a
+   lista, não um puxão. */
+.voltar-ao-fim {
+  position: sticky;
+  bottom: 8px;
+  align-self: center;
+  width: auto;
+  margin: -40px auto 8px;
+  padding: 6px 12px;
+  min-height: 30px;
+  font-size: var(--t-sm);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+
+/* Erro de envio: colado ao compositor, com o botão inline. */
+.erro-de-envio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
 }
 
 /* Cartão de solicitação NÃO segue o lado de quem enviou: no app ele é

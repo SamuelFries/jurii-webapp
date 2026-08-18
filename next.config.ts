@@ -31,7 +31,12 @@ const csp = [
   // blob: e data: aparecem em pré-visualização de anexo antes do envio.
   `img-src 'self' data: blob: ${supabase}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase} wss://${supabase.replace(/^https?:\/\//, "")}`,
+  // O WebSocket do realtime acompanha o esquema do Supabase: wss:// quando o
+  // host é https (produção), ws:// quando é http (o Supabase LOCAL, em
+  // 127.0.0.1). Antes era wss:// fixo, e no ambiente local a CSP bloqueava o
+  // realtime em silêncio: a prova de scroll do chat "passava" porque a
+  // mensagem nova nunca chegava. Em produção nada muda.
+  `connect-src 'self' ${supabase} ${supabase.startsWith("http://") ? "ws" : "wss"}://${supabase.replace(/^https?:\/\//, "")}`,
   "upgrade-insecure-requests",
 ].join("; ");
 
