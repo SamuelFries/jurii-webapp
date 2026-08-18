@@ -1,5 +1,6 @@
 import { MioloDaAssinatura } from "@/components/planos/miolo-da-assinatura";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
+import { ehGestor } from "@/lib/fluxos";
 
 /** Sempre no servidor e sempre fresco: estado de assinatura em cache é como
  * a pessoa paga e continua vendo "pendente". */
@@ -27,6 +28,7 @@ export default async function AssinaturaDoEscritorio({
         <MioloDaAssinatura
           supabase={contexto.supabase}
           escritorioId={escritorio.id}
+          gestor={ehGestor(escritorio)}
         />
       </div>
     </div>

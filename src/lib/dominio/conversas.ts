@@ -118,3 +118,29 @@ export function indicacaoDaMetadata(
         : String(metadata.note),
   };
 }
+
+/**
+ * Há quanto tempo algo espera, para a fila de "precisa de você".
+ *
+ * A pergunta que decide quem atender primeiro não é "a que horas chegou", é
+ * "há quanto tempo está parado". Minutos até uma hora, horas até um dia,
+ * dias depois. Nunca negativo: relógio adiantado no cliente vira "agora".
+ */
+export function esperaDesde(data: Date, agora: Date): string {
+  const minutos = Math.max(0, Math.floor((agora.getTime() - data.getTime()) / 60_000));
+  if (minutos < 1) return "agora";
+  if (minutos < 60) return `há ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return horas === 1 ? "há 1 h" : `há ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  return dias === 1 ? "há 1 dia" : `há ${dias} dias`;
+}
+
+/**
+ * Espera longa demais para o padrão de atendimento: acima de 24 horas. É o
+ * mesmo limiar do `urgent` do painel de casos (cliente falou por último e
+ * ninguém respondeu em um dia), para a tela e o banco concordarem.
+ */
+export function esperandoHaMuito(data: Date, agora: Date): boolean {
+  return agora.getTime() - data.getTime() >= 24 * 3_600_000;
+}

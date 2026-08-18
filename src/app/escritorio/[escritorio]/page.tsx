@@ -1,9 +1,12 @@
+import { ehGestor } from "@/lib/fluxos";
 import Link from "next/link";
+
+import { Icone, type NomeDoIcone } from "@/components/icone";
 
 import { AlcanceDoProfissional } from "@/components/alcance-do-profissional";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { casoDoEscritorioDaLinha } from "@/lib/dominio/casos";
-import { conversaDaLinha, rotuloDeHorario } from "@/lib/dominio/conversas";
+import { conversaDaLinha, rotuloDeHorario, esperaDesde, esperandoHaMuito } from "@/lib/dominio/conversas";
 import {
   passosDoEscritorio,
   progressoDoEscritorio,
@@ -126,26 +129,35 @@ export default async function PaginaDoEscritorio({
   const pendencias =
     semResponsavel.length + aguardandoResposta.length + conversasParadas.length;
 
-  const numeros = [
+  const numeros: {
+    rotulo: string;
+    valor: number;
+    href: string;
+    icone: NomeDoIcone;
+  }[] = [
     {
       rotulo: "Conversas de clientes",
       valor: Number(metricas?.client_messages ?? 0),
       href: `/escritorio/${escritorioId}/mensagens`,
+      icone: "mensagens",
     },
     {
       rotulo: "Conversas internas",
       valor: Number(metricas?.team_messages ?? 0),
       href: `/escritorio/${escritorioId}/mensagens?aba=equipe`,
+      icone: "equipe",
     },
     {
       rotulo: "Casos ativos",
       valor: Number(metricas?.active_cases ?? 0),
       href: `/escritorio/${escritorioId}/casos`,
+      icone: "casos",
     },
     {
       rotulo: "Pessoas na equipe",
       valor: pessoasNaEquipe,
       href: `/escritorio/${escritorioId}/equipe`,
+      icone: "perfil",
     },
   ];
 
@@ -163,16 +175,21 @@ export default async function PaginaDoEscritorio({
             : `${pendencias} coisas esperando por uma pessoa.`}
       </p>
 
-      <div className="metricas">
+      {/* Uma FAIXA, não quatro cartões: os números são atalho de contexto,
+          não o assunto da tela. Ícone + número + rótulo numa linha só, e o
+          conjunto ocupa metade da altura anterior para o que pede ação
+          subir na dobra. */}
+      <div className="faixa-de-numeros">
         {numeros.map((numero) => (
           <Link
             key={numero.rotulo}
             href={numero.href}
-            className="metrica"
-            style={{ textDecoration: "none", color: "inherit" }}
+            className="numero-da-faixa"
+            title={`Abrir ${numero.rotulo.toLowerCase()}`}
           >
-            <div className="numero">{numero.valor}</div>
-            <div className="rotulo">{numero.rotulo}</div>
+            <Icone nome={numero.icone} className="icone" />
+            <span className="valor">{numero.valor}</span>
+            <span className="rotulo">{numero.rotulo}</span>
           </Link>
         ))}
       </div>
@@ -221,9 +238,19 @@ export default async function PaginaDoEscritorio({
                     <span className="pilula-nao-lidas">
                       {conversa.naoLidas}
                     </span>
+                    {/* HÁ QUANTO TEMPO espera, e não a que horas chegou: é
+                        a medida que decide quem atender primeiro. A hora
+                        exata está a um clique. */}
                     {conversa.ultimaMensagemEm !== null && (
-                      <span className="detalhe">
-                        {rotuloDeHorario(conversa.ultimaMensagemEm, agora)}
+                      <span
+                        className={
+                          esperandoHaMuito(conversa.ultimaMensagemEm, agora)
+                            ? "detalhe espera-longa"
+                            : "detalhe"
+                        }
+                        title={rotuloDeHorario(conversa.ultimaMensagemEm, agora)}
+                      >
+                        {esperaDesde(conversa.ultimaMensagemEm, agora)}
                       </span>
                     )}
                   </span>
@@ -272,27 +299,48 @@ export default async function PaginaDoEscritorio({
 
           {passos.length > 0 && (
             <>
-              <h2 className="secao" style={{ marginTop: pendencias > 0 ? undefined : 0 }}>
-                Para o cliente achar o escritório
-                <span className="detalhe" style={{ fontWeight: 600 }}>
-                  {" "}
-                  {progresso.feitos} de {progresso.total}
-                </span>
-              </h2>
-              <div className="lista-empilhada">
+              {/* PERFIL PÚBLICO como progresso: um cabeçalho que diz quanto
+                  falta e por quê importa, e os passos como linhas compactas,
+                  não cartões altos. A pessoa vê de uma vez o que está
+                  incompleto, o impacto, e onde clicar. */}
+              <div
+                className="cabecalho-de-progresso"
+                style={{ marginTop: pendencias > 0 ? undefined : 0 }}
+              >
+                <div>
+                  <h2 className="secao" style={{ margin: 0 }}>
+                    Perfil público
+                  </h2>
+                  <p className="detalhe" style={{ margin: "2px 0 0" }}>
+                    O que o cliente vê na busca.{" "}
+                    {passos.length === 1
+                      ? "Falta 1 item."
+                      : `Faltam ${passos.length} itens.`}
+                  </p>
+                </div>
+                <div className="medidor" aria-label={`${progresso.feitos} de ${progresso.total} concluídos`}>
+                  <span className="medidor-texto">
+                    {progresso.feitos} de {progresso.total}
+                  </span>
+                  <span className="medidor-trilho">
+                    <span
+                      className="medidor-cheio"
+                      style={{
+                        width: `${Math.round((progresso.feitos / progresso.total) * 100)}%`,
+                      }}
+                    />
+                  </span>
+                </div>
+              </div>
+              <div className="lista-de-passos">
                 {passos.map((passo) => (
-                  <Link
-                    key={passo.chave}
-                    href={passo.href}
-                    className="cartao-de-lista explicativo"
-                  >
+                  <Link key={passo.chave} href={passo.href} className="passo">
+                    <span className="marca-do-passo" aria-hidden />
                     <span className="conteudo">
                       <span className="titulo">{passo.titulo}</span>
-                      <p className="linha-2">{passo.porque}</p>
+                      <span className="porque">{passo.porque}</span>
                     </span>
-                    <span className="seta" aria-hidden>
-                      ›
-                    </span>
+                    <Icone nome="seta-direita" tamanho={16} className="seta" />
                   </Link>
                 ))}
               </div>
@@ -319,7 +367,13 @@ export default async function PaginaDoEscritorio({
                 Ver
               </Link>
             </div>
-            {assinatura === null ? (
+            {/* Membro comum não lê a linha (RLS); "sem plano" para ele
+                seria mentira. Diz de quem é a gestão e segue. */}
+            {!ehGestor(escritorio) ? (
+              <p className="detalhe" style={{ marginTop: 6 }}>
+                Gerenciada pelos sócios e admins.
+              </p>
+            ) : assinatura === null ? (
               <p className="detalhe" style={{ marginTop: 6 }}>
                 Sem plano escolhido.
               </p>

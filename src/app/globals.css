@@ -593,18 +593,21 @@ button.discreto:hover {
 
 .cartao-de-lista {
   display: flex;
-  gap: 14px;
+  gap: var(--s-3);
   align-items: flex-start;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: var(--radius-sm);
+  padding: var(--s-3) var(--s-4);
   text-decoration: none;
   color: var(--text);
 }
 
+/* Hover: a borda ganha cor E o fundo levanta um tom. Só a borda mudava, e
+   num cartão claro sobre fundo claro isso passava batido. */
 a.cartao-de-lista:hover {
   border-color: var(--gold-soft);
+  background: var(--surface-2);
 }
 
 .avatar {
@@ -634,7 +637,8 @@ a.cartao-de-lista:hover {
 }
 
 .cartao-de-lista .titulo {
-  font-weight: 800;
+  font-weight: 700;
+  font-size: var(--t-base);
   margin: 0 0 2px;
   display: flex;
   gap: 8px;
@@ -644,11 +648,18 @@ a.cartao-de-lista:hover {
 
 .cartao-de-lista .linha-2 {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--t-sm);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Espera acima de 24 h: o texto ganha o tom de aviso. Não vermelho: quem
+   trabalha não precisa de alarme, precisa de ordem. */
+.espera-longa {
+  color: var(--aviso);
+  font-weight: 700;
 }
 
 /* Uma linha só é o certo para PRÉVIA (última mensagem, cliente do caso): o
@@ -675,39 +686,178 @@ a.cartao-de-lista:hover {
   gap: 12px;
 }
 
-/* ---- Métricas da visão geral ---- */
-
-.metricas {
+/* ---- A faixa de números da visão geral ------------------------------------
+   Quatro atalhos numa linha só. Não são o assunto da tela (o assunto é o que
+   pede ação), são contexto: leem-se de relance e levam para a seção. Metade
+   da altura dos cartões que existiam, e o que precisa de você sobe na
+   dobra. */
+.faixa-de-numeros {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
 @media (min-width: 720px) {
-  .metricas {
-    grid-template-columns: repeat(4, 1fr);
+  .faixa-de-numeros {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-.metrica {
+.numero-da-faixa {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.numero-da-faixa:last-child {
+  border-right: 0;
+}
+
+@media (max-width: 719px) {
+  .numero-da-faixa:nth-child(2) {
+    border-right: 0;
+  }
+  .numero-da-faixa:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.numero-da-faixa:hover {
+  background: var(--surface-2);
+}
+
+.numero-da-faixa .icone {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.numero-da-faixa .valor {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.4ch;
+}
+
+.numero-da-faixa .rotulo {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-tight);
+  min-width: 0;
+}
+
+/* ---- Perfil público como progresso ------------------------------------------ */
+.cabecalho-de-progresso {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin: var(--s-6) 0 var(--s-3);
+}
+
+.medidor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: none;
+  min-width: 140px;
+}
+
+.medidor-texto {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.medidor-trilho {
+  width: 140px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.medidor-cheio {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: var(--radius-pill);
+  transition: width var(--mov-normal) var(--mov-ease);
+}
+
+.lista-de-passos {
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.metrica:hover {
-  border-color: var(--gold-soft);
+.passo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
 }
 
-.metrica .numero {
-  font-size: 26px;
-  font-weight: 800;
+.passo:last-child {
+  border-bottom: 0;
 }
 
-.metrica .rotulo {
+.passo:hover {
+  background: var(--surface-2);
+}
+
+/* O marcador vazio diz "falta" sem dizer "erro": um anel na cor da borda,
+   que o hover deixa dourado. */
+.marca-do-passo {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.passo:hover .marca-do-passo {
+  border-color: var(--gold);
+}
+
+.passo .conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.passo .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.passo .porque {
+  font-size: var(--t-sm);
   color: var(--text-2);
-  font-size: 13px;
+  line-height: var(--lh-tight);
+}
+
+.passo .seta {
+  flex: none;
+  color: var(--text-2);
 }
 
 /* ---- Visão geral do escritório ----
