@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PainelDeMensagens } from "@/components/paineis";
+import { ResumoDaCaixa } from "@/components/resumo-da-caixa";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { conversaParaTela } from "@/lib/busca/mapeia";
 import { conversaDaLinha } from "@/lib/dominio/conversas";
@@ -29,8 +30,11 @@ export default async function MensagensDoEscritorio({
   );
 
   const agora = new Date();
-  const conversas = ((data as unknown[]) ?? []).map((linha) =>
-    conversaParaTela(conversaDaLinha(linha as Record<string, unknown>), agora),
+  const conversasDoDominio = ((data as unknown[]) ?? []).map((linha) =>
+    conversaDaLinha(linha as Record<string, unknown>),
+  );
+  const conversas = conversasDoDominio.map((conversa) =>
+    conversaParaTela(conversa, agora),
   );
 
   return (
@@ -72,12 +76,12 @@ export default async function MensagensDoEscritorio({
         </nav>
       }
     >
-      <div className="painel-vazio">
-        <p>
-          Escolha uma conversa ao lado. Ela abre aqui do lado, com a lista
-          sempre à mão.
-        </p>
-      </div>
+      <ResumoDaCaixa
+        conversas={conversasDoDominio}
+        baseHref={`/escritorio/${escritorioId}/conversas`}
+        hrefSufixo={segmentoEquipe ? "?aba=equipe" : ""}
+        agora={agora}
+      />
     </PainelDeMensagens>
   );
 }

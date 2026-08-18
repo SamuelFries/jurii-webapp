@@ -2137,11 +2137,257 @@ body:has(.area-de-trabalho) footer.rodape {
 
 .painel-vazio {
   height: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   color: var(--text-2);
   text-align: center;
-  padding: 32px;
+  padding: var(--s-8);
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.painel-vazio p {
+  margin: 0;
+  font-size: var(--t-base);
+}
+
+.painel-vazio .titulo-do-vazio {
+  color: var(--text);
+  font-weight: 700;
+  font-size: var(--t-md);
+}
+
+.icone-do-vazio {
+  color: var(--text-2);
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.icone-do-vazio.ok {
+  color: var(--sucesso);
+  opacity: 1;
+}
+
+/* ---- Resumo operacional do painel direito ---------------------------------
+   Mensagens sem conversa aberta e Casos sem caso aberto mostram a fila de
+   quem espera e a carteira em uma olhada, no lugar da frase num vazio.
+   Denso e escaneável: é o que a pessoa olha entre uma conversa e outra. */
+.resumo-da-caixa {
+  padding: var(--s-6) var(--s-8);
+  max-width: 720px;
+}
+
+.cabecalho-do-resumo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-4);
+}
+
+.titulo-do-resumo {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitulo-do-resumo {
+  margin: var(--s-5) 0 var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.fila-de-espera {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.item-da-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.fila-de-espera li:last-child .item-da-fila {
+  border-bottom: 0;
+}
+
+.item-da-fila:hover {
+  background: var(--surface-2);
+}
+
+.item-da-fila .conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item-da-fila .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-da-fila .previa {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-da-fila .sinais {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: var(--t-sm);
+}
+
+.avatar.pequeno {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 9px;
+  font-size: var(--t-sm);
+}
+
+.blocos-do-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.blocos-do-resumo .bloco {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blocos-do-resumo .bloco.atencao {
+  border-color: var(--aviso-borda);
+  background: var(--aviso-fundo);
+}
+
+.blocos-do-resumo .valor {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.blocos-do-resumo .bloco.atencao .valor {
+  color: var(--aviso);
+}
+
+.blocos-do-resumo .rotulo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+}
+
+.carga-por-pessoa {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.carga-por-pessoa li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--t-sm);
+}
+
+.carga-por-pessoa .nome {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.carga-por-pessoa .barra {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.carga-por-pessoa .cheio {
+  display: block;
+  height: 100%;
+  /* Dourado, e não navy: no escuro o navy some sobre a superfície navy. O
+     accent é a única cor que lê nos dois temas por construção. */
+  background: var(--gold);
+  opacity: 0.85;
+}
+
+.carga-por-pessoa .quantos {
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* ---- Item de caso reorganizado ------------------------------------------- */
+.cartao-de-lista .titulo .area {
+  font-weight: 500;
+  color: var(--text-2);
+  font-size: var(--t-sm);
+}
+
+.cartao-de-lista .linha-meta {
+  margin: 4px 0 0;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cartao-de-lista .linha-meta .separador {
+  opacity: 0.5;
+}
+
+.cartao-de-lista .linha-meta .sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cartao-de-lista .linha-meta .proximo-passo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Em tela estreita o par vira um painel só: com detalhe aberto, a lista

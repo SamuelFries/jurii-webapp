@@ -2,6 +2,7 @@ import { CasosDoEscritorioComBusca } from "@/components/listas/casos-do-escritor
 import { PainelDeCasos } from "@/components/paineis";
 import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 import { casoDoEscritorioParaTela } from "@/lib/busca/mapeia";
+import { ResumoDaCarteira } from "@/components/resumo-da-carteira";
 import { casoDoEscritorioDaLinha } from "@/lib/dominio/casos";
 
 export const dynamic = "force-dynamic";
@@ -35,12 +36,10 @@ export default async function CasosDoEscritorio({
         />
       }
     >
-      <div className="painel-vazio">
-        <p>
-          Escolha um caso ao lado para ver a linha do tempo, atribuir o
-          responsável e cuidar do processo.
-        </p>
-      </div>
+      <ResumoDaCarteira
+        casos={casos}
+        baseHref={`/escritorio/${escritorio.id}/casos`}
+      />
     </PainelDeCasos>
   );
 }
