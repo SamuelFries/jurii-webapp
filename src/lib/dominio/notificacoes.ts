@@ -94,3 +94,55 @@ export function destinoDaNotificacao(
   }
   return null;
 }
+
+/**
+ * A hierarquia visual de uma notificação, derivada do TIPO.
+ *
+ * Quatro níveis, e nenhum deles é "alerta vermelho": quem trabalha precisa
+ * de ordem, não de susto. Ação necessária é o que espera um clique da
+ * pessoa (aceitar, decidir); urgente é o que espera alguém do escritório;
+ * atualização é o andamento das coisas; informação é o resto. A tela dá a
+ * cada nível uma cor de fio e um ícone, e só isso.
+ *
+ * Tipo desconhecido cai em "informacao": nível novo no banco não pode virar
+ * destaque por descuido, pela mesma lógica do webhook.
+ */
+export type NivelDeNotificacao =
+  | "acao"
+  | "urgente"
+  | "atualizacao"
+  | "informacao";
+
+export function nivelDaNotificacao(tipo: string): NivelDeNotificacao {
+  switch (tipo) {
+    case "team_invite":
+    case "firm_join_requested":
+    case "case_request":
+      return "acao";
+    case "case_request_response":
+    case "firm_case_started":
+    case "lawyer_recommended":
+      return "urgente";
+    case "case_movement":
+    case "case_update":
+    case "case_closed":
+    case "appointment_reminder":
+    case "firm_join_decided":
+      return "atualizacao";
+    default:
+      return "informacao";
+  }
+}
+
+export function rotuloDoNivel(nivel: NivelDeNotificacao): string {
+  switch (nivel) {
+    case "acao":
+      return "Ação necessária";
+    case "urgente":
+      return "Precisa de atenção";
+    case "atualizacao":
+      return "Atualização";
+    case "informacao":
+      return "Informação";
+  }
+}

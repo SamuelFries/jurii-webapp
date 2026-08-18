@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { Icone } from "./icone";
+import { esperaDesde } from "@/lib/dominio/conversas";
+
 import {
   abrirNotificacao,
   apagarNotificacao,
@@ -12,6 +15,8 @@ import {
   destinoDaNotificacao,
   notificacaoDaLinha,
   type EscopoDeNotificacao,
+  nivelDaNotificacao,
+  rotuloDoNivel,
 } from "@/lib/dominio/notificacoes";
 import { rotuloDeHorario } from "@/lib/dominio/conversas";
 
@@ -81,28 +86,55 @@ export async function ListaDeNotificacoes({
             const destino = destinoDaNotificacao(notificacao, fluxo, lawFirmId);
             const convite =
               fluxo === "advogado" && conviteDeEquipePendente(notificacao);
+            const nivel = nivelDaNotificacao(notificacao.tipo);
             return (
               <div
                 key={notificacao.id}
-                className="cartao-de-lista"
-                style={notificacao.lida ? { opacity: 0.75 } : undefined}
+                className={`cartao-de-lista notificacao nivel-${nivel}${
+                  notificacao.lida ? " lida" : ""
+                }`}
               >
+                {/* O nível vira um fio à esquerda e um ícone: hierarquia
+                    sem alarme. Não lida = fio cheio e ponto dourado; lida =
+                    tudo no tom neutro. */}
+                <span className="icone-do-nivel" aria-hidden>
+                  <Icone
+                    nome={
+                      nivel === "acao"
+                        ? "alerta"
+                        : nivel === "urgente"
+                          ? "relogio"
+                          : nivel === "atualizacao"
+                            ? "casos"
+                            : "info"
+                    }
+                    tamanho={18}
+                  />
+                </span>
                 <span className="conteudo">
-                  <span className="titulo">
-                    {notificacao.titulo}
-                    {!notificacao.lida && (
-                      <span className="selo dourado">Nova</span>
-                    )}
+                  <span className="cabecalho-da-notificacao">
+                    <span className="titulo">
+                      {notificacao.titulo}
+                      {!notificacao.lida && (
+                        <span className="ponto-nao-lida" aria-label="Não lida" />
+                      )}
+                    </span>
+                    <span className="meta">
+                      <span className="nivel">{rotuloDoNivel(nivel)}</span>
+                      {notificacao.criadaEm !== null && (
+                        <>
+                          <span aria-hidden> · </span>
+                          <span title={rotuloDeHorario(notificacao.criadaEm, agora)}>
+                            {esperaDesde(notificacao.criadaEm, agora)}
+                          </span>
+                        </>
+                      )}
+                    </span>
                   </span>
                   {notificacao.corpo !== "" && (
                     <p className="linha-2">{notificacao.corpo}</p>
                   )}
-                  {notificacao.criadaEm !== null && (
-                    <p className="detalhe">
-                      {rotuloDeHorario(notificacao.criadaEm, agora)}
-                    </p>
-                  )}
-                  <span className="acoes-em-linha">
+                  <span className="acoes-em-linha acoes-discretas">
                     {convite && (
                       <>
                         <form action={responderConviteDeEquipe}>
@@ -113,7 +145,9 @@ export async function ListaDeNotificacoes({
                           />
                           <input type="hidden" name="resposta" value="aceitar" />
                           <input type="hidden" name="voltar" value={voltar} />
-                          <button type="submit">Aceitar convite</button>
+                          <button type="submit" className="compacto">
+                            Aceitar convite
+                          </button>
                         </form>
                         <form action={responderConviteDeEquipe}>
                           <input
@@ -123,7 +157,7 @@ export async function ListaDeNotificacoes({
                           />
                           <input type="hidden" name="resposta" value="recusar" />
                           <input type="hidden" name="voltar" value={voltar} />
-                          <button type="submit" className="secundario">
+                          <button type="submit" className="secundario compacto">
                             Recusar
                           </button>
                         </form>
@@ -133,7 +167,7 @@ export async function ListaDeNotificacoes({
                       <form action={abrirNotificacao}>
                         <input type="hidden" name="id" value={notificacao.id} />
                         <input type="hidden" name="destino" value={destino} />
-                        <button type="submit" className="secundario">
+                        <button type="submit" className="secundario compacto">
                           Abrir
                         </button>
                       </form>
@@ -142,7 +176,7 @@ export async function ListaDeNotificacoes({
                       <form action={marcarComoLida}>
                         <input type="hidden" name="id" value={notificacao.id} />
                         <input type="hidden" name="voltar" value={voltar} />
-                        <button type="submit" className="secundario">
+                        <button type="submit" className="discreto compacto">
                           Marcar como lida
                         </button>
                       </form>
@@ -150,7 +184,7 @@ export async function ListaDeNotificacoes({
                     <form action={apagarNotificacao}>
                       <input type="hidden" name="id" value={notificacao.id} />
                       <input type="hidden" name="voltar" value={voltar} />
-                      <button type="submit" className="secundario">
+                      <button type="submit" className="discreto compacto">
                         Apagar
                       </button>
                     </form>

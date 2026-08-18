@@ -11,6 +11,7 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 import { NavDaLateral } from "./nav-da-lateral";
 import { Icone, type NomeDoIcone } from "./icone";
+import { Toasts } from "./toasts";
 import { SeletorDeEscritorio } from "./seletor-de-escritorio";
 
 export type { FluxoDeTrabalho };
@@ -177,6 +178,7 @@ export async function CascaDeTrabalho({
       </aside>
 
       <div className="conteudo-de-trabalho">{children}</div>
+      <Toasts />
     </div>
   );
 }

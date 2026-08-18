@@ -3528,3 +3528,180 @@ button.compacto {
 .pedido-de-entrada .acoes-em-linha button {
   width: auto;
 }
+
+
+/* ---- Notificações com hierarquia ------------------------------------------- */
+.cartao-de-lista.notificacao {
+  align-items: flex-start;
+  border-left: 3px solid var(--border);
+}
+
+.cartao-de-lista.notificacao.nivel-acao {
+  border-left-color: var(--gold);
+}
+
+.cartao-de-lista.notificacao.nivel-urgente {
+  border-left-color: var(--aviso);
+}
+
+.cartao-de-lista.notificacao.nivel-atualizacao {
+  border-left-color: var(--navy-2);
+}
+
+/* Lida: some o fio de nível e baixa o tom. Sem opacity no cartão inteiro,
+   que deixava os botões cinza e ilegíveis. */
+.cartao-de-lista.notificacao.lida {
+  border-left-color: var(--border);
+}
+
+.cartao-de-lista.notificacao.lida .titulo,
+.cartao-de-lista.notificacao.lida .icone-do-nivel {
+  color: var(--text-2);
+}
+
+.icone-do-nivel {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.nivel-acao .icone-do-nivel {
+  color: var(--accent-ink);
+  background: var(--aviso-fundo);
+}
+
+.nivel-urgente .icone-do-nivel {
+  color: var(--aviso);
+  background: var(--aviso-fundo);
+}
+
+.cabecalho-da-notificacao {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.cabecalho-da-notificacao .meta {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-da-notificacao .nivel {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ponto-nao-lida {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-left: 2px;
+}
+
+.acoes-discretas {
+  margin-top: var(--s-2);
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.acoes-discretas form {
+  flex: none;
+}
+
+/* Botão compacto: para linhas de ação dentro de item, não de largura cheia. */
+button.compacto,
+.botao.compacto {
+  width: auto;
+  padding: 6px 12px;
+  font-size: var(--t-sm);
+  min-height: 30px;
+}
+
+button.discreto.compacto {
+  padding: 6px 8px;
+}
+
+/* ---- Toasts -------------------------------------------------------------------
+   O feedback de ação, no canto inferior direito, empilhado. Sucesso some em
+   4 s; erro fica até fechar. Entra com um deslize curto, sai com um fade
+   mais curto ainda, e nada disso acontece para quem pediu menos movimento. */
+.pilha-de-toasts {
+  position: fixed;
+  right: var(--s-5);
+  bottom: var(--s-5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: min(420px, calc(100vw - 40px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  animation: toast-entra var(--mov-normal) var(--mov-ease);
+}
+
+.toast-ok {
+  border-left: 3px solid var(--sucesso);
+}
+
+.toast-erro {
+  border-left: 3px solid var(--danger);
+}
+
+.toast.saindo {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--mov-normal) var(--mov-ease),
+    transform var(--mov-normal) var(--mov-ease);
+}
+
+.fechar-toast {
+  all: unset;
+  cursor: pointer;
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.fechar-toast:hover {
+  color: var(--text);
+}
+
+@keyframes toast-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
