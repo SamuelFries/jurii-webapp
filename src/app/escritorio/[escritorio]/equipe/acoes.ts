@@ -220,3 +220,53 @@ export async function revogarLinkDeConvite(dados: FormData): Promise<void> {
   }
   redirect(`/escritorio/${vinculo.id}/equipe?ok=link-cancelado`);
 }
+
+/**
+ * Aprovar ou recusar um pedido de entrada.
+ *
+ * A CORRIDA MORRE NO BANCO: decidir_entrada_no_escritorio tranca a linha
+ * (FOR UPDATE), então dois gestores clicando ao mesmo tempo dão uma decisão
+ * só, e o segundo ouve QUEM decidiu. A tela nunca tenta adivinhar isso.
+ *
+ * Recusar não tem campo de motivo de propósito: justificativa escrita no
+ * calor do momento vira mensagem que a gente entrega sem moderação nenhuma.
+ */
+export async function decidirPedidoDeEntrada(dados: FormData): Promise<void> {
+  const contexto = await contextoLogado();
+  const vinculo = vinculoDaAcao(
+    contexto,
+    String(dados.get("escritorio") ?? ""),
+  );
+  if (vinculo === null) {
+    redirect(destinoInicial(contexto.fluxos));
+  }
+
+  const aprovar = String(dados.get("decisao") ?? "") === "aprovar";
+
+  const supabase = await clienteDoServidor();
+  const { error } = await supabase.rpc("decidir_entrada_no_escritorio", {
+    request_id_value: String(dados.get("pedido") ?? ""),
+    aprovar,
+  });
+
+  if (error) {
+    const jaDecidido = error.message.match(/already decided by (.+)$/);
+    const mensagem =
+      jaDecidido !== null
+        ? `${jaDecidido[1]} já decidiu este pedido.`
+        : error.message.includes("Subscription is not active")
+          ? ASSINATURA_PARADA
+          : error.message.includes("expired")
+            ? "Este pedido venceu. Peça à pessoa para pedir de novo com um link novo."
+            : error.message.includes("Already a member")
+              ? "Esta pessoa já faz parte da equipe."
+              : "Não foi possível decidir agora. Tente de novo.";
+    redirect(
+      `/escritorio/${vinculo.id}/equipe?erro=${encodeURIComponent(mensagem)}`,
+    );
+  }
+
+  redirect(
+    `/escritorio/${vinculo.id}/equipe?ok=${aprovar ? "entrada-aprovada" : "entrada-recusada"}`,
+  );
+}

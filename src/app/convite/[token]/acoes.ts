@@ -5,21 +5,24 @@ import { redirect } from "next/navigation";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 
 /**
- * Aceitar o convite de equipe.
+ * Pedir entrada na equipe.
  *
- * QUEM DECIDE É O BANCO: uso único (FOR UPDATE na linha do link), expiração,
- * revogação, papel e o congelamento da assinatura moram em
- * aceitar_link_de_convite. Esta ação só traduz a recusa na língua de quem lê
- * e leva quem entrou para a casa nova.
+ * O LINK NÃO CONCEDE MAIS, ele PEDE. Quem clica não vira membro: nasce uma
+ * solicitação que um sócio ou admin aprova. O motivo é identidade — o link
+ * autoriza um PAPEL, e circula em WhatsApp; quem decide precisa ver QUEM
+ * apareceu, porque membro novo lê toda conversa com cliente da banca.
+ *
+ * Quem decide tudo é o banco (solicitar_entrada_por_link): consome o link,
+ * confere congelamento, vínculo existente e prazo. Aqui só se traduz a
+ * recusa.
  */
-export async function aceitarConvite(dados: FormData): Promise<void> {
+export async function pedirEntrada(dados: FormData): Promise<void> {
   const token = String(dados.get("token") ?? "");
   const supabase = await clienteDoServidor();
 
-  const { data: lawFirmId, error } = await supabase.rpc(
-    "aceitar_link_de_convite",
-    { token_value: token },
-  );
+  const { error } = await supabase.rpc("solicitar_entrada_por_link", {
+    token_value: token,
+  });
 
   if (error) {
     const mensagem = error.message.includes("already used")
@@ -32,11 +35,13 @@ export async function aceitarConvite(dados: FormData): Promise<void> {
             ? "Você já faz parte deste escritório."
             : error.message.includes("Subscription is not active")
               ? "A assinatura do escritório está pendente e a equipe não pode crescer agora. Avise quem te convidou."
-              : "Não foi possível aceitar o convite. Tente de novo.";
+              : "Não foi possível enviar o pedido. Tente de novo.";
     redirect(
       `/convite/${encodeURIComponent(token)}?erro=${encodeURIComponent(mensagem)}`,
     );
   }
 
-  redirect(`/escritorio/${String(lawFirmId)}`);
+  // Fica na própria página: ela passa a mostrar o estado de espera, porque a
+  // espiada reconhece quem consumiu o link.
+  redirect(`/convite/${encodeURIComponent(token)}`);
 }

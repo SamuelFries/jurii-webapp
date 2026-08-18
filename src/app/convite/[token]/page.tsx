@@ -3,7 +3,7 @@ import Link from "next/link";
 import { clienteDoServidor } from "@/lib/supabase/servidor";
 import { rotuloDoPapel, type PapelNoEscritorio } from "@/lib/fluxos";
 
-import { aceitarConvite } from "./acoes";
+import { pedirEntrada } from "./acoes";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +15,14 @@ export const dynamic = "force-dynamic";
  * ANTES de pedir qualquer coisa — ninguém cria conta às cegas para só então
  * descobrir o que era.
  *
- * Link morto (usado, vencido, cancelado) diz o que aconteceu e o caminho:
- * pedir outro para quem convidou. Nenhum estado termina em botão que não
- * leva a lugar nenhum.
+ * O LINK PEDE, NÃO CONCEDE: clicar cria uma solicitação que um sócio ou
+ * admin aprova. Quem chegou vê exatamente em que pé está, inclusive ao
+ * reabrir o link depois (a espiada reconhece quem o consumiu, senão a pessoa
+ * que aguarda leria "já foi usado" e concluiria que perdeu a vaga).
+ *
+ * Link morto (usado por OUTRA pessoa, vencido, cancelado) diz o que
+ * aconteceu e o caminho: pedir outro para quem convidou. Nenhum estado
+ * termina em botão que não leva a lugar nenhum.
  */
 export default async function PaginaDoConvite({
   params,
@@ -83,7 +88,7 @@ export default async function PaginaDoConvite({
                   className="botao"
                   href={`/entrar?depois=${encodeURIComponent(`/convite/${token}`)}`}
                 >
-                  Entrar para aceitar
+                  Entrar para pedir
                 </Link>
                 <p className="detalhe" style={{ marginTop: 10 }}>
                   Ainda não tem conta? O botão acima também leva ao cadastro,
@@ -91,11 +96,46 @@ export default async function PaginaDoConvite({
                 </p>
               </>
             ) : (
-              <form action={aceitarConvite}>
-                <input type="hidden" name="token" value={token} />
-                <button type="submit">Aceitar convite</button>
-              </form>
+              <>
+                <form action={pedirEntrada}>
+                  <input type="hidden" name="token" value={token} />
+                  <button type="submit">Pedir para entrar</button>
+                </form>
+                {/* Dito ANTES do clique: quem espera aprovação precisa saber
+                    que vai esperar, senão lê a tela seguinte como falha. */}
+                <p className="detalhe" style={{ marginTop: 10 }}>
+                  Um sócio ou admin do escritório confirma seu pedido. Você é
+                  avisado assim que decidirem.
+                </p>
+              </>
             )}
+          </>
+        ) : situacao.startsWith("meu_pedido") ? (
+          <>
+            <span className="avatar-do-convite" aria-hidden>
+              {convite?.firm_initials ?? "E"}
+            </span>
+            <h1>
+              {situacao === "meu_pedido_pendente"
+                ? "Pedido enviado"
+                : situacao === "meu_pedido_aprovado"
+                  ? "Você entrou na equipe"
+                  : situacao === "meu_pedido_recusado"
+                    ? "Pedido não aprovado"
+                    : "Pedido expirado"}
+            </h1>
+            <p className="subtitulo">
+              {situacao === "meu_pedido_pendente"
+                ? `Um sócio ou admin de ${convite?.firm_name ?? "o escritório"} vai confirmar. Você é avisado assim que decidirem, e não precisa ficar nesta página.`
+                : situacao === "meu_pedido_aprovado"
+                  ? `Você já faz parte de ${convite?.firm_name ?? "o escritório"}.`
+                  : situacao === "meu_pedido_recusado"
+                    ? "O escritório não aprovou este pedido. Se foi engano, fale com quem te convidou."
+                    : "Ninguém decidiu a tempo e o pedido venceu. Peça um link novo para quem te convidou."}
+            </p>
+            <Link className="botao secundario" href="/">
+              Ir para o início
+            </Link>
           </>
         ) : (
           <>

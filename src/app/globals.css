@@ -2881,3 +2881,42 @@ button.compacto {
   padding: 6px 12px;
   font-size: 13px;
 }
+
+/* ---- Pedido de entrada na equipe ----
+ *
+ * Fica no topo da Equipe porque é a única coisa da tela que tem alguém
+ * esperando do outro lado. Nome grande, sinal de CPF ao lado, e as duas
+ * decisões na mesma linha. */
+.pedido-de-entrada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.pedido-de-entrada > div:first-child {
+  min-width: 0;
+}
+
+.pedido-de-entrada strong {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--text);
+}
+
+.pedido-de-entrada .detalhe {
+  display: block;
+  margin-top: 2px;
+}
+
+.pedido-de-entrada .acoes-em-linha {
+  flex: none;
+  gap: 8px;
+}
+
+.pedido-de-entrada .acoes-em-linha button {
+  width: auto;
+}

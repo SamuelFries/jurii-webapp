@@ -4,6 +4,7 @@ import { contextoLogado, exigeEscritorio } from "@/lib/contexto";
 
 import {
   convidarAdvogado,
+  decidirPedidoDeEntrada,
   gerarLinkDeConvite,
   revogarLinkDeConvite,
   salvarPapeis,
@@ -89,6 +90,24 @@ export default async function PaginaDaEquipe({
     criado_por: string;
   }[];
 
+  // OS PEDIDOS DE ENTRADA. A decisão mora AQUI, e não na notificação: o sino
+  // avisa que aconteceu, mas item de sino pode ser marcado como lido e aí o
+  // pedido ficaria órfão, sem nenhuma outra superfície. Equipe é onde a
+  // equipe se administra.
+  const { data: pedidosBrutos } = podeConvidar
+    ? await contexto.supabase.rpc("listar_pedidos_de_entrada", {
+        law_firm_id_value: escritorio.id,
+      })
+    : { data: null };
+  const pedidos = ((pedidosBrutos as unknown[]) ?? []) as {
+    id: string;
+    requester_name: string;
+    requester_email: string;
+    cpf_confirmado: boolean;
+    member_role: string;
+    expires_at: string;
+  }[];
+
   let linkGerado: string | null = null;
   if (link !== undefined && link !== "") {
     const cabecalhos = await headers();
@@ -113,6 +132,17 @@ export default async function PaginaDaEquipe({
         </p>
       )}
       {ok === "papeis" && <p className="aviso-bom">Papéis atualizados.</p>}
+      {ok === "entrada-aprovada" && (
+        <p className="aviso-bom">
+          Pedido aprovado. A pessoa já faz parte da equipe e foi avisada.
+        </p>
+      )}
+      {ok === "entrada-recusada" && (
+        <p className="aviso-bom">Pedido recusado. A pessoa foi avisada.</p>
+      )}
+      {ok === "link-cancelado" && (
+        <p className="aviso-bom">Link cancelado. Ele não entra mais ninguém.</p>
+      )}
 
       {/* A EQUIPE QUE JÁ EXISTE NÃO MUDA. O aviso fala de crescer, e só, para
           ninguém ler "assinatura pendente" como "perdi o escritório". Quem
@@ -129,6 +159,62 @@ export default async function PaginaDaEquipe({
           <Link className="botao" href={`/escritorio/${escritorio.id}/assinatura`}>
             Regularizar pagamento
           </Link>
+        </div>
+      )}
+
+      {/* OS PEDIDOS primeiro: é a única coisa da tela que espera por uma
+          pessoa, e alguém do outro lado está parado aguardando. */}
+      {podeConvidar && pedidos.length > 0 && (
+        <div className="cartao" style={{ marginBottom: 16 }}>
+          <span className="selo dourado">
+            {pedidos.length === 1
+              ? "1 pedido para entrar"
+              : `${pedidos.length} pedidos para entrar`}
+          </span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            Quem entra passa a ver as conversas com clientes do escritório.
+            Confirme que você reconhece a pessoa antes de aprovar.
+          </p>
+          {pedidos.map((pedido) => (
+            <div key={pedido.id} className="pedido-de-entrada">
+              <div>
+                <strong>{pedido.requester_name}</strong>
+                {/* O sinal mais forte que temos de que é quem diz ser. O
+                    número em si não é da conta do gestor: vai o fato. */}
+                {pedido.cpf_confirmado ? (
+                  <span className="selo" title="CPF confirmado na conta">
+                    CPF confirmado
+                  </span>
+                ) : (
+                  <span className="selo" title="Esta conta ainda não confirmou CPF">
+                    sem CPF
+                  </span>
+                )}
+                <span className="detalhe">
+                  {pedido.requester_email} · quer entrar como{" "}
+                  {pedido.member_role === "intern"
+                    ? "estagiário"
+                    : "secretária"}
+                </span>
+              </div>
+              <div className="acoes-em-linha">
+                <form action={decidirPedidoDeEntrada}>
+                  <input type="hidden" name="escritorio" value={escritorio.id} />
+                  <input type="hidden" name="pedido" value={pedido.id} />
+                  <input type="hidden" name="decisao" value="recusar" />
+                  <button type="submit" className="botao secundario">
+                    Recusar
+                  </button>
+                </form>
+                <form action={decidirPedidoDeEntrada}>
+                  <input type="hidden" name="escritorio" value={escritorio.id} />
+                  <input type="hidden" name="pedido" value={pedido.id} />
+                  <input type="hidden" name="decisao" value="aprovar" />
+                  <button type="submit">Aprovar</button>
+                </form>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -152,9 +238,9 @@ export default async function PaginaDaEquipe({
           <summary>Convidar por link (secretária ou estagiário)</summary>
           <div className="cartao" style={{ marginTop: 10, maxWidth: 480 }}>
             <p className="detalhe" style={{ marginTop: 0 }}>
-              Para quem não tem OAB. O link entra UMA pessoa, vale 7 dias, e
-              você escolhe o papel agora; promover depois é na própria
-              equipe.
+              Para quem não tem OAB. O link vale 7 dias e serve UMA vez: quem
+              clicar manda um pedido, e você aprova aqui depois de ver quem é.
+              Promover depois é na própria equipe.
             </p>
             <form action={gerarLinkDeConvite} className="acoes-em-linha">
               <input type="hidden" name="escritorio" value={escritorio.id} />
