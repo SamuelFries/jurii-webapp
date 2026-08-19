@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["SUBSTITUA_PELO_TEAM_ID.br.com.jurii.app"],
+        "components": [
+          { "/": "/convite/*", "comment": "Convite de equipe por link" }
+        ]
+      }
+    ]
+  }
+}

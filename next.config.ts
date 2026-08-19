@@ -43,6 +43,25 @@ const csp = [
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      // Os arquivos que o Android e o iOS leem para decidir se o link
+      // https://app.jurii.com.br/convite/<token> abre o app. O da Apple não
+      // tem extensão e o Next o serviria como octet-stream; a Apple exige
+      // application/json. Cache curto: trocar o SHA-256/Team ID tem que
+      // valer sem esperar um dia de CDN.
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=300" },
+        ],
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=300" },
+        ],
+      },
       {
         source: "/:path*",
         headers: [
