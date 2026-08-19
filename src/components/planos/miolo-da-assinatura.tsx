@@ -21,11 +21,49 @@ import {
 export async function MioloDaAssinatura({
   supabase,
   escritorioId,
+  gestor = true,
 }: {
   supabase: SupabaseClient;
   /** Nulo antes de o escritório existir. */
   escritorioId: string | null;
+  /**
+   * Se quem olha ADMINISTRA a assinatura (sócio/admin, ou o contratante sem
+   * banca ainda). Membro comum não enxerga a linha pela RLS, e a tela
+   * concluía "sem plano" e oferecia "Escolher um plano" a quem não pode
+   * escolher nada: a assinatura é do escritório, e para a secretária ela é
+   * gerenciada por outra pessoa. Sem esta distinção, a ausência de PERMISSÃO
+   * de leitura virava ausência de PLANO na tela.
+   */
+  gestor?: boolean;
 }) {
+  // MEMBRO: não lê a linha, então não decide por ela. O que ele pode saber
+  // é o estado público da banca (pode crescer = assinatura em dia), pelo
+  // oráculo que já existe para as telas, sem expor valor, plano nem dono.
+  if (!gestor && escritorioId !== null) {
+    const { data: podeCrescer } = await supabase.rpc("banca_pode_crescer", {
+      law_firm_id_value: escritorioId,
+    });
+    const emDia = podeCrescer !== false;
+    return (
+      <>
+        <h1>Assinatura</h1>
+        <p className="subtitulo">
+          O plano do escritório é gerenciado por quem o administra.
+        </p>
+        <div className="cartao">
+          <span className={emDia ? "selo dourado" : "selo"}>
+            {emDia ? "Em dia" : "Pendente"}
+          </span>
+          <p className="detalhe" style={{ marginTop: 10 }}>
+            {emDia
+              ? "A assinatura do escritório está ativa. Plano, pagamento e vencimento ficam com os sócios e admins."
+              : "A assinatura do escritório está pendente e a equipe não pode crescer até o pagamento entrar. Quem regulariza é um sócio ou admin."}
+          </p>
+        </div>
+      </>
+    );
+  }
+
   let consulta = supabase
     .from("law_firm_license_subscriptions")
     .select("*, law_firm_license_plans(*)")

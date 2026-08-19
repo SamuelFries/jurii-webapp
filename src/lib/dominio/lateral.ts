@@ -1,6 +1,11 @@
+import type { NomeDoIcone } from "@/components/icone";
+
 export interface ItemDaLateral {
   rotulo: string;
   href: string;
+  /** O ícone do item, resolvido pelo componente. É dado de domínio porque a
+   *  lista é: o mesmo item tem o mesmo desenho em qualquer lateral. */
+  icone?: NomeDoIcone;
   /** Prefixos de rota que também acendem este item. */
   tambem?: string[];
   /**
@@ -48,14 +53,19 @@ export const lateralDoAdvogado: ItemDaLateral[] = [
   {
     rotulo: "Mensagens",
     href: "/advogado",
+    icone: "mensagens",
     exata: true,
     tambem: ["/advogado/conversas"],
   },
-  { rotulo: "Casos", href: "/advogado/casos" },
-  { rotulo: "Agenda", href: "/advogado/agenda" },
-  { rotulo: "Alcance", href: "/advogado/alcance" },
-  { rotulo: "Meu perfil", href: "/advogado/perfil" },
-  { rotulo: "Notificações", href: "/advogado/notificacoes" },
+  { rotulo: "Casos", href: "/advogado/casos", icone: "casos" },
+  { rotulo: "Agenda", href: "/advogado/agenda", icone: "agenda" },
+  { rotulo: "Alcance", href: "/advogado/alcance", icone: "alcance" },
+  { rotulo: "Meu perfil", href: "/advogado/perfil", icone: "perfil" },
+  {
+    rotulo: "Notificações",
+    href: "/advogado/notificacoes",
+    icone: "notificacoes",
+  },
 ];
 
 /**
@@ -66,20 +76,26 @@ export const lateralDoAdvogado: ItemDaLateral[] = [
 export function lateralDoEscritorio(escritorioId: string): ItemDaLateral[] {
   const raiz = `/escritorio/${escritorioId}`;
   return [
-    { rotulo: "Visão geral", href: raiz, exata: true },
+    { rotulo: "Visão geral", href: raiz, icone: "visao", exata: true },
     {
       rotulo: "Mensagens",
       href: `${raiz}/mensagens`,
+      icone: "mensagens",
       tambem: [`${raiz}/conversas`],
     },
-    { rotulo: "Casos", href: `${raiz}/casos` },
-    { rotulo: "Equipe", href: `${raiz}/equipe` },
-    { rotulo: "Alcance", href: `${raiz}/alcance` },
-    { rotulo: "Perfil", href: `${raiz}/perfil` },
-    { rotulo: "Notificações", href: `${raiz}/notificacoes` },
+    { rotulo: "Casos", href: `${raiz}/casos`, icone: "casos" },
+    { rotulo: "Equipe", href: `${raiz}/equipe`, icone: "equipe" },
+    { rotulo: "Alcance", href: `${raiz}/alcance`, icone: "alcance" },
+    { rotulo: "Perfil", href: `${raiz}/perfil`, icone: "perfil" },
+    {
+      rotulo: "Notificações",
+      href: `${raiz}/notificacoes`,
+      icone: "notificacoes",
+    },
     {
       rotulo: "Assinatura",
       href: `${raiz}/assinatura`,
+      icone: "assinatura",
       tambem: [`${raiz}/planos`],
     },
   ];
@@ -98,7 +114,7 @@ export const lateralDoFluxo: Record<FluxoDeTrabalho, ItemDaLateral[]> = {
 
 /** A lateral da equipe da Jurii. */
 export const lateralDaRevisao: ItemDaLateral[] = [
-  { rotulo: "Verificações", href: "/revisao", exata: true },
-  { rotulo: "Histórico", href: "/revisao/historico" },
-  { rotulo: "Denúncias", href: "/revisao/denuncias" },
+  { rotulo: "Verificações", href: "/revisao", icone: "verificacoes", exata: true },
+  { rotulo: "Histórico", href: "/revisao/historico", icone: "historico" },
+  { rotulo: "Denúncias", href: "/revisao/denuncias", icone: "denuncias" },
 ];

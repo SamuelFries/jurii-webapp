@@ -101,25 +101,47 @@ export function CasosDoEscritorioComBusca({
               }
               aria-current={caso.id === ativoId ? "page" : undefined}
             >
-              <span className="avatar" aria-hidden>
+              <span className="avatar pequeno" aria-hidden>
                 {caso.iniciaisDoCliente}
               </span>
               <span className="conteudo">
+                {/* O QUE IMPORTA PRIMEIRO. Cliente e área na primeira linha
+                    (é como o escritório fala do caso: "o trabalhista do
+                    João"); o título completo na segunda; e o RESPONSÁVEL
+                    numa linha própria, com o estado ao lado, para nunca
+                    mais ficar truncado no fim de outra frase. */}
                 <span className="titulo">
-                  {caso.titulo}
+                  {caso.cliente}
+                  <span className="area">{caso.area}</span>
                   {caso.urgente && (
                     <span className="selo dourado">Aguardando resposta</span>
                   )}
                 </span>
-                <p className="linha-2">
-                  {caso.cliente} · {caso.area}
-                </p>
-                <p className="linha-2">
-                  {caso.advogadoId === null ? "Sem advogado definido" : caso.advogado}
-                  {caso.proximoPasso !== "" ? ` · ${caso.proximoPasso}` : ""}
+                <p className="linha-2">{caso.titulo}</p>
+                <p className="linha-meta">
+                  <span
+                    className={
+                      caso.advogadoId === null ? "sem-responsavel" : undefined
+                    }
+                  >
+                    {caso.advogadoId === null
+                      ? "Sem responsável"
+                      : caso.advogado}
+                  </span>
+                  <span className="separador" aria-hidden>
+                    ·
+                  </span>
+                  <span>{caso.statusRotulo}</span>
+                  {caso.proximoPasso !== "" && (
+                    <>
+                      <span className="separador" aria-hidden>
+                        ·
+                      </span>
+                      <span className="proximo-passo">{caso.proximoPasso}</span>
+                    </>
+                  )}
                 </p>
               </span>
-              <span className="selo">{caso.statusRotulo}</span>
             </Link>
           ))}
         </div>

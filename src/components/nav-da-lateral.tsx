@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { itemAceso, type ItemDaLateral } from "@/lib/dominio/lateral";
 
+import { Icone } from "./icone";
 import { SinoVivo } from "./sino-vivo";
 
 /**
@@ -42,7 +43,12 @@ export function NavDaLateral({
           className={itemAceso(item, caminho) ? "ativa" : ""}
           aria-current={itemAceso(item, caminho) ? "page" : undefined}
         >
-          {item.rotulo}
+          {/* O ícone é a âncora do olho na lateral: quem navega o dia todo
+              acha o item pela forma antes de ler a palavra. */}
+          {item.icone !== undefined && (
+            <Icone nome={item.icone} className="icone-do-item" />
+          )}
+          <span className="rotulo-do-item">{item.rotulo}</span>
           {item.rotulo === "Notificações" && (
             <SinoVivo
               escopo={escopo}

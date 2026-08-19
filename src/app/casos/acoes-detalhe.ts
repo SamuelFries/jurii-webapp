@@ -22,8 +22,13 @@ import { clienteDoServidor } from "@/lib/supabase/servidor";
  * a recusa para a língua de quem lê.
  */
 
-function volta(caminho: string, erro?: string): never {
-  redirect(erro ? `${caminho}?erro=${encodeURIComponent(erro)}` : caminho);
+function volta(caminho: string, erro?: string, ok?: string): never {
+  // Sucesso confirmado por ?ok= (vira toast na casca); erro por ?erro=.
+  // Antes só o erro falava e o sucesso era silêncio: a pessoa clicava em
+  // "Registrar" e não sabia se tinha registrado.
+  if (erro) redirect(`${caminho}?erro=${encodeURIComponent(erro)}`);
+  if (ok) redirect(`${caminho}?ok=${encodeURIComponent(ok)}`);
+  redirect(caminho);
 }
 
 function caminhoSeguro(dados: FormData): string {
@@ -48,7 +53,7 @@ export async function adicionarAtualizacao(dados: FormData): Promise<void> {
   if (error) {
     volta(voltar, "Não foi possível registrar a atualização. Tente de novo.");
   }
-  volta(voltar);
+  volta(voltar, undefined, "atualizacao");
 }
 
 export async function definirCnj(dados: FormData): Promise<void> {
@@ -70,7 +75,7 @@ export async function definirCnj(dados: FormData): Promise<void> {
       "O número não foi aceito. Confira os dígitos (o banco valida o dígito verificador).",
     );
   }
-  volta(voltar);
+  volta(voltar, undefined, "cnj");
 }
 
 export async function encerrarCaso(dados: FormData): Promise<void> {
@@ -80,7 +85,7 @@ export async function encerrarCaso(dados: FormData): Promise<void> {
     case_id_value: String(dados.get("caso") ?? ""),
   });
   if (error) volta(voltar, "Não foi possível encerrar o caso.");
-  volta(voltar);
+  volta(voltar, undefined, "encerrado");
 }
 
 export async function reabrirCaso(dados: FormData): Promise<void> {
@@ -90,7 +95,7 @@ export async function reabrirCaso(dados: FormData): Promise<void> {
     case_id_value: String(dados.get("caso") ?? ""),
   });
   if (error) volta(voltar, "Não foi possível reabrir o caso.");
-  volta(voltar);
+  volta(voltar, undefined, "reaberto");
 }
 
 export async function atribuirAdvogado(dados: FormData): Promise<void> {
@@ -123,5 +128,5 @@ export async function atribuirAdvogado(dados: FormData): Promise<void> {
         : "Não foi possível atribuir o caso. Tente de novo.";
     volta(voltar, mensagem);
   }
-  volta(voltar);
+  volta(voltar, undefined, "atribuido");
 }

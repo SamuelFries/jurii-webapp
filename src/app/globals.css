@@ -26,6 +26,65 @@
   /* Os mesmos valores do app (app_colors.dart): o verde do "Caso aceito"
      precisa ser o verde que o profissional já conhece do celular. */
   --sucesso: #2d7a4f;
+  --sucesso-fundo: #e8f4ed;
+  --sucesso-borda: #bfe0cd;
+  --aviso: #8a6a10;
+  --aviso-fundo: #fbf3dc;
+  --aviso-borda: #ecd89a;
+  --info-fundo: #eaf0fb;
+  --info-borda: #c9d6ee;
+
+  /* ---- ESCALA, e não valores soltos ---------------------------------------
+     A auditoria de 18/08 achou 14 tamanhos de fonte (com um 12.5px solto),
+     9 raios e 8 sombras, e só uma delas era token. Não é falta de gosto,
+     é falta de escala: sem régua, cada tela inventa a sua. Daqui em diante
+     tamanho, raio, sombra e espaço vêm daqui, e o CSS de tela só ESCOLHE
+     um passo. ------------------------------------------------------------ */
+
+  /* Tipografia: 7 passos. O corpo é 14, porque isto é ferramenta de
+     trabalho e não landing page: mais informação por tela, sem apertar. */
+  --t-xs: 11px;
+  --t-sm: 12px;
+  --t-base: 14px;
+  --t-md: 15px;
+  --t-lg: 17px;
+  --t-xl: 20px;
+  --t-2xl: 26px;
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+
+  /* Espaço: base 4. */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+
+  /* Raios: TRÊS. Pílula para chip/badge/botão compacto, sm para input e
+     item de lista, o grande para cartão. */
+  --radius-pill: 999px;
+
+  /* Sombras: TRÊS níveis. Repouso, elevado (menu, popover) e modal. O
+     cartão comum NÃO tem sombra pesada: borda sutil e superfície bastam,
+     e a sombra fica para o que realmente flutua. */
+  --shadow-sm: 0 1px 2px rgba(10, 28, 59, 0.06);
+  --shadow-md: 0 8px 24px rgba(10, 28, 59, 0.1);
+  --shadow-lg: 0 16px 40px rgba(10, 28, 59, 0.18);
+
+  /* Foco: o MESMO anel em tudo que recebe teclado. Dourado, que é o accent
+     e não briga com o navy do fundo nem com o branco. */
+  --anel-foco: 0 0 0 3px rgba(184, 151, 42, 0.35);
+
+  /* Movimento: rápido e discreto. Quem trabalha não espera animação. */
+  --mov-rapido: 120ms;
+  --mov-normal: 180ms;
+  --mov-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Larguras da casca. */
+  --lateral: 248px;
+  --lateral-estreita: 72px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,6 +105,17 @@
     --erro-fundo: #2a1512;
     --erro-borda: #5c2620;
     --sucesso: #5bbd8b;
+    --sucesso-fundo: #12291d;
+    --sucesso-borda: #22503a;
+    --aviso: #e0c463;
+    --aviso-fundo: #2a2410;
+    --aviso-borda: #5a4c1c;
+    --info-fundo: #14203a;
+    --info-borda: #223252;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+    --anel-foco: 0 0 0 3px rgba(212, 177, 74, 0.4);
   }
 }
 
@@ -62,11 +132,73 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
+  /* A fonte da casa vem do next/font (layout.tsx) pela variável; a pilha
+     do sistema fica só como rede de segurança. */
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  line-height: 1.5;
+    var(--fonte), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
+  /* Números que ALINHAM em coluna: contagem, hora, preço. É o detalhe que
+     separa tabela de trabalho de texto corrido. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Foco visível, o MESMO em tudo ----------------------------------------
+   Antes cada controle decidia sozinho, e a maioria decidia nada: navegar
+   por teclado era adivinhar onde se estava. Um anel só, dourado, em tudo
+   que recebe foco, e só quando o foco veio do teclado (focus-visible), para
+   o clique de mouse não deixar anel pendurado. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--anel-foco);
+}
+
+/* ---- Barra de rolagem discreta ---------------------------------------------
+   Ferramenta que fica aberta o dia todo mostra barra o dia todo; a do
+   sistema é grossa e cinza. Fina, da cor da borda, e some quando não há o
+   que rolar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Movimento com propósito ---------------------------------------------
+   Transição curta em cor, fundo e sombra de tudo que é interativo, para o
+   hover e o ativo não "piscarem". E quem pediu menos movimento no sistema
+   recebe nada: a regra global abaixo zera tudo. */
+:where(a, button, input, select, textarea, summary, .cartao, .selo) {
+  transition:
+    background-color var(--mov-rapido) var(--mov-ease),
+    border-color var(--mov-rapido) var(--mov-ease),
+    color var(--mov-rapido) var(--mov-ease),
+    box-shadow var(--mov-rapido) var(--mov-ease),
+    opacity var(--mov-rapido) var(--mov-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ---- Larguras: a MESMA régua para cabeçalho e conteúdo. Cabeçalho numa
@@ -119,7 +251,7 @@ h2.secao {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   padding: 22px;
 }
 
@@ -179,13 +311,42 @@ textarea,
 select,
 .seletor {
   width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
+  padding: 10px 12px;
+  min-height: 40px;
+  font-size: var(--t-base);
   font-family: inherit;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
+}
+
+/* Hover levanta a borda um tom; foco troca pelo anel dourado da casa (o
+   focus-visible global cuida do anel; aqui só a borda acompanha). */
+input:not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover {
+  border-color: var(--gold-soft);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: var(--anel-foco);
+}
+
+/* Inválido só DEPOIS de a pessoa mexer, senão o formulário abre vermelho. */
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: var(--danger);
+}
+
+::placeholder {
+  color: var(--text-2);
+  opacity: 0.7;
 }
 
 /* Campo travado precisa PARECER travado. O CNPJ do escritório é só leitura
@@ -249,22 +410,33 @@ textarea:focus,
   border-color: var(--gold);
 }
 
+/* ---- Botões: um sistema, quatro variantes, todos os estados ---------------
+   Primário (navy cheio), secundário (contorno), discreto (texto) e compacto
+   (modificador de tamanho). Cada um com hover, active, focus-visible e
+   disabled. O `active` afunda meio pixel: é o feedback tátil de "cliquei"
+   que faltava e que separa botão vivo de retângulo pintado. */
 button,
 a.botao,
 label.botao {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   margin-top: 18px;
-  padding: 12px 16px;
-  font-size: 15px;
-  font-weight: 800;
+  padding: 10px 16px;
+  min-height: 40px;
+  font-size: var(--t-base);
+  font-weight: 700;
+  line-height: 1.2;
   text-align: center;
   text-decoration: none;
   color: #fff;
   background: var(--botao);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  user-select: none;
 }
 
 button:hover,
@@ -273,9 +445,18 @@ label.botao:hover {
   background: var(--botao-hover);
 }
 
-button:disabled {
-  opacity: 0.55;
-  cursor: default;
+button:active,
+a.botao:active,
+label.botao:active {
+  transform: translateY(0.5px);
+}
+
+button:disabled,
+button[aria-disabled="true"],
+a.botao[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 button.secundario,
@@ -283,29 +464,45 @@ a.botao.secundario,
 label.botao.secundario {
   background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
+  border-color: var(--border);
 }
 
 button.secundario:hover,
 a.botao.secundario:hover,
 label.botao.secundario:hover {
   background: var(--surface-2);
+  border-color: var(--gold-soft);
 }
 
 button.discreto {
   width: auto;
   margin: 0;
-  padding: 8px 12px;
+  padding: 6px 10px;
+  min-height: 32px;
   background: transparent;
   color: var(--text-2);
-  border: 0;
+  border-color: transparent;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--t-sm);
 }
 
 button.discreto:hover {
-  background: transparent;
+  background: var(--surface-2);
   color: var(--text);
+}
+
+/* Botão de perigo: só onde a ação apaga ou cancela de verdade. Contorno,
+   não cheio: perigo cheio grita, e a tela de trabalho não deve gritar. */
+button.perigo,
+a.botao.perigo {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--erro-borda);
+}
+
+button.perigo:hover,
+a.botao.perigo:hover {
+  background: var(--erro-fundo);
 }
 
 .formulario-de-busca {
@@ -326,18 +523,39 @@ button.discreto:hover {
 /* ---- Selos e pílulas ---- */
 
 .selo {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  min-height: 20px;
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .selo.dourado {
-  background: rgba(184, 151, 42, 0.16);
+  background: var(--aviso-fundo);
   color: var(--accent-ink);
+}
+
+.selo.sucesso {
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+}
+
+.selo.aviso {
+  background: var(--aviso-fundo);
+  color: var(--aviso);
+}
+
+.selo.perigo {
+  background: var(--erro-fundo);
+  color: var(--danger);
 }
 
 .selo-papel {
@@ -352,17 +570,20 @@ button.discreto:hover {
 }
 
 .pilula-nao-lidas {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
   background: var(--gold);
   color: #fff;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Cor fixa de propósito: o dourado é o mesmo nos dois temas e o branco
+     lê nele em ambos (contraste medido 4.6:1). */
 }
 
 .linha-topo {
@@ -458,18 +679,21 @@ button.discreto:hover {
 
 .cartao-de-lista {
   display: flex;
-  gap: 14px;
+  gap: var(--s-3);
   align-items: flex-start;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: var(--radius-sm);
+  padding: var(--s-3) var(--s-4);
   text-decoration: none;
   color: var(--text);
 }
 
+/* Hover: a borda ganha cor E o fundo levanta um tom. Só a borda mudava, e
+   num cartão claro sobre fundo claro isso passava batido. */
 a.cartao-de-lista:hover {
   border-color: var(--gold-soft);
+  background: var(--surface-2);
 }
 
 .avatar {
@@ -499,7 +723,8 @@ a.cartao-de-lista:hover {
 }
 
 .cartao-de-lista .titulo {
-  font-weight: 800;
+  font-weight: 700;
+  font-size: var(--t-base);
   margin: 0 0 2px;
   display: flex;
   gap: 8px;
@@ -509,11 +734,18 @@ a.cartao-de-lista:hover {
 
 .cartao-de-lista .linha-2 {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--t-sm);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Espera acima de 24 h: o texto ganha o tom de aviso. Não vermelho: quem
+   trabalha não precisa de alarme, precisa de ordem. */
+.espera-longa {
+  color: var(--aviso);
+  font-weight: 700;
 }
 
 /* Uma linha só é o certo para PRÉVIA (última mensagem, cliente do caso): o
@@ -540,39 +772,181 @@ a.cartao-de-lista:hover {
   gap: 12px;
 }
 
-/* ---- Métricas da visão geral ---- */
-
-.metricas {
+/* ---- A faixa de números da visão geral ------------------------------------
+   Quatro atalhos numa linha só. Não são o assunto da tela (o assunto é o que
+   pede ação), são contexto: leem-se de relance e levam para a seção. Metade
+   da altura dos cartões que existiam, e o que precisa de você sobe na
+   dobra. */
+.faixa-de-numeros {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
 @media (min-width: 720px) {
-  .metricas {
-    grid-template-columns: repeat(4, 1fr);
+  .faixa-de-numeros {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-.metrica {
+.numero-da-faixa {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.numero-da-faixa:last-child {
+  border-right: 0;
+}
+
+@media (max-width: 719px) {
+  .numero-da-faixa:nth-child(2) {
+    border-right: 0;
+  }
+  .numero-da-faixa:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.numero-da-faixa:hover {
+  background: var(--surface-2);
+}
+
+.numero-da-faixa .icone {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.numero-da-faixa .valor {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.4ch;
+}
+
+.numero-da-faixa .rotulo {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-tight);
+  min-width: 0;
+}
+
+/* ---- Perfil público como progresso ------------------------------------------ */
+.cabecalho-de-progresso {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin: var(--s-6) 0 var(--s-3);
+}
+
+.medidor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: none;
+}
+
+.medidor-texto {
+  white-space: nowrap;
+}
+
+.medidor-texto {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.medidor-trilho {
+  width: 140px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.medidor-cheio {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: var(--radius-pill);
+  transition: width var(--mov-normal) var(--mov-ease);
+}
+
+.lista-de-passos {
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.metrica:hover {
-  border-color: var(--gold-soft);
+.passo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
 }
 
-.metrica .numero {
-  font-size: 26px;
-  font-weight: 800;
+.passo:last-child {
+  border-bottom: 0;
 }
 
-.metrica .rotulo {
+.passo:hover {
+  background: var(--surface-2);
+}
+
+/* O marcador vazio diz "falta" sem dizer "erro": um anel na cor da borda,
+   que o hover deixa dourado. */
+.marca-do-passo {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.passo:hover .marca-do-passo {
+  border-color: var(--gold);
+}
+
+.passo .conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.passo .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.passo .porque {
+  font-size: var(--t-sm);
   color: var(--text-2);
-  font-size: 13px;
+  line-height: var(--lh-tight);
+}
+
+.passo .seta {
+  flex: none;
+  color: var(--text-2);
 }
 
 /* ---- Visão geral do escritório ----
@@ -590,7 +964,7 @@ a.cartao-de-lista:hover {
   align-items: start;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
   .visao-em-duas-colunas {
     /* A coluna da ação leva quase o dobro: ela cresce com a operação, a
        lateral tem tamanho fixo. */
@@ -631,77 +1005,105 @@ a.cartao-de-lista:hover {
   font-size: 13px;
 }
 
-/* ---- Seletor de escritório ----
- *
- * Recolhido por padrão: o cabeçalho é o escritório ATIVO (com o cargo nele),
- * e a seta abre os demais. A lista completa sempre visível escalava mal —
- * com quatro ou cinco vínculos ela dominava o rodapé da lateral e empurrava
- * "Trocar de área" e "Sair" para fora da dobra, para exibir escritórios em
- * que a pessoa não está atuando. `details`/`summary` nativo: abre e fecha
- * sem JavaScript, como o resto da lateral. */
+/* ---- Contexto: "Atuando como" -------------------------------------------------
+   Sempre presente. Cabeçalho = onde estou e como quem; a seta só existe
+   quando há para onde ir. O avatar de iniciais é o mesmo da lista de
+   conversas: a banca tem a mesma cara em toda a casa. */
 .seletor-de-escritorio {
-  margin-bottom: 14px;
+  margin-bottom: var(--s-3);
 }
 
-.seletor-de-escritorio summary {
-  /* Cabeçalho com a cara do item ativo de sempre: fundo aceso e o fio
-     dourado. É o "você está aqui" da lateral, agora clicável. */
+.seletor-de-escritorio summary,
+.seletor-de-escritorio .contexto-fixo {
   list-style: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
-  border-left: 2px solid var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
   background: var(--surface-2);
+}
+
+.seletor-de-escritorio summary {
   cursor: pointer;
 }
 
-/* O marcador nativo do details, fora (Safari usa pseudo próprio). */
 .seletor-de-escritorio summary::-webkit-details-marker {
   display: none;
 }
 
-.seletor-de-escritorio summary .identidade {
+.avatar-de-contexto {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: #fff;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.avatar-de-contexto.pessoal {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent-ink);
+}
+
+.seletor-de-escritorio .identidade {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.seletor-de-escritorio .nome {
+  font-size: var(--t-base);
+  font-weight: 700;
+  color: var(--text);
+  line-height: var(--lh-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seletor-de-escritorio .cargo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  line-height: var(--lh-tight);
 }
 
 .seletor-de-escritorio .seta {
   flex: none;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--text-2);
-  border-bottom: 2px solid var(--text-2);
-  /* Fechado aponta para BAIXO (há mais coisa abaixo)... */
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
-  margin-top: -2px;
+  color: var(--text-2);
+  transition: transform var(--mov-normal) var(--mov-ease);
 }
 
-/* ...aberto aponta para cima, no mesmo fio do gesto de recolher. */
 .seletor-de-escritorio details[open] .seta {
-  transform: rotate(-135deg);
-  margin-top: 4px;
+  transform: rotate(180deg);
 }
 
 .seletor-de-escritorio form {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   margin-top: 2px;
 }
 
 .seletor-de-escritorio .opcao-de-escritorio {
-  /* O `button` global é dourado e alto; aqui ele precisa parecer item de
-     navegação, como os vizinhos. */
   all: unset;
   box-sizing: border-box;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  border-left: 2px solid transparent;
 }
 
 .seletor-de-escritorio .opcao-de-escritorio:hover,
@@ -709,18 +1111,10 @@ a.cartao-de-lista:hover {
   background: var(--surface-2);
 }
 
-.seletor-de-escritorio .nome {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
+.seletor-de-escritorio .opcao-de-escritorio .avatar-de-contexto {
+  background: var(--surface-2);
   color: var(--text);
-  line-height: 1.25;
-}
-
-.seletor-de-escritorio .cargo {
-  display: block;
-  font-size: 12px;
-  color: var(--text-2);
+  border: 1px solid var(--border);
 }
 
 /* ---- A conversa denunciada, no painel ----
@@ -790,12 +1184,114 @@ a.cartao-de-lista:hover {
 
 /* ---- Chat ---- */
 
+/* ---- O cabeçalho do chat aberto ---------------------------------------------
+   Grade de quatro colunas: voltar | quem | atendimento | ações. A 1440 cabe
+   numa linha; abaixo de 1024 vira duas por DESENHO (quem em cima,
+   atendimento + ações embaixo), nunca "Joao / Pereira" quebrado por
+   acidente. */
 .cabecalho-do-chat {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "voltar avatar quem atendimento acoes";
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cabecalho-do-chat .voltar {
+  grid-area: voltar;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.cabecalho-do-chat .voltar:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.cabecalho-do-chat .seta-de-voltar {
+  transform: rotate(180deg);
+}
+
+.cabecalho-do-chat .identidade-do-chat {
+  grid-area: avatar;
+}
+
+.cabecalho-do-chat .quem {
+  grid-area: quem;
+  min-width: 0;
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  padding: 14px 0 6px;
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.cabecalho-do-chat .atendimento {
+  grid-area: atendimento;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-do-chat .responsavel,
+.cabecalho-do-chat .link-do-caso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.cabecalho-do-chat .responsavel.sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cabecalho-do-chat .link-do-caso {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.cabecalho-do-chat .link-do-caso:hover {
+  background: var(--surface-2);
+  border-color: var(--gold-soft);
+}
+
+/* O corte é pela largura do PAINEL, não da janela: a 1024 de viewport o
+   painel direito tem uns 400px, e é isso que decide se cabe uma linha.
+   Container query no painel principal. */
+.painel-principal {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .cabecalho-do-chat {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "voltar avatar quem acoes"
+      "voltar atendimento atendimento atendimento";
+    row-gap: 6px;
+  }
+  .cabecalho-do-chat .atendimento {
+    padding-left: 2px;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .cabecalho-do-chat .quem {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
 }
 
 /* As acoes da conversa (propor caso, indicar advogado, moderacao) ficam no
@@ -803,11 +1299,11 @@ a.cartao-de-lista:hover {
    `margin-left: auto` empurra o grupo inteiro, entao o nome fica colado no
    voltar e as acoes na outra ponta. */
 .cabecalho-do-chat .acoes-do-chat {
-  margin-left: auto;
+  grid-area: acoes;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 auto;
+  justify-self: end;
 }
 
 /* Dentro do cabecalho, os `details` de acao viram pilulas compactas em vez
@@ -818,7 +1314,7 @@ a.cartao-de-lista:hover {
 
 .cabecalho-do-chat .acoes-do-chat .propor-caso > summary {
   padding: 6px 12px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   white-space: nowrap;
 }
 
@@ -837,42 +1333,87 @@ a.cartao-de-lista:hover {
   box-shadow: 0 16px 40px rgba(10, 28, 59, 0.28);
 }
 
-.cabecalho-do-chat a {
-  color: var(--text-2);
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
 .cabecalho-do-chat .nome {
-  font-weight: 800;
-  font-size: 17px;
+  font-weight: 700;
+  font-size: var(--t-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .cabecalho-do-chat .area {
   color: var(--text-2);
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: var(--t-sm);
   white-space: nowrap;
+  flex: none;
 }
 
 .chat {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   padding: 8px 0 16px;
   min-height: 40vh;
+  /* O scroll é decidido no componente (acompanhar ou não): sem smooth
+     nativo aqui, senão a restauração de posição ao carregar anteriores
+     animaria. */
+  scroll-behavior: auto;
+}
+
+.grupo-de-mensagem {
+  display: contents;
+}
+
+/* ---- Autor da sequência ------------------------------------------------------
+   Nome + PAPEL na primeira mensagem de quem não sou eu. O papel é o da
+   pessoa na equipe/na conversa ("Cliente", "Sócio", "Secretária"), e é o
+   que faz a secretária distinguir a fala da sócia da do cliente. Sem
+   avatar por linha: texto discreto, no tom secundário. */
+.autor-da-sequencia {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0 2px 6px;
+  font-size: var(--t-sm);
+  line-height: var(--lh-tight);
+}
+
+.autor-da-sequencia .nome-do-autor {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.autor-da-sequencia .papel-do-autor {
+  color: var(--text-2);
+}
+
+/* Cliente = fora; equipe = dentro. A cor do nome acompanha, para o olho
+   ler o lado antes da palavra. */
+.autor-da-sequencia.lado-equipe .nome-do-autor {
+  color: var(--navy-2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .autor-da-sequencia.lado-equipe .nome-do-autor {
+    color: var(--accent-ink);
+  }
 }
 
 .bolha {
   max-width: 76%;
-  padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 15px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Continuação da mesma sequência: cola na anterior. */
+.linha-de-mensagem.continuacao .bolha {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }
 
 .bolha.minha {
@@ -889,11 +1430,38 @@ a.cartao-de-lista:hover {
   border-bottom-left-radius: 6px;
 }
 
+/* EQUIPE que não sou eu: mesmo lado do cliente (é o "outro" na tela), mas
+   com a cara de "lado de dentro": superfície 2 e um fio fino navy à
+   esquerda. Sem terceira cor: só superfície e fio, na paleta que existe. */
+.bolha.equipe {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--navy-2);
+  border-bottom-left-radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bolha.equipe {
+    border-left-color: var(--accent-ink);
+  }
+}
+
+.bolha.sistema {
+  align-self: center;
+}
+
 .bolha .horario {
-  display: block;
-  margin-top: 4px;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0 0 10px;
+  float: right;
+  font-size: var(--t-xs);
   opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+  /* Float à direita com margem: a hora fica no canto inferior direito da
+     bolha e nunca cola na última palavra ("faltavam.14:28"). */
 }
 
 .bolha.apagada {
@@ -1107,7 +1675,7 @@ body:has(.tela-de-entrada) footer.rodape {
 
 .chamada-do-palco {
   margin: 0 0 14px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1141,7 +1709,7 @@ body:has(.tela-de-entrada) footer.rodape {
 .provas-do-palco li {
   position: relative;
   padding-left: 22px;
-  font-size: 14.5px;
+  font-size: var(--t-base);
   color: rgba(238, 241, 248, 0.82);
 }
 
@@ -1445,7 +2013,7 @@ body:has(.tela-de-entrada) footer.rodape {
   width: 100%;
   margin: 18px 0 12px;
   color: var(--text-2);
-  font-size: 12.5px;
+  font-size: var(--t-sm);
 }
 
 .divisor-da-entrada::before,
@@ -1463,7 +2031,7 @@ body:has(.tela-de-entrada) footer.rodape {
   align-items: center;
   gap: 7px;
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: rgba(238, 241, 248, 0.6);
   animation: surge-da-entrada 0.55s var(--ease) 0.15s both;
 }
@@ -1616,67 +2184,124 @@ body:has(.area-de-trabalho) footer.rodape {
   display: none;
 }
 
+/* ---- A lateral ---------------------------------------------------------------
+   Ferramenta de navegação, não vitrine. Quem trabalha o dia todo aqui precisa
+   de três coisas: achar o item pela FORMA antes de ler (ícone), saber onde
+   está sem pensar (ativo inequívoco) e nunca ser surpreendido (tudo no mesmo
+   lugar, sempre). */
 .lateral {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 18px 14px;
+  gap: 2px;
+  padding: var(--s-4) var(--s-3);
   background: var(--surface);
   border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
 .lateral .marca-pequena {
-  padding: 0 10px 14px;
+  padding: var(--s-1) var(--s-3) var(--s-4);
 }
 
 .lateral nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-.lateral nav a {
+.lateral nav a,
+.lateral .item-de-sair {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 var(--s-3);
+  border-radius: var(--radius-sm);
   color: var(--text-2);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--t-base);
+  font-weight: 600;
   text-decoration: none;
-  border-left: 3px solid transparent;
+  position: relative;
 }
 
-.lateral nav a:hover {
+/* O ícone e o texto são a MESMA cor, e escurecem juntos no hover e no
+   ativo: dois tons na mesma linha fariam o olho ler duas colunas. */
+.lateral .icone-do-item {
+  flex: none;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.lateral .rotulo-do-item {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lateral nav a:hover,
+.lateral .item-de-sair:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 
+/* ATIVO: fundo aceso, texto no tom cheio, e o fio dourado do lado de
+   dentro (inset, não border-left) para não deslocar o texto um pixel em
+   relação aos vizinhos. É o único item com fio; ninguém confunde. */
 .lateral nav a.ativa {
   background: var(--surface-2);
   color: var(--text);
-  border-left-color: var(--gold);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.lateral nav a.ativa .icone-do-item {
+  opacity: 1;
+  color: var(--accent-ink);
+}
+
+/* Badge de não lidas: alinhado à direita pelo margin-left, tamanho fixo
+   para 1, 2 ou 99+ não mudarem a altura da linha. */
+.lateral .pilula-nao-lidas {
+  margin-left: auto;
 }
 
 .lateral .rodape-da-lateral {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 12px;
+  gap: 1px;
+  padding-top: var(--s-3);
   border-top: 1px solid var(--border);
 }
 
 .lateral .rotulo-da-secao {
-  padding: 14px 12px 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  padding: var(--s-3) var(--s-3) var(--s-1);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
+  opacity: 0.8;
+}
+
+.lateral .item-de-sair {
+  /* O `button.discreto` global centraliza; aqui ele é item de lista como
+     os vizinhos, alinhado à esquerda com ícone. */
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  width: 100%;
+  padding: 0 var(--s-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .conteudo-de-trabalho {
@@ -1775,16 +2400,262 @@ body:has(.area-de-trabalho) footer.rodape {
 
 .painel-vazio {
   height: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   color: var(--text-2);
   text-align: center;
-  padding: 32px;
+  padding: var(--s-8);
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.painel-vazio p {
+  margin: 0;
+  font-size: var(--t-base);
+}
+
+.painel-vazio .titulo-do-vazio {
+  color: var(--text);
+  font-weight: 700;
+  font-size: var(--t-md);
+}
+
+.icone-do-vazio {
+  color: var(--text-2);
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.icone-do-vazio.ok {
+  color: var(--sucesso);
+  opacity: 1;
+}
+
+/* ---- Resumo operacional do painel direito ---------------------------------
+   Mensagens sem conversa aberta e Casos sem caso aberto mostram a fila de
+   quem espera e a carteira em uma olhada, no lugar da frase num vazio.
+   Denso e escaneável: é o que a pessoa olha entre uma conversa e outra. */
+.resumo-da-caixa {
+  padding: var(--s-6) var(--s-8);
+  max-width: 720px;
+}
+
+.cabecalho-do-resumo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-4);
+}
+
+.titulo-do-resumo {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitulo-do-resumo {
+  margin: var(--s-5) 0 var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.fila-de-espera {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.item-da-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px var(--s-4);
+  text-decoration: none;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.fila-de-espera li:last-child .item-da-fila {
+  border-bottom: 0;
+}
+
+.item-da-fila:hover {
+  background: var(--surface-2);
+}
+
+.item-da-fila .conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item-da-fila .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-da-fila .previa {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-da-fila .sinais {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: var(--t-sm);
+}
+
+.avatar.pequeno {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 9px;
+  font-size: var(--t-sm);
+}
+
+.blocos-do-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.blocos-do-resumo .bloco {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blocos-do-resumo .bloco.atencao {
+  border-color: var(--aviso-borda);
+  background: var(--aviso-fundo);
+}
+
+.blocos-do-resumo .valor {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.blocos-do-resumo .bloco.atencao .valor {
+  color: var(--aviso);
+}
+
+.blocos-do-resumo .rotulo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+}
+
+.carga-por-pessoa {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.carga-por-pessoa li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--t-sm);
+}
+
+.carga-por-pessoa .nome {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.carga-por-pessoa .barra {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.carga-por-pessoa .cheio {
+  display: block;
+  height: 100%;
+  /* Dourado, e não navy: no escuro o navy some sobre a superfície navy. O
+     accent é a única cor que lê nos dois temas por construção. */
+  background: var(--gold);
+  opacity: 0.85;
+}
+
+.carga-por-pessoa .quantos {
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* ---- Item de caso reorganizado ------------------------------------------- */
+.cartao-de-lista .titulo .area {
+  font-weight: 500;
+  color: var(--text-2);
+  font-size: var(--t-sm);
+}
+
+.cartao-de-lista .linha-meta {
+  margin: 4px 0 0;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cartao-de-lista .linha-meta .separador {
+  opacity: 0.5;
+}
+
+.cartao-de-lista .linha-meta .sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cartao-de-lista .linha-meta .proximo-passo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Em tela estreita o par vira um painel só: com detalhe aberto, a lista
    sai de cena (o link Voltar do cabeçalho leva de volta). */
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   /* Empilhada, a mesa não cabe na janela e a página volta a rolar: manter
      o overflow travado prenderia o conteúdo fora de alcance. */
   body:has(.area-de-trabalho) {
@@ -2062,6 +2933,94 @@ button.compacto {
 
 .linha-de-mensagem.minha {
   justify-content: flex-end;
+}
+
+.linha-de-mensagem.sistema {
+  justify-content: center;
+}
+
+/* ---- Separador de dia --------------------------------------------------------
+   "Hoje", "Ontem", "15/08": a linha fina com o rótulo no meio. É o único
+   marcador de dia; a bolha mostra só a hora. */
+.separador-de-dia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 6px;
+  color: var(--text-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.separador-de-dia::before,
+.separador-de-dia::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.marco-do-historico {
+  margin: 4px 0 8px;
+  text-align: center;
+  color: var(--text-2);
+  font-size: var(--t-xs);
+}
+
+/* ---- Faixa de estado ---------------------------------------------------------
+   Só quando o cliente falou por último. Uma linha, acima do compositor.
+   Âmbar acima de 24 h. Nada de badge nem card. */
+.faixa-de-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 2px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.faixa-de-estado .ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.faixa-de-estado.espera-longa {
+  color: var(--aviso);
+}
+
+.faixa-de-estado.espera-longa .ponto {
+  background: var(--aviso);
+}
+
+/* ---- Voltar ao fim ---------------------------------------------------------
+   Novas chegaram enquanto eu lia lá em cima: um botão flutuante sobre a
+   lista, não um puxão. */
+.voltar-ao-fim {
+  position: sticky;
+  bottom: 8px;
+  align-self: center;
+  width: auto;
+  margin: -40px auto 8px;
+  padding: 6px 12px;
+  min-height: 30px;
+  font-size: var(--t-sm);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+
+/* Erro de envio: colado ao compositor, com o botão inline. */
+.erro-de-envio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
 }
 
 /* Cartão de solicitação NÃO segue o lado de quem enviou: no app ele é
@@ -2385,7 +3344,7 @@ button.compacto {
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  font-size: 13.5px;
+  font-size: var(--t-base);
   margin-bottom: 6px;
 }
 
@@ -2442,7 +3401,7 @@ button.compacto {
   border-radius: 8px;
   background: transparent;
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: var(--t-xs);
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -2588,7 +3547,7 @@ button.compacto {
 }
 
 .linha-da-fila .espera {
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: var(--text-2);
   white-space: nowrap;
 }
@@ -2624,7 +3583,7 @@ button.compacto {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-top: 4px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: var(--danger);
 }
 
@@ -2919,4 +3878,657 @@ button.compacto {
 
 .pedido-de-entrada .acoes-em-linha button {
   width: auto;
+}
+
+
+/* ---- Notificações com hierarquia ------------------------------------------- */
+.cartao-de-lista.notificacao {
+  align-items: flex-start;
+  border-left: 3px solid var(--border);
+}
+
+.cartao-de-lista.notificacao.nivel-acao {
+  border-left-color: var(--gold);
+}
+
+.cartao-de-lista.notificacao.nivel-urgente {
+  border-left-color: var(--aviso);
+}
+
+.cartao-de-lista.notificacao.nivel-atualizacao {
+  border-left-color: var(--navy-2);
+}
+
+/* Lida: some o fio de nível e baixa o tom. Sem opacity no cartão inteiro,
+   que deixava os botões cinza e ilegíveis. */
+.cartao-de-lista.notificacao.lida {
+  border-left-color: var(--border);
+}
+
+.cartao-de-lista.notificacao.lida .titulo,
+.cartao-de-lista.notificacao.lida .icone-do-nivel {
+  color: var(--text-2);
+}
+
+.icone-do-nivel {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.nivel-acao .icone-do-nivel {
+  color: var(--accent-ink);
+  background: var(--aviso-fundo);
+}
+
+.nivel-urgente .icone-do-nivel {
+  color: var(--aviso);
+  background: var(--aviso-fundo);
+}
+
+.cabecalho-da-notificacao {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.cabecalho-da-notificacao .meta {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-da-notificacao .nivel {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ponto-nao-lida {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-left: 2px;
+}
+
+.acoes-discretas {
+  margin-top: var(--s-2);
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.acoes-discretas form {
+  flex: none;
+}
+
+/* Botão compacto: para linhas de ação dentro de item, não de largura cheia. */
+button.compacto,
+.botao.compacto {
+  width: auto;
+  padding: 6px 12px;
+  font-size: var(--t-sm);
+  min-height: 30px;
+}
+
+button.discreto.compacto {
+  padding: 6px 8px;
+}
+
+/* ---- Toasts -------------------------------------------------------------------
+   O feedback de ação, no canto inferior direito, empilhado. Sucesso some em
+   4 s; erro fica até fechar. Entra com um deslize curto, sai com um fade
+   mais curto ainda, e nada disso acontece para quem pediu menos movimento. */
+.pilha-de-toasts {
+  position: fixed;
+  right: var(--s-5);
+  bottom: var(--s-5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: min(420px, calc(100vw - 40px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  animation: toast-entra var(--mov-normal) var(--mov-ease);
+}
+
+.toast-ok {
+  border-left: 3px solid var(--sucesso);
+}
+
+.toast-erro {
+  border-left: 3px solid var(--danger);
+}
+
+.toast.saindo {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--mov-normal) var(--mov-ease),
+    transform var(--mov-normal) var(--mov-ease);
+}
+
+.fechar-toast {
+  all: unset;
+  cursor: pointer;
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.fechar-toast:hover {
+  color: var(--text);
+}
+
+@keyframes toast-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- O detalhe do caso --------------------------------------------------------
+   "Onde este caso está e o que eu faço com ele." Complementa o chat: mesma
+   grade de cabeçalho, mesma faixa de estado, mesmos separadores de dia,
+   mesma densidade. Nada de página vertical gigante: cabeçalho fixo, corpo
+   rola. */
+.detalhe-do-caso {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.cabecalho-do-caso {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "voltar avatar quem atendimento acoes";
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cabecalho-do-caso .voltar {
+  grid-area: voltar;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.cabecalho-do-caso .voltar:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.cabecalho-do-caso .seta-de-voltar {
+  transform: rotate(180deg);
+}
+
+.cabecalho-do-caso > .avatar {
+  grid-area: avatar;
+}
+
+.cabecalho-do-caso .quem {
+  grid-area: quem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cabecalho-do-caso .linha-1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* O cliente LIDERA e nunca some: encolhe com elipse, mas com um mínimo
+   legível; área e selo cedem antes (flex: none neles, então quem estica é
+   ele). Sem o min-width o overflow:hidden o zerava e só sobrava a área. */
+.cabecalho-do-caso .cliente {
+  font-weight: 700;
+  font-size: var(--t-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Encolhe com elipse quando falta espaço, mas NÃO estica: área e selo
+     ficam colados ao nome, não jogados para a outra ponta. */
+  flex: 0 1 auto;
+  min-width: 8ch;
+}
+
+.cabecalho-do-caso .area {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* O título do caso é a segunda linha, menor: o cliente lidera, o assunto
+   detalha. Antes o nome do cliente aparecia duas vezes. */
+.cabecalho-do-caso .linha-2 {
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cabecalho-do-caso .atendimento {
+  grid-area: atendimento;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.cabecalho-do-caso .responsavel,
+.cabecalho-do-caso .link-do-caso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.cabecalho-do-caso .responsavel.sem-responsavel {
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.cabecalho-do-caso .link-do-caso {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.cabecalho-do-caso .link-do-caso:hover {
+  background: var(--surface-2);
+  border-color: var(--gold-soft);
+}
+
+.cabecalho-do-caso .acoes-do-chat {
+  grid-area: acoes;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+/* A ação primária: pílula cheia, à vista; o formulário só quando aberto. */
+.cabecalho-do-caso .acao-primaria > summary {
+  background: var(--botao);
+  color: #fff;
+  border-color: transparent;
+  list-style: none;
+}
+
+.cabecalho-do-caso .acao-primaria > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cabecalho-do-caso .acao-primaria > summary:hover {
+  background: var(--botao-hover);
+}
+
+.cabecalho-do-caso .acao-primaria[open] > form {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  width: min(420px, 80vw);
+  box-shadow: var(--shadow-md);
+}
+
+.cabecalho-do-caso .acao-primaria {
+  position: relative;
+  margin: 0;
+}
+
+.cabecalho-do-caso .acao-primaria > summary {
+  padding: 6px 12px;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+}
+
+/* Confirmação de encerrar: um details dentro do menu, curto. */
+.confirmar-encerrar > summary {
+  list-style: none;
+  display: inline-flex;
+  width: auto;
+  margin-top: 4px;
+}
+
+.confirmar-encerrar > summary::-webkit-details-marker {
+  display: none;
+}
+
+.confirmar-encerrar[open] > summary {
+  display: none;
+}
+
+.confirmar-encerrar .detalhe {
+  margin: 6px 0 8px;
+}
+
+/* O nome do cliente nao trunca enquanto ha espaco: abaixo de 900px de
+   painel (que e o caso a 1440 com a lista aberta), atendimento e acoes
+   descem para a segunda linha ANTES de comprimir o nome. */
+@container (max-width: 900px) {
+  .cabecalho-do-caso {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "voltar avatar quem acoes"
+      "voltar atendimento atendimento atendimento";
+    row-gap: 6px;
+  }
+}
+
+/* Painel estreito (a 1024 de viewport com a lista aberta): TUDO cede ao
+   nome. Identidade em cima; atendimento e ações numa segunda linha, lado a
+   lado, as ações à direita. */
+@container (max-width: 640px) {
+  .cabecalho-do-caso {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "voltar avatar quem"
+      "voltar atendimento atendimento"
+      "voltar acoes acoes";
+    row-gap: 8px;
+  }
+  .cabecalho-do-caso .atendimento {
+    padding-left: 2px;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  /* Ações numa TERCEIRA linha, à esquerda como o resto: nada sobrepõe. */
+  .cabecalho-do-caso .acoes-do-chat {
+    justify-self: start;
+    padding-left: 2px;
+  }
+  .cabecalho-do-caso .linha-1 {
+    flex-wrap: wrap;
+  }
+}
+
+/* Várias faixas de estado empilhadas, sem cartão. */
+.faixas-de-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.faixas-de-estado .faixa-de-estado a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* O corpo rola; o cabeçalho e as faixas ficam. */
+.corpo-do-caso {
+  padding-top: var(--s-2);
+}
+
+.bloco-do-caso {
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bloco-do-caso:last-child {
+  border-bottom: 0;
+}
+
+.titulo-do-bloco {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.texto-do-caso {
+  margin: 0;
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  max-width: 72ch;
+}
+
+/* CNJ como dado: rótulo · valor · editar, numa linha. */
+.linha-de-dado {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.linha-de-dado .rotulo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  min-width: 100px;
+}
+
+.linha-de-dado .valor {
+  font-weight: 600;
+  font-size: var(--t-base);
+}
+
+.linha-de-dado .valor.detalhe {
+  font-weight: 400;
+}
+
+.editar-inline > summary {
+  list-style: none;
+  display: inline-flex;
+  width: auto;
+}
+
+.editar-inline > summary::-webkit-details-marker {
+  display: none;
+}
+
+.editar-inline[open] > summary {
+  display: none;
+}
+
+.editar-inline .acoes-em-linha {
+  margin-top: 6px;
+  align-items: center;
+}
+
+.editar-inline .acoes-em-linha input {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ---- A linha do tempo única -------------------------------------------- */
+.linha-do-tempo-unica {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.linha-do-tempo-unica .separador-de-dia {
+  margin: 10px 0 4px;
+}
+
+.conteudo-do-evento {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+/* A marca de origem: um ponto. Tribunal em dourado (o oficial, o accent);
+   equipe em navy (o de dentro). Sem cor nova. */
+.marca-da-origem {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--navy-2);
+}
+
+.origem-tribunal .marca-da-origem {
+  background: var(--gold);
+}
+
+@media (prefers-color-scheme: dark) {
+  .marca-da-origem {
+    background: var(--text-2);
+  }
+}
+
+.conteudo-do-evento .texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conteudo-do-evento .cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.conteudo-do-evento .titulo {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.conteudo-do-evento .meta {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.conteudo-do-evento .origem {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.conteudo-do-evento .corpo {
+  font-size: var(--t-sm);
+  color: var(--text-2);
+  line-height: var(--lh-normal);
+}
+
+.historico-fora-do-alcance {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--info-fundo);
+  border: 1px solid var(--info-borda);
+  margin: 0;
+  max-width: 64ch;
+}
+
+/* ---- Documentos ------------------------------------------------------------ */
+.lista-de-documentos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.lista-de-documentos li + li {
+  border-top: 1px solid var(--border);
+}
+
+.lista-de-documentos .documento {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.lista-de-documentos a.documento:hover {
+  background: var(--surface-2);
+}
+
+.lista-de-documentos .documento.indisponivel {
+  opacity: 0.6;
+}
+
+.lista-de-documentos .texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lista-de-documentos .titulo {
+  font-weight: 600;
+  font-size: var(--t-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lista-de-documentos .meta {
+  font-size: var(--t-xs);
+  color: var(--text-2);
+}
+
+.lista-de-documentos .seta {
+  flex: none;
+  color: var(--text-2);
 }

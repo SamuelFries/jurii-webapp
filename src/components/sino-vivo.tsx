@@ -113,7 +113,23 @@ export function SinoVivo({
 
   return (
     <>
-      {naoLidas > 0 && <span className="pilula-nao-lidas">{naoLidas}</span>}
+      {naoLidas > 0 && (
+        <span
+          className="pilula-nao-lidas"
+          title={
+            naoLidas === 1
+              ? "1 notificação não lida"
+              : `${naoLidas} notificações não lidas`
+          }
+          aria-label={
+            naoLidas === 1
+              ? "1 notificação não lida"
+              : `${naoLidas} notificações não lidas`
+          }
+        >
+          {naoLidas > 99 ? "99+" : naoLidas}
+        </span>
+      )}
       {permissao === "default" && (
         <button
           type="button"
