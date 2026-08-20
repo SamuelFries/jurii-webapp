@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
@@ -85,6 +86,7 @@ export function Chat({
   nomeDoCliente?: string;
   equipe?: MembroParaAutoria[];
 }) {
+  const router = useRouter();
   const [mensagens, setMensagens] = useState(mensagensIniciais);
   const [temAnteriores, setTemAnteriores] = useState(temAnterioresInicial);
   const [carregandoAnteriores, setCarregandoAnteriores] = useState(false);
@@ -118,17 +120,35 @@ export function Chat({
   useEffect(() => {
     const supabase = clienteDoNavegador();
 
-    // Abrir a conversa É a leitura.
-    void supabase.rpc("mark_conversation_read", {
-      conversation_id_value: conversaId,
-    });
+    // ARMADILHA que estava aqui: o builder do supabase-js é PREGUIÇOSO. Ele
+    // só dispara o HTTP quando alguém faz await ou .then(); `void
+    // supabase.rpc(...)` cria o builder e joga fora sem nunca enviar. As duas
+    // chamadas abaixo eram exatamente isso, então abrir a conversa no webapp
+    // NÃO marcava nada: as mensagens ficavam não lidas para sempre (o "3" no
+    // badge que nunca sumia) e o tique de entregue nunca acendia no cliente.
+    //
+    // Marcar como lida precisa também revalidar a lista ao lado (server
+    // component, force-dynamic), que foi renderizada antes desta chamada com
+    // o badge cheio. router.refresh() re-renderiza só a parte do servidor; o
+    // estado deste chat (mensagens, scroll) é de cliente e sobrevive. Só
+    // revalida quando algo foi de fato marcado, para não virar refresh em
+    // loop.
+    void supabase
+      .rpc("mark_conversation_read", { conversation_id_value: conversaId })
+      .then(({ data }) => {
+        if (typeof data === "number" && data > 0) router.refresh();
+      });
 
-    // E marca como ENTREGUES as que chegaram enquanto eu estava fora. Falha
-    // em silêncio de propósito: é sinal de cortesia, não pode virar erro na
-    // cara de ninguém.
-    void supabase.rpc("mark_messages_delivered", {
-      conversation_ids_value: [conversaId],
-    });
+    // E marca como ENTREGUES as que chegaram enquanto eu estava fora. O .then
+    // vazio não é decoração: é o que DISPARA a chamada (ver acima). Falha em
+    // silêncio de propósito: é sinal de cortesia, não pode virar erro na cara
+    // de ninguém.
+    void supabase
+      .rpc("mark_messages_delivered", { conversation_ids_value: [conversaId] })
+      .then(
+        () => {},
+        () => {},
+      );
 
     const canal = supabase
       .channel(`web_chat_${conversaId}`)
@@ -206,9 +226,13 @@ export function Chat({
             })();
           }
           if (!nova.minha) {
-            void supabase.rpc("mark_conversation_read", {
-              conversation_id_value: conversaId,
-            });
+            // Chegou de outra pessoa com a tela aberta: já é lida, e a lista
+            // ao lado precisa saber (subiu de 0 para 1 no badge ao chegar).
+            void supabase
+              .rpc("mark_conversation_read", { conversation_id_value: conversaId })
+              .then(({ data }) => {
+                if (typeof data === "number" && data > 0) router.refresh();
+              });
           }
         },
       )
@@ -217,7 +241,7 @@ export function Chat({
     return () => {
       void supabase.removeChannel(canal);
     };
-  }, [conversaId, meuId]);
+  }, [conversaId, meuId, router]);
 
   // ---- SCROLL COMO FERRAMENTA, não como visualizador --------------------
   //
