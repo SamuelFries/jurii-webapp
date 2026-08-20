@@ -18,7 +18,7 @@ export default async function PaginaDeCadastro({
   const { depois } = await searchParams;
   const destino = caminhoInterno(depois, "/");
   return (
-    <div className="tela-de-entrada">
+    <div className="tela-de-entrada solo">
       <Aurora />
       <main className="cartao-de-entrada">
         <h1 className="so-para-leitores">Criar conta no Jurii</h1>

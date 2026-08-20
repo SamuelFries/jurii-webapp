@@ -40,7 +40,7 @@ export default async function PaginaDeEntrada({
         </p>
         <ul className="provas-do-palco">
           <li>Conversas com clientes em tempo real</li>
-          <li>A carteira de casos com quem faz o quê</li>
+          <li>A carteira de casos e quem faz o quê</li>
           <li>Agenda que vive no seu calendário</li>
         </ul>
       </section>
@@ -68,8 +68,7 @@ export default async function PaginaDeEntrada({
             className="lockup-da-entrada lockup-escuro"
           />
           <p className="subtitulo subtitulo-da-entrada">
-            A mesa de trabalho do seu escritório, com a mesma conta do
-            aplicativo.
+            Tudo do seu escritório, conectado ao aplicativo.
           </p>
           <FormularioDeEntrada depois={destino} />
         </CartaoVivo>
@@ -78,7 +77,7 @@ export default async function PaginaDeEntrada({
             <rect x="4" y="11" width="16" height="9" rx="2" />
             <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
-          Conta única com o aplicativo, protegida do início ao fim.
+          Acesso seguro e integrado ao aplicativo.
         </p>
       </div>
     </div>
