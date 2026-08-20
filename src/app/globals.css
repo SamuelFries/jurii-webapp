@@ -284,6 +284,85 @@ h2.secao {
   margin: 4px 0 0;
 }
 
+/* Tela de orientação (/cliente): quem entra no webapp sem papel
+   profissional. É um mapa, não um erro. O cabeçalho é centrado, com o título
+   como âncora visual; os dois caminhos (cliente pelo app, advogado pela OAB)
+   vêm como cartões; e as ações de conta ficam em terceiro plano. Reusa
+   .pagina/.cartao (navy no tema escuro, limpo no claro) e o rodapé global. */
+.orientacao {
+  text-align: center;
+}
+
+.orientacao > h1 {
+  margin-top: 8px;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.orientacao > .subtitulo {
+  max-width: 48ch;
+  margin: 12px auto 0;
+}
+
+/* Os dois caminhos: respiro generoso acima, e conteúdo alinhado à esquerda
+   dentro de cada cartão (o texto centrado atrapalha a leitura da instrução). */
+.orientacao .blocos {
+  margin-top: 26px;
+  text-align: left;
+}
+
+.orientacao .bloco strong {
+  display: block;
+  font-size: 16px;
+  color: var(--text);
+}
+
+/* A ação principal em dourado, o MESMO do botão de entrar: é o destaque da
+   casa, e aqui resolve duas coisas de uma vez. O primário padrão do webapp é
+   navy, que no tema escuro fica navy sobre navy e some justo na ação que a
+   maioria de quem cai nesta tela precisa. O dourado é o único ponto de cor
+   forte da tela; o caminho do advogado fica ao lado, secundário. */
+.orientacao .bloco a.botao:not(.secundario) {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #d4b14a 0%, #b8972a 60%, #a9891f 100%);
+  box-shadow: 0 10px 26px rgba(184, 151, 42, 0.28);
+}
+
+.orientacao .bloco a.botao:not(.secundario):hover {
+  background: linear-gradient(135deg, #dcbb59 0%, #c2a032 60%, #b3921f 100%);
+}
+
+/* Ações da conta em terceiro plano: uma linha discreta, "Minha conta · Sair",
+   sem peso de botão. Presentes, mas fora do caminho principal. */
+.orientacao .acoes-discretas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 24px;
+  color: var(--text-2);
+  font-size: var(--t-sm);
+}
+
+.orientacao .acoes-discretas a {
+  padding: 6px 8px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.orientacao .acoes-discretas a:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.orientacao .acoes-discretas form {
+  margin: 0;
+}
+
 /* ---- Formulários ---- */
 
 label {

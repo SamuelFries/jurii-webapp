@@ -13,12 +13,18 @@ export const dynamic = "force-dynamic";
  * O webapp é a mesa de trabalho de advogados e escritórios; a área do
  * cliente vive no aplicativo. Sem esta página, quem tem só conta de
  * cliente cairia numa mesa vazia ou num erro, que é pior do que uma
- * explicação. Ela não promete o que não existe: enquanto não houver link
- * de loja publicado, o caminho oferecido é o site e a própria conta.
+ * explicação. Por isso a tela é uma ORIENTAÇÃO, não um bloqueio: diz onde
+ * cada lado da relação trabalha e oferece o caminho de cada um (o aplicativo
+ * para o cliente; a verificação da OAB para o advogado). Nada de "acesso
+ * negado".
  *
  * Quem TEM papel profissional nunca chega aqui: é redirecionado para a
  * casa dele, porque um advogado que digitar /cliente por engano quer a
  * mesa de trabalho, não este aviso.
+ *
+ * Herda o fundo do tema (navy no escuro, limpo no claro) e o rodapé
+ * institucional global do layout raiz. Sem canvas próprio: esta é uma tela
+ * de dentro da conta, não a porta de entrada.
  */
 export default async function AreaDoCliente() {
   const contexto = await contextoLogado();
@@ -27,35 +33,51 @@ export default async function AreaDoCliente() {
 
   return (
     <main className="pagina">
-      <div className="cartao" style={{ maxWidth: 520, margin: "48px auto" }}>
-        <h1 style={{ marginTop: 0 }}>Sua área da Jurii é no aplicativo</h1>
-        <p>
-          Este endereço é a mesa de trabalho de advogados e escritórios.
-          Encontrar profissional, conversar e acompanhar seus casos acontece
-          no aplicativo, no seu celular.
-        </p>
-        <p className="detalhe">
-          Sua conta é a mesma nos dois lugares.
+      <div
+        className="cartao orientacao"
+        style={{ maxWidth: 540, margin: "48px auto" }}
+      >
+        <h1>Este espaço é para advogados e escritórios</h1>
+        <p className="subtitulo">
+          O Jurii tem um ambiente para cada lado da relação. No aplicativo,
+          clientes encontram profissionais, conversam e acompanham seus casos.
+          A mesa de trabalho no computador é exclusiva para advogados e
+          equipes.
         </p>
 
-        <div className="cartao" style={{ marginTop: 16, textAlign: "left" }}>
-          <strong>É advogado ou advogada?</strong>
-          <p className="detalhe" style={{ marginTop: 4 }}>
-            Envie a verificação da OAB por aqui mesmo. Quando ela for
-            aprovada, a mesa de trabalho abre nesta conta.
-          </p>
-          <Link className="botao" href="/verificacao">
-            Verificar minha OAB
-          </Link>
+        <div className="blocos">
+          {/* Área principal: a maioria de quem cai aqui é cliente, e o caminho
+              deles é o aplicativo/site. Por isso o botão primário. */}
+          <div className="cartao bloco">
+            <strong>Não é advogado?</strong>
+            <p className="detalhe">
+              Encontre profissionais, converse com escritórios e acompanhe
+              seus casos pelo aplicativo Jurii.
+            </p>
+            <a className="botao" href="https://jurii.com.br">
+              Ir para jurii.com.br
+            </a>
+          </div>
+
+          {/* Área do profissional: mesma ideia do card que já funcionava, com
+              o fluxo de verificação intacto. */}
+          <div className="cartao bloco">
+            <strong>É advogado ou advogada?</strong>
+            <p className="detalhe">
+              Verifique sua OAB para liberar a mesa de trabalho nesta conta.
+              Após a aprovação, o acesso profissional será liberado.
+            </p>
+            <Link className="botao secundario" href="/verificacao">
+              Verificar minha OAB
+            </Link>
+          </div>
         </div>
 
-        <div className="acoes-em-linha" style={{ marginTop: 14 }}>
-          <a className="botao secundario" href="https://jurii.com.br">
-            Ir para jurii.com.br
-          </a>
-          <Link className="botao secundario" href="/conta">
-            Minha conta
-          </Link>
+        {/* Ações da conta, em terceiro plano: existem, mas não competem com a
+            orientação. Nada foi removido. */}
+        <div className="acoes-discretas">
+          <Link href="/conta">Minha conta</Link>
+          <span aria-hidden>·</span>
           <form action={sair}>
             <button type="submit" className="discreto">
               Sair
