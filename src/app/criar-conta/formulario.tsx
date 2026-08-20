@@ -12,7 +12,15 @@ import {
   tamanhoMinimoDeSenha,
 } from "@/lib/validadores";
 
+/** A frase que o banco levanta no gatilho de auth.users. */
+const RECADO_DESCARTAVEL =
+  "Use um e-mail permanente. Endereços descartáveis não são aceitos: " +
+  "é por ele que você recupera a senha e recebe aviso de movimentação.";
+
 function traduzErroDeCadastro(mensagem: string): string {
+  if (mensagem.includes("Disposable email domains are not allowed")) {
+    return RECADO_DESCARTAVEL;
+  }
   if (mensagem.includes("already registered")) {
     return "Já existe uma conta com esse e-mail. Entre ou recupere a senha.";
   }
@@ -62,6 +70,24 @@ export function FormularioDeCadastro({ depois = "/" }: { depois?: string }) {
     setErro(null);
 
     const supabase = clienteDoNavegador();
+
+    // Pergunta ANTES de enviar, para a pessoa ler o motivo em vez de um erro
+    // de servidor. A barreira de verdade é o gatilho em auth.users (a chave
+    // anon é pública: cadastro por curl contornaria qualquer tela). Se a
+    // consulta falhar, segue o cadastro: quem decide é o banco.
+    try {
+      const { data: descartavel } = await supabase.rpc("email_e_descartavel", {
+        email_value: email.trim(),
+      });
+      if (descartavel === true) {
+        setErro(RECADO_DESCARTAVEL);
+        setEnviando(false);
+        return;
+      }
+    } catch {
+      // sem rede para checar: o servidor decide
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: senha,
